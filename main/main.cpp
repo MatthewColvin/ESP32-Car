@@ -13,40 +13,13 @@
 extern "C" void
 app_main(void)
 {
-    esp_err_t ret;
-
-    ESP_ERROR_CHECK(esp_bt_controller_mem_release(ESP_BT_MODE_CLASSIC_BT));
-
-    esp_bt_controller_config_t bt_cfg = BT_CONTROLLER_INIT_CONFIG_DEFAULT();
-
     nvs_flash_init();
-    ret = esp_bt_controller_init(&bt_cfg);
-    if (ret)
-    {
-        ESP_LOGE(LOG_TAG, "%s enable controller failed: %s\n", __func__, esp_err_to_name(ret));
-        return;
-    }
+    auto *bt = Ble::getInstance();
+    bt->init();
+    bt->ble_client_appRegister();
 
-    ret = esp_bt_controller_enable(ESP_BT_MODE_BLE);
-    if (ret)
+    for (auto device : bt->scan(10))
     {
-        ESP_LOGE(LOG_TAG, "%s enable controller failed: %s\n", __func__, esp_err_to_name(ret));
-        return;
+        esp_log_buffer_hex(LOG_TAG, device.bda, 6);
     }
-
-    ESP_LOGI(LOG_TAG, "%s init bluetooth\n", __func__);
-    ret = esp_bluedroid_init();
-    if (ret)
-    {
-        ESP_LOGE(LOG_TAG, "%s init bluetooth failed: %s\n", __func__, esp_err_to_name(ret));
-        return;
-    }
-    ret = esp_bluedroid_enable();
-    if (ret)
-    {
-        ESP_LOGE(LOG_TAG, "%s enable bluetooth failed: %s\n", __func__, esp_err_to_name(ret));
-        return;
-    }
-
-    Ble::getInstance()->ble_client_appRegister();
 }

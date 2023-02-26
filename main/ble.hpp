@@ -6,6 +6,7 @@
 #include <stdio.h>
 #include "driver/uart.h"
 #include "freertos/FreeRTOS.h"
+#include <vector>
 
 #include "esp_gap_ble_api.h"
 #include "esp_gattc_api.h"
@@ -46,7 +47,10 @@ public:
     void operator=(const Ble &) = delete;
     static Ble *getInstance();
 
+    static void init();
     static void ble_client_appRegister();
+
+    static std::vector<esp_ble_gap_cb_param_t::ble_scan_result_evt_param> scan(uint32_t secondsToScan);
 
 protected:
     Ble(){};
