@@ -63,11 +63,6 @@ enum
     SPP_IDX_SPP_STATUS_VAL,
     SPP_IDX_SPP_STATUS_CFG,
 
-#ifdef SUPPORT_HEARTBEAT
-    SPP_IDX_SPP_HEARTBEAT_VAL,
-    SPP_IDX_SPP_HEARTBEAT_CFG,
-#endif
-
     SPP_IDX_NB,
 };
 
@@ -90,9 +85,9 @@ static esp_ble_scan_params_t ble_scan_params = {
     .scan_filter_policy = BLE_SCAN_FILTER_ALLOW_ALL,
     .scan_interval = 0x50,
     .scan_window = 0x30,
-    .scan_duplicate = BLE_SCAN_DUPLICATE_DISABLE};
+    .scan_duplicate = BLE_SCAN_DUPLICATE_ENABLE};
 
-static const char device_name[] = "VR_PARK";
+static const char device_name[] = "VR-PARK";
 static bool is_connect = false;
 static uint16_t spp_conn_id = 0;
 static uint16_t spp_mtu_size = 23;
@@ -108,11 +103,6 @@ static esp_gattc_db_elem_t *db = NULL;
 static esp_ble_gap_cb_param_t scan_rst;
 static QueueHandle_t cmd_reg_queue = NULL;
 QueueHandle_t spp_uart_queue = NULL;
-
-#ifdef SUPPORT_HEARTBEAT
-static uint8_t heartbeat_s[9] = {'E', 's', 'p', 'r', 'e', 's', 's', 'i', 'f'};
-static QueueHandle_t cmd_heartbeat_queue = NULL;
-#endif
 
 static esp_bt_uuid_t spp_service_uuid = {
     .len = ESP_UUID_LEN_16,
@@ -278,15 +268,14 @@ static void esp_gap_cb(esp_gap_ble_cb_event_t event, esp_ble_gap_cb_param_t *par
         switch (scan_result->scan_rst.search_evt)
         {
         case ESP_GAP_SEARCH_INQ_RES_EVT:
-            esp_log_buffer_hex(GATTC_TAG, scan_result->scan_rst.bda, 6);
-            ESP_LOGI(GATTC_TAG, "Searched Adv Data Len %d, Scan Response Len %d", scan_result->scan_rst.adv_data_len, scan_result->scan_rst.scan_rsp_len);
+            // esp_log_buffer_hex(GATTC_TAG, scan_result->scan_rst.bda, 6);
+            //  ESP_LOGI(GATTC_TAG, "Searched Adv Data Len %d, Scan Response Len %d", scan_result->scan_rst.adv_data_len, scan_result->scan_rst.scan_rsp_len);
             adv_name = esp_ble_resolve_adv_data(scan_result->scan_rst.ble_adv, ESP_BLE_AD_TYPE_NAME_CMPL, &adv_name_len);
             ESP_LOGI(GATTC_TAG, "Searched Device Name Len %d", adv_name_len);
-            esp_log_buffer_char(MATTS_TAG, adv_name, adv_name_len);
-            ESP_LOGI(GATTC_TAG, "\n");
+            // esp_log_buffer_char(MATTS_TAG, adv_name, adv_name_len);
+            // ESP_LOGI(GATTC_TAG, "\n");
             if (adv_name != NULL)
             {
-                ESP_LOGI(MATTS_TAG, "Device Name %s", adv_name);
                 if (strncmp((char *)adv_name, device_name, adv_name_len) == 0)
                 {
                     memcpy(&(scan_rst), scan_result, sizeof(esp_ble_gap_cb_param_t));
@@ -439,16 +428,7 @@ static void gattc_profile_event_handler(esp_gattc_cb_event_t event, esp_gatt_if_
             xQueueSend(cmd_reg_queue, &cmd, 10 / portTICK_PERIOD_MS);
             break;
         case SPP_IDX_SPP_STATUS_VAL:
-#ifdef SUPPORT_HEARTBEAT
-            cmd = SPP_IDX_SPP_HEARTBEAT_VAL;
-            xQueueSend(cmd_reg_queue, &cmd, 10 / portTICK_PERIOD_MS);
-#endif
             break;
-#ifdef SUPPORT_HEARTBEAT
-        case SPP_IDX_SPP_HEARTBEAT_VAL:
-            xQueueSend(cmd_heartbeat_queue, &cmd, 10 / portTICK_PERIOD_MS);
-            break;
-#endif
         default:
             break;
         };
@@ -539,51 +519,10 @@ void spp_client_reg_task(void *arg)
                     ESP_LOGI(GATTC_TAG, "Index = %d,UUID = 0x%04x, handle = %d \n", cmd_id, (db + SPP_IDX_SPP_STATUS_VAL)->uuid.uuid.uuid16, (db + SPP_IDX_SPP_STATUS_VAL)->attribute_handle);
                     esp_ble_gattc_register_for_notify(spp_gattc_if, gl_profile_tab[PROFILE_APP_ID].remote_bda, (db + SPP_IDX_SPP_STATUS_VAL)->attribute_handle);
                 }
-#ifdef SUPPORT_HEARTBEAT
-                else if (cmd_id == SPP_IDX_SPP_HEARTBEAT_VAL)
-                {
-                    ESP_LOGI(GATTC_TAG, "Index = %d,UUID = 0x%04x, handle = %d \n", cmd_id, (db + SPP_IDX_SPP_HEARTBEAT_VAL)->uuid.uuid.uuid16, (db + SPP_IDX_SPP_HEARTBEAT_VAL)->attribute_handle);
-                    esp_ble_gattc_register_for_notify(spp_gattc_if, gl_profile_tab[PROFILE_APP_ID].remote_bda, (db + SPP_IDX_SPP_HEARTBEAT_VAL)->attribute_handle);
-                }
-#endif
             }
         }
     }
 }
-
-#ifdef SUPPORT_HEARTBEAT
-void spp_heart_beat_task(void *arg)
-{
-    uint16_t cmd_id;
-
-    for (;;)
-    {
-        vTaskDelay(50 / portTICK_PERIOD_MS);
-        if (xQueueReceive(cmd_heartbeat_queue, &cmd_id, portMAX_DELAY))
-        {
-            while (1)
-            {
-                if ((is_connect == true) && (db != NULL) && ((db + SPP_IDX_SPP_HEARTBEAT_VAL)->properties & (ESP_GATT_CHAR_PROP_BIT_WRITE_NR | ESP_GATT_CHAR_PROP_BIT_WRITE)))
-                {
-                    esp_ble_gattc_write_char(spp_gattc_if,
-                                             spp_conn_id,
-                                             (db + SPP_IDX_SPP_HEARTBEAT_VAL)->attribute_handle,
-                                             sizeof(heartbeat_s),
-                                             (uint8_t *)heartbeat_s,
-                                             ESP_GATT_WRITE_TYPE_RSP,
-                                             ESP_GATT_AUTH_REQ_NONE);
-                    vTaskDelay(5000 / portTICK_PERIOD_MS);
-                }
-                else
-                {
-                    ESP_LOGI(GATTC_TAG, "disconnect\n");
-                    break;
-                }
-            }
-        }
-    }
-}
-#endif
 
 void ble_client_appRegister(void)
 {
@@ -614,11 +553,6 @@ void ble_client_appRegister(void)
 
     cmd_reg_queue = xQueueCreate(10, sizeof(uint32_t));
     xTaskCreate(spp_client_reg_task, "spp_client_reg_task", 2048, NULL, 10, NULL);
-
-#ifdef SUPPORT_HEARTBEAT
-    cmd_heartbeat_queue = xQueueCreate(10, sizeof(uint32_t));
-    xTaskCreate(spp_heart_beat_task, "spp_heart_beat_task", 2048, NULL, 10, NULL);
-#endif
 }
 
 void uart_task(void *pvParameters)
