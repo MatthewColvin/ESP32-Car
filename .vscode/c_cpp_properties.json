@@ -5,7 +5,7 @@
             "includePath": [
                 "${workspaceFolder}/**",
                 "C:/Users/mcolv/esp/esp-idf/**",
-                "C:/Users/mcolv/esp/esp-idf/components/newlib/platform_include"
+                "C:/Users/mcolv/esp/esp-idf/components/newlib/platform_include/**"
             ],
             "defines": [
                 "_DEBUG",
