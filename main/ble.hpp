@@ -61,7 +61,6 @@ public:
     static int notify_value_count;
     static esp_gattc_db_elem_t *db;
     static QueueHandle_t cmd_reg_queue;
-    static QueueHandle_t spp_uart_queue;
     static uint16_t spp_conn_id;
     static uint16_t spp_mtu_size;
     static uint16_t cmd;

@@ -41,7 +41,6 @@ int Ble::notify_value_offset = 0;
 int Ble::notify_value_count = 0;
 esp_gattc_db_elem_t *Ble::db = NULL;
 QueueHandle_t Ble::cmd_reg_queue = NULL;
-QueueHandle_t Ble::spp_uart_queue = NULL;
 uint16_t Ble::spp_conn_id = 0;
 uint16_t Ble::spp_mtu_size = 23;
 uint16_t Ble::cmd = 0;
