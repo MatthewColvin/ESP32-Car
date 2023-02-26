@@ -10,9 +10,8 @@
 #include "freertos/FreeRTOS.h"
 #include "string.h"
 
-#define LOG_TAG "GATTC_SPP_DEMO"
+#define LOG_TAG "BLE"
 #define MATTS_TAG "MATT PRINTS"
-#define LOG_TAG "Main"
 #define PROFILE_NUM 1
 #define PROFILE_APP_ID 0
 #define BT_BD_ADDR_STR "%02x:%02x:%02x:%02x:%02x:%02x"
