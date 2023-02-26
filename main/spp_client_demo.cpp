@@ -92,7 +92,7 @@ static esp_ble_scan_params_t ble_scan_params = {
     .scan_window = 0x30,
     .scan_duplicate = BLE_SCAN_DUPLICATE_DISABLE};
 
-static const char device_name[] = "ESP_SPP_SERVER";
+static const char device_name[] = "VR_PARK";
 static bool is_connect = false;
 static uint16_t spp_conn_id = 0;
 static uint16_t spp_mtu_size = 23;
@@ -683,7 +683,7 @@ static void spp_uart_init(void)
     xTaskCreate(uart_task, "uTask", 2048, (void *)UART_NUM_0, 8, NULL);
 }
 
-void app_main(void)
+extern "C" void app_main(void)
 {
     esp_err_t ret;
 
