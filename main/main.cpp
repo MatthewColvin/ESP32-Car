@@ -10,9 +10,8 @@
 
 #define LOG_TAG "Main"
 
-Ble *bluetooth = new Ble();
-
-extern "C" void app_main(void)
+extern "C" void
+app_main(void)
 {
     esp_err_t ret;
 
@@ -49,5 +48,5 @@ extern "C" void app_main(void)
         return;
     }
 
-    bluetooth->ble_client_appRegister();
+    Ble::getInstance()->ble_client_appRegister();
 }

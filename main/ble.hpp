@@ -42,15 +42,23 @@ struct gattc_profile_inst
 class Ble
 {
 public:
-    Ble();
+    Ble(Ble &other) = delete;
+    void operator=(const Ble &) = delete;
+    static Ble *getInstance();
 
+    static void ble_client_appRegister();
+
+protected:
+    Ble(){};
+    static Ble *mInstance;
+
+private:
     static void esp_gap_cb(esp_gap_ble_cb_event_t event, esp_ble_gap_cb_param_t *param);
     static void esp_gattc_cb(esp_gattc_cb_event_t event, esp_gatt_if_t gattc_if, esp_ble_gattc_cb_param_t *param);
     static void gattc_profile_event_handler(esp_gattc_cb_event_t event, esp_gatt_if_t gattc_if, esp_ble_gattc_cb_param_t *param);
     static void free_gattc_srv_db();
     static void notify_event_handler(esp_ble_gattc_cb_param_t *p_data);
 
-    static void ble_client_appRegister();
     static void spp_client_reg_task(void *arg);
 
     static bool is_connect;
@@ -69,4 +77,5 @@ public:
     static uint16_t spp_gattc_if;
     static char *notify_value_p;
     static const char *device_name;
+    static gattc_profile_inst gl_profile_tab[];
 };

@@ -49,15 +49,22 @@ uint16_t Ble::spp_srv_end_handle = 0;
 uint16_t Ble::spp_gattc_if = 0xff;
 char *Ble::notify_value_p = NULL;
 const char *Ble::device_name = "VR-PARK";
-
-Ble::Ble(){};
-
+Ble *Ble::mInstance = nullptr;
 /* One gatt-based profile one app_id and one gattc_if, this array will store the gattc_if returned by ESP_GATTS_REG_EVT */
-struct gattc_profile_inst gl_profile_tab[PROFILE_NUM] = {
+struct gattc_profile_inst Ble::gl_profile_tab[PROFILE_NUM] = {
     [PROFILE_APP_ID] = {
         .gattc_cb = Ble::gattc_profile_event_handler,
         .gattc_if = ESP_GATT_IF_NONE, /* Not get the gatt_if, so initial is ESP_GATT_IF_NONE */
     }};
+
+Ble *Ble::getInstance()
+{
+    if (mInstance == nullptr)
+    {
+        mInstance = new Ble();
+    }
+    return mInstance;
+}
 
 void Ble::esp_gap_cb(esp_gap_ble_cb_event_t event, esp_ble_gap_cb_param_t *param)
 {
