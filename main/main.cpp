@@ -7,6 +7,7 @@
 #include "esp_bt_main.h"
 #include "esp_system.h"
 #include "esp_log.h"
+#include "driver/gpio.h"
 
 #define LOG_TAG "Main"
 
@@ -15,8 +16,6 @@ app_main(void)
 {
     nvs_flash_init();
     auto *bt = Ble::getInstance();
-    bt->init();
-    bt->ble_client_appRegister();
 
     for (auto device : bt->scan(10))
     {
