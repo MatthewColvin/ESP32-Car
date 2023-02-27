@@ -19,6 +19,7 @@ app_main(void)
 
     for (auto device : bt->scan(10))
     {
-        esp_log_buffer_hex(LOG_TAG, device.bda, 6);
+        ESP_LOGI(LOG_TAG, "Device Name: %s", device.getName().c_str());
+        // esp_log_buffer_hex(LOG_TAG, device.bda, 6);
     }
 }

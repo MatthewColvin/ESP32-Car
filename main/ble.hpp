@@ -10,6 +10,7 @@
 
 #include "esp_gap_ble_api.h"
 #include "esp_gattc_api.h"
+#include "device.hpp"
 
 struct gattc_profile_inst
 {
@@ -32,7 +33,7 @@ public:
 
     static void ble_client_appRegister();
 
-    static std::vector<esp_ble_gap_cb_param_t::ble_scan_result_evt_param> scan(uint32_t secondsToScan);
+    static std::vector<Device> scan(uint32_t secondsToScan);
 
 protected:
     Ble();
@@ -42,6 +43,9 @@ private:
     static void esp_gap_cb(esp_gap_ble_cb_event_t event, esp_ble_gap_cb_param_t *param);
     static void esp_gattc_cb(esp_gattc_cb_event_t event, esp_gatt_if_t gattc_if, esp_ble_gattc_cb_param_t *param);
     static void gattc_profile_event_handler(esp_gattc_cb_event_t event, esp_gatt_if_t gattc_if, esp_ble_gattc_cb_param_t *param);
+
+    static void gattc_hid_event_handler(esp_gattc_cb_event_t event, esp_gatt_if_t gattc_if, esp_ble_gattc_cb_param_t *param);
+    static void gattc_battery_event_handler(esp_gattc_cb_event_t event, esp_gatt_if_t gattc_if, esp_ble_gattc_cb_param_t *param);
 
     static bool is_connect;
     static esp_ble_gap_cb_param_t scan_rst;

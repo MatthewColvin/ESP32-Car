@@ -32,7 +32,7 @@ esp_ble_scan_params_t Ble::ble_scan_params = {
 const char *Ble::device_name = "VR-PARK";
 Ble *Ble::mInstance = nullptr;
 
-std::vector<esp_ble_gap_cb_param_t::ble_scan_result_evt_param> devices;
+std::vector<Device> devices;
 
 Ble::Ble()
 {
@@ -69,6 +69,8 @@ Ble::Ble()
         ESP_LOGE(LOG_TAG, "%s enable bluetooth failed: %s\n", __func__, esp_err_to_name(ret));
         return;
     }
+
+    ble_client_appRegister();
 }
 
 Ble *Ble::getInstance()
@@ -80,17 +82,16 @@ Ble *Ble::getInstance()
     return mInstance;
 }
 
-std::vector<esp_ble_gap_cb_param_t::ble_scan_result_evt_param> Ble::scan(uint32_t secondsToScan)
+std::vector<Device> Ble::scan(uint32_t secondsToScan)
 {
     esp_ble_gap_start_scanning(secondsToScan);
     vTaskDelay(secondsToScan * 1000 / portTICK_PERIOD_MS);
+    esp_ble_gap_stop_scanning();
     return devices;
 }
 
 void Ble::esp_gap_cb(esp_gap_ble_cb_event_t event, esp_ble_gap_cb_param_t *param)
 {
-    uint8_t *adv_name = NULL;
-    uint8_t adv_name_len = 0;
     esp_err_t err;
 
     switch (event)
@@ -132,20 +133,10 @@ void Ble::esp_gap_cb(esp_gap_ble_cb_event_t event, esp_ble_gap_cb_param_t *param
         switch (scan_result->scan_rst.search_evt)
         {
         case ESP_GAP_SEARCH_INQ_RES_EVT:
-            devices.push_back(scan_result->scan_rst);
-            // esp_log_buffer_hex(LOG_TAG, scan_result->scan_rst.bda, 6);
-            // ESP_LOGI(LOG_TAG, "Searched Adv Data Len %d, Scan Response Len %d", scan_result->scan_rst.adv_data_len, scan_result->scan_rst.scan_rsp_len);
-            adv_name = esp_ble_resolve_adv_data(scan_result->scan_rst.ble_adv, ESP_BLE_AD_TYPE_NAME_CMPL, &adv_name_len);
-            esp_log_buffer_char(MATTS_TAG, adv_name, adv_name_len);
-            if (adv_name != NULL)
-            {
-                if (strncmp((char *)adv_name, device_name, adv_name_len) == 0)
-                {
-                    memcpy(&(scan_rst), scan_result, sizeof(esp_ble_gap_cb_param_t));
-                    esp_ble_gap_stop_scanning();
-                }
-            }
-            break;
+        {
+            Device d(scan_result->scan_rst);
+            devices.push_back(d);
+        }
         case ESP_GAP_SEARCH_INQ_CMPL_EVT:
             break;
         default:
