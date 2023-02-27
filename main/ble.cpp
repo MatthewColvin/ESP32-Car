@@ -10,6 +10,7 @@
 #include "freertos/FreeRTOS.h"
 #include "string.h"
 #include <vector>
+#include <optional>
 
 #define LOG_TAG "BLE"
 #define MATTS_TAG "MATT PRINTS"
@@ -20,14 +21,6 @@
 #define SCAN_ALL_THE_TIME 0
 
 bool Ble::is_connect = false;
-esp_ble_gap_cb_param_t Ble::scan_rst;
-esp_ble_scan_params_t Ble::ble_scan_params = {
-    .scan_type = BLE_SCAN_TYPE_ACTIVE,
-    .own_addr_type = BLE_ADDR_TYPE_PUBLIC,
-    .scan_filter_policy = BLE_SCAN_FILTER_ALLOW_ALL,
-    .scan_interval = 0x50,
-    .scan_window = 0x30,
-    .scan_duplicate = BLE_SCAN_DUPLICATE_ENABLE};
 
 const char *Ble::device_name = "VR-PARK";
 Ble *Ble::mInstance = nullptr;
@@ -82,8 +75,9 @@ Ble *Ble::getInstance()
     return mInstance;
 }
 
-std::vector<Device> Ble::scan(uint32_t secondsToScan)
+std::vector<Device> Ble::scan(uint32_t secondsToScan, esp_ble_scan_params_t aScanParams)
 {
+    esp_ble_gap_set_scan_params(&aScanParams);
     esp_ble_gap_start_scanning(secondsToScan);
     vTaskDelay(secondsToScan * 1000 / portTICK_PERIOD_MS);
     esp_ble_gap_stop_scanning();
@@ -108,7 +102,8 @@ void Ble::esp_gap_cb(esp_gap_ble_cb_event_t event, esp_ble_gap_cb_param_t *param
             ESP_LOGE(LOG_TAG, "Scan start failed: %s", esp_err_to_name(err));
             break;
         }
-        ESP_LOGI(LOG_TAG, "Scan start successed");
+        ESP_LOGI(LOG_TAG, "Scan start successed Clearing Devices");
+        devices.clear();
         break;
     }
     case ESP_GAP_BLE_SCAN_STOP_COMPLETE_EVT:
@@ -118,12 +113,7 @@ void Ble::esp_gap_cb(esp_gap_ble_cb_event_t event, esp_ble_gap_cb_param_t *param
             ESP_LOGE(LOG_TAG, "Scan stop failed: %s", esp_err_to_name(err));
             break;
         }
-        ESP_LOGI(LOG_TAG, "Scan stop successed");
-        if (is_connect == false)
-        {
-            ESP_LOGI(LOG_TAG, "Connect to the remote device.");
-            // esp_ble_gattc_open(our profile.gattc_if, scan_rst.scan_rst.bda, scan_rst.scan_rst.ble_addr_type, true);
-        }
+        ESP_LOGI(LOG_TAG, "Scan stop successed. Found %d Devices", devices.size());
         break;
     }
     case ESP_GAP_BLE_SCAN_RESULT_EVT:

@@ -24,6 +24,14 @@ struct gattc_profile_inst
     esp_bd_addr_t remote_bda;
 };
 
+static constexpr esp_ble_scan_params_t default_ble_scan_params = {
+    .scan_type = BLE_SCAN_TYPE_ACTIVE,
+    .own_addr_type = BLE_ADDR_TYPE_PUBLIC,
+    .scan_filter_policy = BLE_SCAN_FILTER_ALLOW_ALL,
+    .scan_interval = 0x50,
+    .scan_window = 0x30,
+    .scan_duplicate = BLE_SCAN_DUPLICATE_ENABLE};
+
 class Ble
 {
 public:
@@ -33,7 +41,7 @@ public:
 
     static void ble_client_appRegister();
 
-    static std::vector<Device> scan(uint32_t secondsToScan);
+    static std::vector<Device> scan(uint32_t secondsToScan, esp_ble_scan_params_t scanParams = default_ble_scan_params);
 
 protected:
     Ble();
@@ -49,7 +57,6 @@ private:
 
     static bool is_connect;
     static esp_ble_gap_cb_param_t scan_rst;
-    static esp_ble_scan_params_t ble_scan_params;
 
     static const char *device_name;
     static gattc_profile_inst gl_profile_tab[];
