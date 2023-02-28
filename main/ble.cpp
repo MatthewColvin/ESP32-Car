@@ -12,7 +12,6 @@
 #include <optional>
 #include <vector>
 
-
 #define LOG_TAG "BLE"
 #define MATTS_TAG "MATT PRINTS"
 #define PROFILE_APP_ID 0
@@ -27,7 +26,8 @@ bool Ble::is_connect = false;
 const char *Ble::device_name = "VR-PARK";
 Ble *Ble::mInstance = nullptr;
 
-std::vector<Device> devices;
+std::vector<Device> scannedDevices;
+std::vector<Device> connectedDevices;
 
 Ble::Ble() {
   // Release Bluetooth Classic we will not need it.
@@ -80,7 +80,27 @@ std::vector<Device> Ble::scan(uint32_t secondsToScan,
   esp_ble_gap_start_scanning(secondsToScan);
   vTaskDelay(secondsToScan * 1000 / portTICK_PERIOD_MS);
   esp_ble_gap_stop_scanning();
-  return devices;
+  return scannedDevices;
+}
+
+bool Ble::connect(Device aDevice) {
+  // Use index to try to get reference to device will pose issue if accounting
+  // for case of disconnect
+
+  // there is a limitation on number of connected devices
+  // the gattc_if is only valid for 3-8
+  if (connectedDevices.size() + 2 > 8) {
+    ESP_LOGE(LOG_TAG, "ERROR Can only Connect 6 devices!");
+    return false;
+  }
+
+  esp_err_t ret =
+      esp_ble_gattc_open(connectedDevices.size() + 3, *aDevice.getAddress(),
+                         aDevice.getAddressType(), true);
+  if (ret == ESP_OK) {
+    connectedDevices.push_back(aDevice);
+  }
+  return ret == ESP_OK;
 }
 
 void Ble::esp_gap_cb(esp_gap_ble_cb_event_t event,
@@ -98,7 +118,7 @@ void Ble::esp_gap_cb(esp_gap_ble_cb_event_t event,
       break;
     }
     ESP_LOGI(LOG_TAG, "Scan start successed Clearing Devices");
-    devices.clear();
+    scannedDevices.clear();
     break;
   }
   case ESP_GAP_BLE_SCAN_STOP_COMPLETE_EVT: {
@@ -106,7 +126,8 @@ void Ble::esp_gap_cb(esp_gap_ble_cb_event_t event,
       ESP_LOGE(LOG_TAG, "Scan stop failed: %s", esp_err_to_name(err));
       break;
     }
-    ESP_LOGI(LOG_TAG, "Scan stop successed. Found %d Devices", devices.size());
+    ESP_LOGI(LOG_TAG, "Scan stop successed. Found %d Devices",
+             scannedDevices.size());
     break;
   }
   case ESP_GAP_BLE_SCAN_RESULT_EVT: {
@@ -115,7 +136,7 @@ void Ble::esp_gap_cb(esp_gap_ble_cb_event_t event,
     switch (scan_result->scan_rst.search_evt) {
     case ESP_GAP_SEARCH_INQ_RES_EVT: {
       Device d(scan_result->scan_rst);
-      devices.push_back(d);
+      scannedDevices.push_back(d);
     }
     case ESP_GAP_SEARCH_INQ_CMPL_EVT:
       break;
@@ -140,36 +161,35 @@ void Ble::esp_gap_cb(esp_gap_ble_cb_event_t event,
 void Ble::esp_gattc_cb(esp_gattc_cb_event_t event, esp_gatt_if_t gattc_if,
                        esp_ble_gattc_cb_param_t *param) {
   ESP_LOGI(LOG_TAG, "EVT %d, gattc if %d", event, gattc_if);
+  if (connectedDevices.size() > gattc_if - 3) {
+    ESP_LOGI(LOG_TAG, "Found Device %s",
+             connectedDevices[gattc_if - 3].getName().c_str());
+  }
 
-  /* If event is register event, store the gattc_if for each profile */
-  if (event == ESP_GATTC_REG_EVT) {
+  switch (event) {
+  case ESP_GATTC_REG_EVT: {
     if (param->reg.status == ESP_GATT_OK) {
-      // ourprofile??[param->reg.app_id].gattc_if = gattc_if;
+      // May need to store something into the device???
     } else {
       ESP_LOGI(LOG_TAG, "Reg app failed, app_id %04x, status %d",
                param->reg.app_id, param->reg.status);
       return;
     }
+    break;
   }
-  /* If the gattc_if equal to profile A, call profile A cb handler,
-   * so here call each profile's callback */
-  // do
-  // {
-  //     int idx;
-  //     for (idx = 0; idx < PROFILE_NUM; idx++)
-  //     {
-  //         if (gattc_if == ESP_GATT_IF_NONE || /* ESP_GATT_IF_NONE, not
-  //         specify a certain gatt_if, need to call every profile cb function
-  //         */
-  //             gattc_if == gl_profile_tab[idx].gattc_if)
-  //         {
-  //             if (gl_profile_tab[idx].gattc_cb)
-  //             {
-  //                 gl_profile_tab[idx].gattc_cb(event, gattc_if, param);
-  //             }
-  //         }
-  //     }
-  // } while (0);
+  case ESP_GATTC_CONNECT_EVT: {
+    // Probably update device somehow here?
+    break;
+  }
+  case ESP_GATTC_SRVC_CHG_EVT: {
+    // Probably update device somehow here?
+
+    break;
+  }
+  default: {
+    break;
+  }
+  }
 }
 
 void Ble::ble_client_appRegister(void) {

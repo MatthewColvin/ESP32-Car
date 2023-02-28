@@ -14,4 +14,14 @@ std::string Device::getName() {
 
   return name;
 }
-// esp_log_buffer_hex(LOG_TAG, scan_result->scan_rst.bda, 6);
+
+esp_bd_addr_t *Device::getAddress() {
+  // esp_log_buffer_hex(LOG_TAG, scan_result->scan_rst.bda, 6);
+  // Decided to go with this but if they save the address of and the device
+  // falls out of scope we have issues
+  return &mScanResult.bda;
+}
+
+esp_ble_addr_type_t Device::getAddressType() {
+  return mScanResult.ble_addr_type;
+}

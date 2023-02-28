@@ -8,11 +8,9 @@
 #include <string.h>
 #include <vector>
 
-
 #include "device.hpp"
 #include "esp_gap_ble_api.h"
 #include "esp_gattc_api.h"
-
 
 struct gattc_profile_inst {
   esp_gattc_cb_t gattc_cb;
@@ -39,9 +37,25 @@ public:
   void operator=(const Ble &) = delete;
   static Ble *getInstance();
 
+  /**
+   * @brief Function to get a list of devices in pairing mode
+   *
+   * @param secondsToScan - time in seconds to scan for devices
+   * @param scanParams - scan parameters to allow for better control of scan
+   * @return std::vector<Device>
+   */
   static std::vector<Device>
   scan(uint32_t secondsToScan,
        esp_ble_scan_params_t scanParams = default_ble_scan_params);
+
+  /**
+   * @brief Function to connect to a device
+   *
+   * @param aDevice - a Device to connect to
+   * @return true - device was connected
+   * @return false - device failed to connect
+   */
+  static bool connect(Device aDevice);
 
 protected:
   Ble();

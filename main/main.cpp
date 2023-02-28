@@ -15,7 +15,9 @@ extern "C" void app_main(void) {
   nvs_flash_init();
   auto *bt = Ble::getInstance();
 
-  while (true) {
+  bool joystickFound = false;
+
+  while (!joystickFound) {
     auto devices = bt->scan(5);
 
     ESP_LOGI(LOG_TAG, "Found %d Devices", devices.size());
@@ -24,10 +26,13 @@ extern "C" void app_main(void) {
         ESP_LOGI(LOG_TAG, "Device Name: %s", device.getName().c_str());
       }
       if (device.getName() == "VR-PARK") {
+        joystickFound = true;
+        bt->connect(device);
         ESP_LOGI(LOG_TAG, "FOUND THE REMOTE!!!!");
       }
       // esp_log_buffer_hex(LOG_TAG, device.bda, 6);
     }
+
     vTaskDelay(10000 / portTICK_PERIOD_MS);
   }
 }

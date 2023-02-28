@@ -8,6 +8,8 @@ public:
   Device(bleScanResult res);
 
   std::string getName();
+  esp_bd_addr_t *getAddress();
+  esp_ble_addr_type_t getAddressType();
 
 private:
   bleScanResult mScanResult;
