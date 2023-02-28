@@ -181,7 +181,6 @@ void Ble::esp_gattc_cb(esp_gattc_cb_event_t event, esp_gatt_if_t gattc_if,
   }
   case ESP_GATTC_OPEN_EVT: {
     connectedDevices[cbDeviceIdx].openConnection(param->open);
-    connectedDevices[cbDeviceIdx].searchServices();
     break;
   }
   case ESP_GATTC_CONNECT_EVT: {
@@ -189,8 +188,7 @@ void Ble::esp_gattc_cb(esp_gattc_cb_event_t event, esp_gatt_if_t gattc_if,
     break;
   }
   case ESP_GATTC_SRVC_CHG_EVT: {
-    // Probably update device somehow here?
-
+    connectedDevices[cbDeviceIdx].searchServices();
     break;
   }
   default: {

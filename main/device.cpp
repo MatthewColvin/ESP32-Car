@@ -52,5 +52,9 @@ void Device::searchServices() {
     ESP_LOGE(LOG_TAG, "Cannot Search for Services without connection!");
     return;
   }
-  esp_ble_gattc_search_service(mGattcIf, mConnectionId, nullptr);
+  ESP_LOGI(LOG_TAG, "Searching %s for Services", getName().c_str());
+  auto res = esp_ble_gattc_search_service(mGattcIf, mConnectionId, nullptr);
+  if (res != ESP_OK) {
+    ESP_LOGE(LOG_TAG, "ERROR in Service Search");
+  }
 }
