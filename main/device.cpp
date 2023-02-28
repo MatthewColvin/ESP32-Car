@@ -1,4 +1,10 @@
 #include "device.hpp"
+#include "esp_gattc_api.h"
+#include "esp_log.h"
+
+#include <cstring>
+
+#define LOG_TAG "Device"
 
 Device::Device(bleScanResult res) { mScanResult = res; }
 
@@ -24,4 +30,27 @@ esp_bd_addr_t *Device::getAddress() {
 
 esp_ble_addr_type_t Device::getAddressType() {
   return mScanResult.ble_addr_type;
+}
+
+void Device::openConnection(OpenEventInfo aOpenEvent) {
+
+  mConnected = true;
+
+  memcpy(mRemoteAddress, aOpenEvent.remote_bda, sizeof(esp_bd_addr_t));
+  mConnectionId = aOpenEvent.conn_id;
+}
+
+bool Device::isConnected() { return mConnected; }
+esp_bd_addr_t *Device::getRemoteAddress() { return &mRemoteAddress; }
+uint16_t Device::getConnectionId() { return mConnectionId; }
+
+uint8_t Device::getGattcIf() { return mGattcIf; }
+void Device::setGattcIf(uint8_t aGattcIf) { mGattcIf = aGattcIf; }
+
+void Device::searchServices() {
+  if (!mConnected) {
+    ESP_LOGE(LOG_TAG, "Cannot Search for Services without connection!");
+    return;
+  }
+  esp_ble_gattc_search_service(mGattcIf, mConnectionId, nullptr);
 }

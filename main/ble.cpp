@@ -161,9 +161,11 @@ void Ble::esp_gap_cb(esp_gap_ble_cb_event_t event,
 void Ble::esp_gattc_cb(esp_gattc_cb_event_t event, esp_gatt_if_t gattc_if,
                        esp_ble_gattc_cb_param_t *param) {
   ESP_LOGI(LOG_TAG, "EVT %d, gattc if %d", event, gattc_if);
-  if (connectedDevices.size() > gattc_if - 3) {
+
+  size_t cbDeviceIdx = gattc_if - 3;
+  if (connectedDevices.size() > cbDeviceIdx) {
     ESP_LOGI(LOG_TAG, "Found Device %s",
-             connectedDevices[gattc_if - 3].getName().c_str());
+             connectedDevices[cbDeviceIdx].getName().c_str());
   }
 
   switch (event) {
@@ -177,8 +179,13 @@ void Ble::esp_gattc_cb(esp_gattc_cb_event_t event, esp_gatt_if_t gattc_if,
     }
     break;
   }
+  case ESP_GATTC_OPEN_EVT: {
+    connectedDevices[cbDeviceIdx].openConnection(param->open);
+    connectedDevices[cbDeviceIdx].searchServices();
+    break;
+  }
   case ESP_GATTC_CONNECT_EVT: {
-    // Probably update device somehow here?
+    connectedDevices[cbDeviceIdx].setGattcIf(cbDeviceIdx);
     break;
   }
   case ESP_GATTC_SRVC_CHG_EVT: {
