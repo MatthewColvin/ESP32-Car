@@ -2,11 +2,14 @@
 #include "esp_gap_ble_api.h"
 #include "esp_gattc_api.h"
 #include <string>
+#include <vector>
 
-class Device {
+class Device
+{
 public:
   typedef esp_ble_gap_cb_param_t::ble_scan_result_evt_param bleScanResult;
   typedef esp_ble_gattc_cb_param_t::gattc_open_evt_param OpenEventInfo;
+  typedef esp_ble_gattc_cb_param_t::gattc_search_res_evt_param ServiceSearchResult;
 
   Device(bleScanResult res);
 
@@ -26,6 +29,9 @@ public:
   uint8_t getGattcIf();
 
   void searchServices();
+  void addFoundService(ServiceSearchResult aService);
+  void serviceSearchComplete();
+  bool isServicesSearchComplete();
 
 private:
   // Pre Connection
@@ -34,6 +40,9 @@ private:
   // Post Connection
   bool mConnected = false;
   uint8_t mGattcIf;
+
+  bool mIsServiceSearching = false;
+  std::vector<ServiceSearchResult> mServicesFound;
 
   esp_bd_addr_t mRemoteAddress;
   uint16_t mConnectionId;

@@ -11,28 +11,33 @@
 
 #define LOG_TAG "Main"
 
-extern "C" void app_main(void) {
-  nvs_flash_init();
-  auto *bt = Ble::getInstance();
+extern "C" void app_main(void)
+{
+    nvs_flash_init();
+    auto *bt = Ble::getInstance();
 
-  bool joystickFound = false;
+    bool joystickFound = false;
 
-  while (!joystickFound) {
-    auto devices = bt->scan(5);
+    while (!joystickFound)
+    {
+        auto devices = bt->scan(5);
 
-    ESP_LOGI(LOG_TAG, "Found %d Devices", devices.size());
-    for (auto device : devices) {
-      if (device.getName() != "") {
-        ESP_LOGI(LOG_TAG, "Device Name: %s", device.getName().c_str());
-      }
-      if (device.getName() == "VR-PARK") {
-        joystickFound = true;
-        bt->connect(device);
-        ESP_LOGI(LOG_TAG, "FOUND THE REMOTE!!!!");
-      }
-      // esp_log_buffer_hex(LOG_TAG, device.bda, 6);
+        ESP_LOGI(LOG_TAG, "Found %d Devices", devices.size());
+        for (auto device : devices)
+        {
+            if (device.getName() != "")
+            {
+                ESP_LOGI(LOG_TAG, "Device Name: %s", device.getName().c_str());
+            }
+            if (device.getName() == "VR-PARK")
+            {
+                joystickFound = true;
+                bt->connect(device);
+                ESP_LOGI(LOG_TAG, "FOUND THE REMOTE!!!!");
+            }
+            // esp_log_buffer_hex(LOG_TAG, device.bda, 6);
+        }
+
+        vTaskDelay(10000 / portTICK_PERIOD_MS);
     }
-
-    vTaskDelay(10000 / portTICK_PERIOD_MS);
-  }
 }
