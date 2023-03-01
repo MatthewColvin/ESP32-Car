@@ -184,10 +184,10 @@ void Ble::esp_gattc_cb(esp_gattc_cb_event_t event, esp_gatt_if_t gattc_if,
     break;
   }
   case ESP_GATTC_CONNECT_EVT: {
-    connectedDevices[cbDeviceIdx].setGattcIf(cbDeviceIdx);
+    connectedDevices[cbDeviceIdx].setGattcIf(gattc_if);
     break;
   }
-  case ESP_GATTC_SRVC_CHG_EVT: {
+  case ESP_GATTC_DIS_SRVC_CMPL_EVT: {
     connectedDevices[cbDeviceIdx].searchServices();
     break;
   }
