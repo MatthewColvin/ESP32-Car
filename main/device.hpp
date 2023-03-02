@@ -3,6 +3,9 @@
 #include "esp_gattc_api.h"
 #include <string>
 #include <vector>
+#include <map>
+#include <functional>
+#include <utility>
 
 class Device
 {
@@ -10,6 +13,12 @@ public:
   typedef esp_ble_gap_cb_param_t::ble_scan_result_evt_param bleScanResult;
   typedef esp_ble_gattc_cb_param_t::gattc_open_evt_param OpenEventInfo;
   typedef esp_ble_gattc_cb_param_t::gattc_search_res_evt_param ServiceSearchResult;
+  typedef esp_bt_uuid_t serviceUUIDType;
+
+  typedef int serviceCbParamType;
+  typedef int serviceCbRetType;
+  typedef std::function<serviceCbRetType(serviceCbParamType)> serviceCallbackType;
+  typedef std::pair<uint16_t, serviceCallbackType> serviceCBPairType;
 
   Device(bleScanResult res);
 
@@ -33,6 +42,9 @@ public:
   void serviceSearchComplete();
   bool isServicesSearchComplete();
 
+  void registerService(ServiceSearchResult aService, serviceCallbackType aCallback);
+  serviceCbRetType handleService(uint16_t uuid, serviceCbParamType params);
+
 private:
   // Pre Connection
   bleScanResult mScanResult;
@@ -43,6 +55,7 @@ private:
 
   bool mIsServiceSearching = false;
   std::vector<ServiceSearchResult> mServicesFound;
+  std::map<serviceUUIDType, serviceCallbackType> mserviceCallbacks;
 
   esp_bd_addr_t mRemoteAddress;
   uint16_t mConnectionId;

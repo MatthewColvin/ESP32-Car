@@ -82,4 +82,20 @@ void Device::serviceSearchComplete()
 
     mIsServiceSearching = true;
 }
-bool Device::isServicesSearchComplete() { return mIsServiceSearching; };
+bool Device::isServicesSearchComplete() { return mIsServiceSearching; }
+
+void Device::registerService(ServiceSearchResult aService, serviceCallbackType aCallback)
+{
+    mserviceCallbacks.emplace(aService.srvc_id.uuid, std::move(aCallback));
+}
+Device::serviceCbRetType Device::handleService(uint16_t uuid, serviceCbParamType aParam)
+{
+    ESP_LOGI(LOG_TAG, "Handeling Service UUID: %d for %s", uuid, getName().c_str());
+    if (auto callbackPair = mserviceCallbacks.find(uuid); callbackPair != mserviceCallbacks.end())
+    {
+        Device::serviceCBPairType callback = *callbackPair;
+        return callback.second(aParam);
+    }
+
+    return 10;
+}
