@@ -1,6 +1,8 @@
 #pragma once
 #include "esp_gap_ble_api.h"
 #include "esp_gattc_api.h"
+#include "esp_bt_defs.h"
+
 #include <string>
 #include <vector>
 #include <map>
@@ -43,7 +45,7 @@ public:
   bool isServicesSearchComplete();
 
   void registerService(ServiceSearchResult aService, serviceCallbackType aCallback);
-  serviceCbRetType handleService(uint16_t uuid, serviceCbParamType params);
+  serviceCbRetType handleService(serviceUUIDType uuid, serviceCbParamType params);
 
 private:
   // Pre Connection

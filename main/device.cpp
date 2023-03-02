@@ -6,6 +6,11 @@
 
 #define LOG_TAG "Device"
 
+bool operator<(const Device::serviceUUIDType &aLeftUUID, const Device::serviceUUIDType &aRightUUID)
+{
+    return aLeftUUID.uuid.uuid16 < aRightUUID.uuid.uuid16;
+}
+
 Device::Device(bleScanResult res) { mScanResult = res; }
 
 std::string Device::getName()
@@ -88,13 +93,12 @@ void Device::registerService(ServiceSearchResult aService, serviceCallbackType a
 {
     mserviceCallbacks.emplace(aService.srvc_id.uuid, std::move(aCallback));
 }
-Device::serviceCbRetType Device::handleService(uint16_t uuid, serviceCbParamType aParam)
+Device::serviceCbRetType Device::handleService(Device::serviceUUIDType uuid, serviceCbParamType aParam)
 {
-    ESP_LOGI(LOG_TAG, "Handeling Service UUID: %d for %s", uuid, getName().c_str());
+    ESP_LOGI(LOG_TAG, "Handeling Service UUID: %d for %s", uuid.uuid.uuid16, getName().c_str());
     if (auto callbackPair = mserviceCallbacks.find(uuid); callbackPair != mserviceCallbacks.end())
     {
-        Device::serviceCBPairType callback = *callbackPair;
-        return callback.second(aParam);
+        return callbackPair->second(aParam);
     }
 
     return 10;
