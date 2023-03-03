@@ -42,10 +42,13 @@ public:
    * @brief Function to connect to a device
    *
    * @param aDevice - a Device to connect to
-   * @return true - device was connected
-   * @return false - device failed to connect
+   * @return deviceIterator - a refrence the device that was connected stored in the connectedDevice vector
+   *                          NOTE: this has the potential to change so should look at redesign here.
+   *                          Also there is a limit on the number of devices that can be connected so we should really
+   *                          make it a vector anyway.
+   * @return nullptr - device failed to connect
    */
-  static bool connect(Device aDevice);
+  static Device *connect(Device aDevice);
 
 protected:
   Ble();

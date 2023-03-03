@@ -17,7 +17,7 @@ extern "C" void app_main(void)
     auto *bt = Ble::getInstance();
 
     bool joystickFound = false;
-
+    Device *joystick = nullptr;
     while (!joystickFound)
     {
         auto devices = bt->scan(5);
@@ -32,12 +32,17 @@ extern "C" void app_main(void)
             if (device.getName() == "VR-PARK")
             {
                 joystickFound = true;
-                bt->connect(device);
+                joystick = bt->connect(device);
                 ESP_LOGI(LOG_TAG, "FOUND THE REMOTE!!!!");
             }
-            // esp_log_buffer_hex(LOG_TAG, device.bda, 6);
         }
-
         vTaskDelay(10000 / portTICK_PERIOD_MS);
     }
+
+    if (joystick)
+    {
+        while (!joystick->isServicesSearchComplete())
+        {
+        }; // block till we find services
+        }
 }

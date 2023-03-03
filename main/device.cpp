@@ -8,7 +8,24 @@
 
 bool operator<(const Device::serviceUUIDType &aLeftUUID, const Device::serviceUUIDType &aRightUUID)
 {
-    return aLeftUUID.uuid.uuid16 < aRightUUID.uuid.uuid16;
+    if (aLeftUUID.len != aRightUUID.len)
+    {
+        ESP_LOGE(LOG_TAG, "WARNING: Comparing 2 different lengths of UUIDs.");
+    }
+
+    switch (aLeftUUID.len)
+    {
+    case ESP_UUID_LEN_16:
+        return aLeftUUID.uuid.uuid16 < aRightUUID.uuid.uuid16;
+    case ESP_UUID_LEN_32:
+        return aLeftUUID.uuid.uuid32 < aRightUUID.uuid.uuid32;
+    case ESP_UUID_LEN_128:
+        ESP_LOGE(LOG_TAG, "128 BIT UUID compare totally guessed on implementation...");
+        return aLeftUUID.uuid.uuid128[ESP_UUID_LEN_128 - 1] < aRightUUID.uuid.uuid128[ESP_UUID_LEN_128 - 1];
+    }
+
+    ESP_LOGE(LOG_TAG, "UUID Compare FAILED DUE TO Invalid len %d", aLeftUUID.len);
+    return false;
 }
 
 Device::Device(bleScanResult res) { mScanResult = res; }
@@ -101,5 +118,26 @@ Device::serviceCbRetType Device::handleService(Device::serviceUUIDType uuid, ser
         return callbackPair->second(aParam);
     }
 
-    return 10;
+    return 10; // TODO need to update serviceCbRetType when better understand ESPIDF api
+}
+
+void Device::registerJoystickServices()
+{
+    uint16_t starthndl = 0; // ???
+    uint16_t endhndl = 0;   // ???
+    uint16_t count = 0;
+
+    esp_gatt_status_t status = esp_ble_gattc_get_attr_count(mGattcIf,
+                                                            mConnectionId,
+                                                            ESP_GATT_DB_CHARACTERISTIC,
+                                                            starthndl,
+                                                            endhndl,
+                                                            ESP_GATT_INVALID_HANDLE,
+                                                            &count);
+    if (status == ESP_OK)
+    {
+    }
+    // esp_ble_gattc_get_all_char(mGattcIf, mConnectionId, starthndl, endhndl, );
+
+    // esp_ble_gattc_register_for_notify(mGattcIf, mRemoteAddress, )
 }

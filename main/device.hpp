@@ -47,6 +47,9 @@ public:
   void registerService(ServiceSearchResult aService, serviceCallbackType aCallback);
   serviceCbRetType handleService(serviceUUIDType uuid, serviceCbParamType params);
 
+  // will need to move to child class...
+  void registerJoystickServices();
+
 private:
   // Pre Connection
   bleScanResult mScanResult;

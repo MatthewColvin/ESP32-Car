@@ -88,7 +88,7 @@ std::vector<Device> Ble::scan(uint32_t secondsToScan,
     return scannedDevices;
 }
 
-bool Ble::connect(Device aDevice)
+Device *Ble::connect(Device aDevice)
 {
     // Use index to try to get reference to device will pose issue if accounting
     // for case of disconnect
@@ -98,7 +98,7 @@ bool Ble::connect(Device aDevice)
     if (connectedDevices.size() + 2 > 8)
     {
         ESP_LOGE(LOG_TAG, "ERROR Can only Connect 6 devices!");
-        return false;
+        return nullptr;
     }
 
     esp_err_t ret =
@@ -107,8 +107,9 @@ bool Ble::connect(Device aDevice)
     if (ret == ESP_OK)
     {
         connectedDevices.push_back(aDevice);
+        return &*connectedDevices.end() - 1;
     }
-    return ret == ESP_OK;
+    return nullptr;
 }
 
 void Ble::esp_gap_cb(esp_gap_ble_cb_event_t event,
