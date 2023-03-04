@@ -44,5 +44,6 @@ extern "C" void app_main(void)
         while (!joystick->isServicesSearchComplete())
         {
         }; // block till we find services
-        }
+            joystick->describeServices();
+    }
 }

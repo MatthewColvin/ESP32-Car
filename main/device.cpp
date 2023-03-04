@@ -121,23 +121,49 @@ Device::serviceCbRetType Device::handleService(Device::serviceUUIDType uuid, ser
     return 10; // TODO need to update serviceCbRetType when better understand ESPIDF api
 }
 
-void Device::registerJoystickServices()
+void Device::describeServices()
 {
-    uint16_t starthndl = 0; // ???
-    uint16_t endhndl = 0;   // ???
-    uint16_t count = 0;
 
-    esp_gatt_status_t status = esp_ble_gattc_get_attr_count(mGattcIf,
-                                                            mConnectionId,
-                                                            ESP_GATT_DB_CHARACTERISTIC,
-                                                            starthndl,
-                                                            endhndl,
-                                                            ESP_GATT_INVALID_HANDLE,
-                                                            &count);
-    if (status == ESP_OK)
-    {
+    for(auto service : mServicesFound){
+        uint16_t numCharacteristics = 0;
+        esp_gatt_status_t status = esp_ble_gattc_get_attr_count(mGattcIf,
+                                                                service.conn_id,
+                                                                ESP_GATT_DB_CHARACTERISTIC,
+                                                                service.start_handle,
+                                                                service.end_handle,
+                                                                ESP_GATT_INVALID_HANDLE,
+                                                                &numCharacteristics);
+        
+        ESP_LOGI(LOG_TAG,"%s:There are %d Attribues for Service UUID: %d ",getName().c_str() ,numCharacteristics, service.srvc_id.uuid.uuid.uuid16);
+    
+        esp_gattc_char_elem_t characteristics[numCharacteristics];
+        esp_ble_gattc_get_all_char(mGattcIf,
+                                   mConnectionId, 
+                                   service.start_handle, 
+                                   service.end_handle, 
+                                   characteristics, 
+                                   &numCharacteristics,
+                                   0);
+        
+        
+        for (int i =0 ; i< numCharacteristics; i++){
+            
+            esp_gattc_descr_elem_t charaDescription;
+            uint16_t numDescriptions = 1;
+            // will return invalid offset when you run out.... need to make loop here 
+            status = esp_ble_gattc_get_all_descr(mGattcIf,
+                                                 service.conn_id,
+                                                 characteristics[i].char_handle,
+                                                 &charaDescription,
+                                                 &numDescriptions,
+                                                 0);
+        
+        }
+        
+        if (status == ESP_OK)
+        {
+        }
     }
-    // esp_ble_gattc_get_all_char(mGattcIf, mConnectionId, starthndl, endhndl, );
 
     // esp_ble_gattc_register_for_notify(mGattcIf, mRemoteAddress, )
 }

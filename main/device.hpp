@@ -1,25 +1,28 @@
 #pragma once
+#include "esp_bt_defs.h"
 #include "esp_gap_ble_api.h"
 #include "esp_gattc_api.h"
-#include "esp_bt_defs.h"
 
-#include <string>
-#include <vector>
-#include <map>
+
 #include <functional>
+#include <map>
+#include <string>
 #include <utility>
+#include <vector>
 
-class Device
-{
+
+class Device {
 public:
   typedef esp_ble_gap_cb_param_t::ble_scan_result_evt_param bleScanResult;
   typedef esp_ble_gattc_cb_param_t::gattc_open_evt_param OpenEventInfo;
-  typedef esp_ble_gattc_cb_param_t::gattc_search_res_evt_param ServiceSearchResult;
+  typedef esp_ble_gattc_cb_param_t::gattc_search_res_evt_param
+      ServiceSearchResult;
   typedef esp_bt_uuid_t serviceUUIDType;
 
   typedef int serviceCbParamType;
   typedef int serviceCbRetType;
-  typedef std::function<serviceCbRetType(serviceCbParamType)> serviceCallbackType;
+  typedef std::function<serviceCbRetType(serviceCbParamType)>
+      serviceCallbackType;
   typedef std::pair<uint16_t, serviceCallbackType> serviceCBPairType;
 
   Device(bleScanResult res);
@@ -44,11 +47,12 @@ public:
   void serviceSearchComplete();
   bool isServicesSearchComplete();
 
-  void registerService(ServiceSearchResult aService, serviceCallbackType aCallback);
-  serviceCbRetType handleService(serviceUUIDType uuid, serviceCbParamType params);
+  void registerService(ServiceSearchResult aService,
+                       serviceCallbackType aCallback);
+  serviceCbRetType handleService(serviceUUIDType uuid,
+                                 serviceCbParamType params);
 
-  // will need to move to child class...
-  void registerJoystickServices();
+  void describeServices();
 
 private:
   // Pre Connection
