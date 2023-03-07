@@ -180,19 +180,35 @@ void Ble::esp_gap_cb(esp_gap_ble_cb_event_t event,
         break;
     }
 }
+bool gattcEventHandledByDevice(esp_gattc_cb_event_t event){
+    switch(event){
+        case ESP_GATTC_OPEN_EVT:
+        case ESP_GATTC_CONNECT_EVT:
+        case ESP_GATTC_SEARCH_RES_EVT:
+        case ESP_GATTC_SEARCH_CMPL_EVT:
+        case ESP_GATTC_DIS_SRVC_CMPL_EVT:
+        case ESP_GATTC_NOTIFY_EVT:
+        case ESP_GATTC_READ_DESCR_EVT:
+            return true;
+        default:
+            return false;
+    }
+}
 
 void Ble::esp_gattc_cb(esp_gattc_cb_event_t event, esp_gatt_if_t gattc_if,
                        esp_ble_gattc_cb_param_t *param)
 {
-    ESP_LOGI(LOG_TAG, "EVT %d, gattc if %d", event, gattc_if);
-
     size_t cbDeviceIdx = gattc_if - 3;
     Device *cbDevice = &connectedDevices[cbDeviceIdx];
-    if (connectedDevices.size() > cbDeviceIdx)
-    {
-        ESP_LOGI(LOG_TAG, "Found Device %s",
-                 cbDevice->getName().c_str());
+
+    if(!gattcEventHandledByDevice(event)){
+        ESP_LOGI(LOG_TAG, "EVT %d, gattc if %d", event, gattc_if);
+        if (connectedDevices.size() > cbDeviceIdx){
+            ESP_LOGI(LOG_TAG, "Found Device %s",
+                    cbDevice->getName().c_str());
+        }
     }
+
     switch (event)
     {
     case ESP_GATTC_REG_EVT:
@@ -243,6 +259,10 @@ void Ble::esp_gattc_cb(esp_gattc_cb_event_t event, esp_gatt_if_t gattc_if,
     {
         ESP_LOGI(LOG_TAG, "REGISTERED:)");
         break;
+    }
+    case ESP_GATTC_READ_DESCR_EVT:
+    {
+        cbDevice->handleCharacteristicRead(param->read);
     }
     default:
     {

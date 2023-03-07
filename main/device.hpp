@@ -13,6 +13,7 @@ class Device
 {
 public:
   typedef esp_ble_gap_cb_param_t::ble_scan_result_evt_param bleScanResult;
+  typedef esp_ble_gattc_cb_param_t::gattc_read_char_evt_param CharacteristicReadResult;
   typedef esp_ble_gattc_cb_param_t::gattc_open_evt_param OpenEventInfo;
   typedef esp_ble_gattc_cb_param_t::gattc_search_res_evt_param
       ServiceSearchResult;
@@ -48,16 +49,19 @@ public:
   void serviceSearchComplete();
   bool isServicesSearchComplete();
 
+
+  void handleCharacteristicRead(Device::CharacteristicReadResult aReadResult);
   void registerService(characterHandleType aCharacteristicHndl, characteristicCallbackType aCallback);
   serviceCbRetType handleService(characteristicCbParamType params);
 
   std::vector<esp_gattc_char_elem_t> getCharacteristics(const Device::ServiceSearchResult& aService);
   std::vector<esp_gattc_descr_elem_t> getDescriptors(const Device::ServiceSearchResult& aService,const esp_gattc_char_elem_t& aCharacteristic);
 
+  void describeCharacteristic(const esp_gattc_char_elem_t& aCharacteristic , Device::ServiceSearchResult* aService = nullptr);
   void describeService(const Device::ServiceSearchResult& aService);
   void describeServices();
 
-  void registerForJoystickCharactistics();
+  void registerForJoystickCharacteristics();
 
 private:
   // Pre Connection

@@ -45,11 +45,11 @@ extern "C" void app_main(void)
         while (!joystick->isServicesSearchComplete())
         {
         };
+        joystick->registerForJoystickCharacteristics();
     }
 
     while (true)
     {
-        joystick->describeServices();
         vTaskDelay(10000 / portTICK_PERIOD_MS);
     }
 }

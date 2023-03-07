@@ -238,16 +238,30 @@ void Device::describeService(const Device::ServiceSearchResult& aService)
     }
 }
 
-void Device::registerForJoystickCharactistics()
+void Device::describeCharacteristic(const esp_gattc_char_elem_t& aCharacteristic, Device::ServiceSearchResult* aService){
+    if (aService){
+        esp_ble_gattc_read_char_descr(mGattcIf,aService->conn_id,aCharacteristic.char_handle,ESP_GATT_AUTH_REQ_NONE);
+    }
+    ESP_LOGI(LOG_TAG, "Handle: %d Props: %d , UUID: %s" ,aCharacteristic.char_handle, aCharacteristic.properties,uuidToStr(aCharacteristic.uuid).c_str());
+}
+
+void Device::registerForJoystickCharacteristics()
 {
     for (auto service : mServicesFound)
     {
-        for (auto characteristic : getCharacteristics(service))
+        auto characteristics = getCharacteristics(service);
+        ESP_LOGI(LOG_TAG, "Checking %d chars", characteristics.size());
+        for (auto characteristic : characteristics)
             if (characteristic.uuid.uuid.uuid16 == ESP_GATT_UUID_HID_REPORT && characteristic.properties & ESP_GATT_CHAR_PROP_BIT_NOTIFY)
             {
-                describeService(service);
-                return;
-                // esp_ble_gattc_register_for_notify(mGattcIf, mRemoteAddress, characteristic.char_handle);
+                describeCharacteristic(characteristic,&service);
             }
     }
+}
+
+void Device::handleCharacteristicRead(Device::CharacteristicReadResult aReadResult){
+
+    char buff[aReadResult.value_len];
+    memcpy(buff,aReadResult.value,sizeof(char)*aReadResult.value_len);
+    ESP_LOGI(LOG_TAG, "CHAR DESC: %s",buff );
 }
