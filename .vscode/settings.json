@@ -81,7 +81,16 @@
         "xstring": "cpp",
         "xtr1common": "cpp",
         "xtree": "cpp",
-        "xutility": "cpp"
+        "xutility": "cpp",
+        "*.tcc": "cpp",
+        "bitset": "cpp",
+        "cstdarg": "cpp",
+        "cwctype": "cpp",
+        "memory_resource": "cpp",
+        "netfwd": "cpp",
+        "string_view": "cpp",
+        "shared_mutex": "cpp",
+        "cinttypes": "cpp"
     },
     "idf.port": "/dev/ttyUSB0"
 }

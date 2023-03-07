@@ -193,7 +193,6 @@ void Ble::esp_gattc_cb(esp_gattc_cb_event_t event, esp_gatt_if_t gattc_if,
         ESP_LOGI(LOG_TAG, "Found Device %s",
                  cbDevice->getName().c_str());
     }
-
     switch (event)
     {
     case ESP_GATTC_REG_EVT:
@@ -233,6 +232,16 @@ void Ble::esp_gattc_cb(esp_gattc_cb_event_t event, esp_gatt_if_t gattc_if,
     case ESP_GATTC_DIS_SRVC_CMPL_EVT:
     {
         cbDevice->searchServices();
+        break;
+    }
+    case ESP_GATTC_NOTIFY_EVT:
+    {
+        cbDevice->handleService(param->notify);
+        break;
+    }
+    case ESP_GATTC_REG_FOR_NOTIFY_EVT:
+    {
+        ESP_LOGI(LOG_TAG, "REGISTERED:)");
         break;
     }
     default:

@@ -34,6 +34,7 @@ extern "C" void app_main(void)
                 joystickFound = true;
                 joystick = bt->connect(device);
                 ESP_LOGI(LOG_TAG, "FOUND THE REMOTE!!!!");
+                break;
             }
         }
         vTaskDelay(10000 / portTICK_PERIOD_MS);
@@ -43,7 +44,12 @@ extern "C" void app_main(void)
     {
         while (!joystick->isServicesSearchComplete())
         {
-        }; // block till we find services
-            joystick->describeServices();
+        };
+    }
+
+    while (true)
+    {
+        joystick->describeServices();
+        vTaskDelay(10000 / portTICK_PERIOD_MS);
     }
 }

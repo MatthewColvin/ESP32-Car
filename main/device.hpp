@@ -3,15 +3,14 @@
 #include "esp_gap_ble_api.h"
 #include "esp_gattc_api.h"
 
-
 #include <functional>
 #include <map>
 #include <string>
 #include <utility>
 #include <vector>
 
-
-class Device {
+class Device
+{
 public:
   typedef esp_ble_gap_cb_param_t::ble_scan_result_evt_param bleScanResult;
   typedef esp_ble_gattc_cb_param_t::gattc_open_evt_param OpenEventInfo;
@@ -19,11 +18,13 @@ public:
       ServiceSearchResult;
   typedef esp_bt_uuid_t serviceUUIDType;
 
-  typedef int serviceCbParamType;
+  typedef esp_ble_gattc_cb_param_t::gattc_notify_evt_param characteristicCbParamType;
   typedef int serviceCbRetType;
-  typedef std::function<serviceCbRetType(serviceCbParamType)>
-      serviceCallbackType;
-  typedef std::pair<uint16_t, serviceCallbackType> serviceCBPairType;
+  typedef std::function<serviceCbRetType(characteristicCbParamType)> characteristicCallbackType;
+  // serviceCbreturnType aFunctionName(characteristicCbParamType aParam){}
+
+  typedef uint16_t characterHandleType;
+  typedef std::pair<characterHandleType, characteristicCallbackType> characteristicCBPairType;
 
   Device(bleScanResult res);
 
@@ -47,12 +48,16 @@ public:
   void serviceSearchComplete();
   bool isServicesSearchComplete();
 
-  void registerService(ServiceSearchResult aService,
-                       serviceCallbackType aCallback);
-  serviceCbRetType handleService(serviceUUIDType uuid,
-                                 serviceCbParamType params);
+  void registerService(characterHandleType aCharacteristicHndl, characteristicCallbackType aCallback);
+  serviceCbRetType handleService(characteristicCbParamType params);
 
+  std::vector<esp_gattc_descr_elem_t> getDescriptors(esp_gattc_char_elem_t aCharacteristic);
+  std::vector<esp_gattc_char_elem_t> getCharacteristics(Device::ServiceSearchResult aService);
+
+  void describeService(Device::ServiceSearchResult aService);
   void describeServices();
+
+  void registerForJoystickCharactistics();
 
 private:
   // Pre Connection
@@ -64,7 +69,7 @@ private:
 
   bool mIsServiceSearching = false;
   std::vector<ServiceSearchResult> mServicesFound;
-  std::map<serviceUUIDType, serviceCallbackType> mserviceCallbacks;
+  std::map<characterHandleType, characteristicCallbackType> mserviceCallbacks;
 
   esp_bd_addr_t mRemoteAddress;
   uint16_t mConnectionId;
