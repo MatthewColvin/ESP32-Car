@@ -51,10 +51,10 @@ public:
   void registerService(characterHandleType aCharacteristicHndl, characteristicCallbackType aCallback);
   serviceCbRetType handleService(characteristicCbParamType params);
 
-  std::vector<esp_gattc_descr_elem_t> getDescriptors(esp_gattc_char_elem_t aCharacteristic);
-  std::vector<esp_gattc_char_elem_t> getCharacteristics(Device::ServiceSearchResult aService);
+  std::vector<esp_gattc_char_elem_t> getCharacteristics(const Device::ServiceSearchResult& aService);
+  std::vector<esp_gattc_descr_elem_t> getDescriptors(const Device::ServiceSearchResult& aService,const esp_gattc_char_elem_t& aCharacteristic);
 
-  void describeService(Device::ServiceSearchResult aService);
+  void describeService(const Device::ServiceSearchResult& aService);
   void describeServices();
 
   void registerForJoystickCharactistics();

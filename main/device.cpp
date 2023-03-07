@@ -149,21 +149,22 @@ Device::serviceCbRetType Device::handleService(characteristicCbParamType aParam)
     // Do we need to let the API know we failed to handle service???
 }
 
-std::vector<esp_gattc_char_elem_t> Device::getCharacteristics(Device::ServiceSearchResult aService)
+std::vector<esp_gattc_char_elem_t> Device::getCharacteristics(const Device::ServiceSearchResult& aService)
 {
     esp_gatt_status_t status = ESP_GATT_OK;
     std::vector<esp_gattc_char_elem_t> characteristics;
 
-    uint16_t numCharacteristics = 1;
+    uint16_t numCharacteristics; // outside scope of loop for check
     do
     {
+        numCharacteristics = 1;// only fetch one at a time
         esp_gattc_char_elem_t characteristic;
         status = esp_ble_gattc_get_all_char(mGattcIf,
                                             aService.conn_id,
                                             aService.start_handle,
                                             aService.end_handle,
                                             &characteristic,
-                                            &numCharacteristics,
+                                            &numCharacteristics, // this will update to total number of characteristics
                                             characteristics.size());
         if (status == ESP_GATT_OK)
         {
@@ -173,85 +174,68 @@ std::vector<esp_gattc_char_elem_t> Device::getCharacteristics(Device::ServiceSea
         {
             ESP_LOGE(LOG_TAG, "FETCH CHAR STATUS: %d", status);
         }
-
-    } while (characteristics.size() < numCharacteristics && status != ESP_GATT_NOT_FOUND);
+    } while (characteristics.size() < numCharacteristics && // Check num descriptions
+             status != ESP_GATT_NOT_FOUND);
 
     return characteristics;
 }
 
-std::vector<esp_gattc_descr_elem_t> Device::getDescriptors(esp_gattc_char_elem_t aCharacteristic)
+std::vector<esp_gattc_descr_elem_t> Device::getDescriptors(const Device::ServiceSearchResult& aService, const esp_gattc_char_elem_t& aCharacteristic)
 {
-    ESP_LOGE(LOG_TAG, "1Broken?");
 
     esp_gatt_status_t status = ESP_GATT_OK;
     std::vector<esp_gattc_descr_elem_t> descriptors;
-    uint16_t numDescriptions = 1;
-
+    uint16_t numDescriptions; // outside scope of loop for check
     do
     {
+        numDescriptions = 1;// only fetch one at a time
         esp_gattc_descr_elem_t charaDescription;
         status = esp_ble_gattc_get_all_descr(mGattcIf,
-                                             mConnectionId,
+                                             aService.conn_id,
                                              aCharacteristic.char_handle,
                                              &charaDescription,
-                                             &numDescriptions,
+                                             &numDescriptions, // this will update to total number of descriptions
                                              descriptors.size());
         if (status == ESP_GATT_OK)
         {
-            ESP_LOGE(LOG_TAG, "Broken? size= %d", descriptors.size());
             descriptors.push_back(charaDescription);
-            ESP_LOGE(LOG_TAG, "post Broken? size= %d", descriptors.size());
         }
         else if (status != ESP_GATT_NOT_FOUND)
         {
-            ESP_LOGE(LOG_TAG, "not found Broken?");
-
             ESP_LOGE(LOG_TAG, "FETCH DESC STATUS: %d", status);
         }
-    } while (descriptors.size() < numDescriptions && status != ESP_GATT_NOT_FOUND);
-
-    ESP_LOGE(LOG_TAG, "exit Broken?");
+    } while (descriptors.size() < numDescriptions && // Check num descriptions
+             status != ESP_GATT_NOT_FOUND);
 
     return descriptors;
 }
 
 void Device::describeServices()
 {
-    ESP_LOGE(LOG_TAG, "enter des serv Broken?");
-
     for (auto service : mServicesFound)
     {
         describeService(service);
-        ESP_LOGE(LOG_TAG, "service desc Broken?");
     }
 }
 
-void Device::describeService(Device::ServiceSearchResult aService)
+void Device::describeService(const Device::ServiceSearchResult& aService)
 {
     ESP_LOGI(LOG_TAG, "%s Service UUID: %s ", getName().c_str(), uuidToStr(aService.srvc_id.uuid).c_str());
-    ESP_LOGI(LOG_TAG, "HEAP Left: %ld", xPortGetFreeHeapSize());
     auto characteristics = getCharacteristics(aService);
-    ESP_LOGI(LOG_TAG, "FOUND %d CHARAs", characteristics.size());
     int count = 0;
     for (auto characteristic : characteristics)
     {
-        ESP_LOGI(LOG_TAG, "chara num %d ", count);
-        ESP_LOGI(LOG_TAG, "HEAP Left: %ld", xPortGetFreeHeapSize());
         ESP_LOGI(LOG_TAG, "----Characteristic UUID: %s", uuidToStr(characteristic.uuid).c_str());
-        auto descriptors = getDescriptors(characteristic);
-        ESP_LOGI(LOG_TAG, "broken here?? descriptors size %d", descriptors.size());
+        auto descriptors = getDescriptors(aService, characteristic);
         if (descriptors.size() != 0)
         {
             for (auto descriptor : descriptors)
             {
-                ESP_LOGI(LOG_TAG, "broken here??");
                 ESP_LOGI(LOG_TAG, "--------Descriptor UUID: %s", uuidToStr(descriptor.uuid).c_str());
             }
         }
-        ESP_LOGI(LOG_TAG, "broken here?? HOW?? %d", descriptors.size());
         count++;
     }
-    ESP_LOGI(LOG_TAG, "broken here why?????? ");
 }
 
 void Device::registerForJoystickCharactistics()
