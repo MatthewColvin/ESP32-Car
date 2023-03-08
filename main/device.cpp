@@ -5,6 +5,7 @@
 #include "freertos/FreeRTOS.h"
 
 #include <cstring>
+#include <algorithm>
 
 #define LOG_TAG "Device"
 
@@ -149,12 +150,12 @@ Device::serviceCbRetType Device::handleService(characteristicCbParamType aParam)
     // Do we need to let the API know we failed to handle service???
 }
 
-std::vector<esp_gattc_char_elem_t> Device::getCharacteristics(const Device::ServiceSearchResult& aService)
+std::vector<esp_gattc_char_elem_t> Device::getCharacteristics(const Device::ServiceSearchResult& aService, uint8_t propertiesFilter, std::vector<int> uuidFilter)
 {
     esp_gatt_status_t status = ESP_GATT_OK;
     std::vector<esp_gattc_char_elem_t> characteristics;
 
-    uint16_t numCharacteristics; // outside scope of loop for check
+    uint16_t numCharacteristics; // outside scope of loop for end read check
     do
     {
         numCharacteristics = 1;// only fetch one at a time
@@ -168,7 +169,11 @@ std::vector<esp_gattc_char_elem_t> Device::getCharacteristics(const Device::Serv
                                             characteristics.size());
         if (status == ESP_GATT_OK)
         {
-            characteristics.push_back(characteristic);
+            bool isUUIDWanted = uuidFilter.empty() || std::find(uuidFilter.begin(),uuidFilter.end(),characteristic.uuid.uuid.uuid32) != uuidFilter.end();
+            bool isPropWanted = characteristic.properties & propertiesFilter;
+            if(isPropWanted && isUUIDWanted){
+                characteristics.push_back(characteristic);
+            }
         }
         else if (status != ESP_GATT_NOT_FOUND)
         {
@@ -185,7 +190,7 @@ std::vector<esp_gattc_descr_elem_t> Device::getDescriptors(const Device::Service
 
     esp_gatt_status_t status = ESP_GATT_OK;
     std::vector<esp_gattc_descr_elem_t> descriptors;
-    uint16_t numDescriptions; // outside scope of loop for check
+    uint16_t numDescriptions; // outside scope of loop for end read check
     do
     {
         numDescriptions = 1;// only fetch one at a time
@@ -222,46 +227,58 @@ void Device::describeService(const Device::ServiceSearchResult& aService)
 {
     ESP_LOGI(LOG_TAG, "%s Service UUID: %s ", getName().c_str(), uuidToStr(aService.srvc_id.uuid).c_str());
     auto characteristics = getCharacteristics(aService);
-    int count = 0;
     for (auto characteristic : characteristics)
     {
-        ESP_LOGI(LOG_TAG, "----Characteristic UUID: %s", uuidToStr(characteristic.uuid).c_str());
-        auto descriptors = getDescriptors(aService, characteristic);
-        if (descriptors.size() != 0)
-        {
-            for (auto descriptor : descriptors)
-            {
-                ESP_LOGI(LOG_TAG, "--------Descriptor UUID: %s", uuidToStr(descriptor.uuid).c_str());
-            }
-        }
-        count++;
+        describeCharacteristic(characteristic, aService);
     }
 }
 
-void Device::describeCharacteristic(const esp_gattc_char_elem_t& aCharacteristic, Device::ServiceSearchResult* aService){
-    if (aService){
-        esp_ble_gattc_read_char_descr(mGattcIf,aService->conn_id,aCharacteristic.char_handle,ESP_GATT_AUTH_REQ_NONE);
-    }
-    ESP_LOGI(LOG_TAG, "Handle: %d Props: %d , UUID: %s" ,aCharacteristic.char_handle, aCharacteristic.properties,uuidToStr(aCharacteristic.uuid).c_str());
+void Device::describeCharacteristic(const esp_gattc_char_elem_t& aCharacteristic, const Device::ServiceSearchResult& aService){
+    ESP_LOGI(LOG_TAG, "---Handle: %d , UUID: %s" ,aCharacteristic.char_handle,uuidToStr(aCharacteristic.uuid).c_str());
+    ESP_LOGI(LOG_TAG, "------ Properties- BroadCast: %d Read: %d Write_NR: %d Write: %d Notify: %d Indicate: %d Auth: %d Ext_Prop: %d ",
+        (aCharacteristic.properties & ESP_GATT_CHAR_PROP_BIT_BROADCAST) > 0,
+        (aCharacteristic.properties & ESP_GATT_CHAR_PROP_BIT_READ) > 0 ,
+        (aCharacteristic.properties & ESP_GATT_CHAR_PROP_BIT_WRITE_NR) > 0,
+        (aCharacteristic.properties & ESP_GATT_CHAR_PROP_BIT_WRITE) > 0,
+        (aCharacteristic.properties & ESP_GATT_CHAR_PROP_BIT_NOTIFY) > 0,
+        (aCharacteristic.properties & ESP_GATT_CHAR_PROP_BIT_INDICATE) > 0,
+        (aCharacteristic.properties & ESP_GATT_CHAR_PROP_BIT_AUTH) > 0,
+        (aCharacteristic.properties & ESP_GATT_CHAR_PROP_BIT_EXT_PROP) > 0);
 }
 
 void Device::registerForJoystickCharacteristics()
 {
     for (auto service : mServicesFound)
     {
-        auto characteristics = getCharacteristics(service);
-        ESP_LOGI(LOG_TAG, "Checking %d chars", characteristics.size());
-        for (auto characteristic : characteristics)
-            if (characteristic.uuid.uuid.uuid16 == ESP_GATT_UUID_HID_REPORT && characteristic.properties & ESP_GATT_CHAR_PROP_BIT_NOTIFY)
-            {
-                describeCharacteristic(characteristic,&service);
-            }
+        uint8_t propFilter = ESP_GATT_CHAR_PROP_BIT_NOTIFY & ESP_GATT_CHAR_PROP_BIT_READ;
+        std::vector<int> uuidFilter{ESP_GATT_UUID_HID_REPORT};
+        auto characteristics = getCharacteristics(service, propFilter, uuidFilter);
+
+        for (auto characteristic : characteristics){
+            describeCharacteristic(characteristic, service);
+        }
     }
 }
 
 void Device::handleCharacteristicRead(Device::CharacteristicReadResult aReadResult){
 
-    char buff[aReadResult.value_len];
-    memcpy(buff,aReadResult.value,sizeof(char)*aReadResult.value_len);
-    ESP_LOGI(LOG_TAG, "CHAR DESC: %s",buff );
+    if (aReadResult.value_len > 0){
+        uint8_t buff[aReadResult.value_len];
+        memcpy(buff,aReadResult.value,sizeof(char)*aReadResult.value_len);
+        ESP_LOG_BUFFER_HEX(LOG_TAG,buff,aReadResult.value_len);
+    }
+}
+
+void Device::readCharacteristic(const Device::ServiceSearchResult aService, const esp_gattc_char_elem_t& aCharacteristic){
+    esp_ble_gattc_read_char(mGattcIf,aService.conn_id,aCharacteristic.char_handle,ESP_GATT_AUTH_REQ_NONE);
+}
+
+void Device::logAllCharacteristicData(){
+    for (auto service : mServicesFound){
+        for (auto characteristic : getCharacteristics(service)){
+            if(characteristic.properties & ESP_GATT_CHAR_PROP_BIT_READ){
+                readCharacteristic(service,characteristic);
+            }
+        }
+    }
 }

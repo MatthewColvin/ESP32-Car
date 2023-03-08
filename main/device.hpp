@@ -50,16 +50,20 @@ public:
   bool isServicesSearchComplete();
 
 
+  void readCharacteristic(const Device::ServiceSearchResult aService, const esp_gattc_char_elem_t& aCharacteristic);
   void handleCharacteristicRead(Device::CharacteristicReadResult aReadResult);
+
   void registerService(characterHandleType aCharacteristicHndl, characteristicCallbackType aCallback);
   serviceCbRetType handleService(characteristicCbParamType params);
 
-  std::vector<esp_gattc_char_elem_t> getCharacteristics(const Device::ServiceSearchResult& aService);
+  std::vector<esp_gattc_char_elem_t> getCharacteristics(const Device::ServiceSearchResult& aService, uint8_t propertiesFilter = 0b1111111, std::vector<int> uuidFilter = {});
   std::vector<esp_gattc_descr_elem_t> getDescriptors(const Device::ServiceSearchResult& aService,const esp_gattc_char_elem_t& aCharacteristic);
 
-  void describeCharacteristic(const esp_gattc_char_elem_t& aCharacteristic , Device::ServiceSearchResult* aService = nullptr);
+  void describeCharacteristic(const esp_gattc_char_elem_t& aCharacteristic , const Device::ServiceSearchResult& aService);
   void describeService(const Device::ServiceSearchResult& aService);
   void describeServices();
+
+  void logAllCharacteristicData();
 
   void registerForJoystickCharacteristics();
 
