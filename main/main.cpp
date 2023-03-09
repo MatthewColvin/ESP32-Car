@@ -52,8 +52,8 @@ extern "C" void app_main(void)
         }
     }
 
-    while (true){
+    while (true)
+    {
         vTaskDelay(10000 / portTICK_PERIOD_MS);
     }
-
 }
