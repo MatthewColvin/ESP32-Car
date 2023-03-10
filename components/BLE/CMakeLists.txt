@@ -1,4 +1,4 @@
-idf_component_register(SRCS "device.cpp" "ble.cpp" 
+idf_component_register(SRCS "device.cpp" "ble.cpp" "service.cpp" "characteristic.cpp"
                        INCLUDE_DIRS "./include"
                        REQUIRES bt driver esp_common nvs_flash)
 

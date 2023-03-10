@@ -1,4 +1,7 @@
 #pragma once
+
+#include "service.hpp"
+
 #include "esp_bt_defs.h"
 #include "esp_gap_ble_api.h"
 #include "esp_gattc_api.h"
@@ -51,24 +54,24 @@ public:
   uint8_t getGattcIf();
 
   void searchServices();
-  void addFoundService(ServiceSearchResult aService);
+  void addFoundService(Service aService);
   void serviceSearchComplete();
   bool isServicesSearchComplete();
 
-  void readCharacteristic(const Device::ServiceSearchResult aService, const esp_gattc_char_elem_t &aCharacteristic);
+  void readCharacteristic(const Service aService, const esp_gattc_char_elem_t &aCharacteristic);
   void handleCharacteristicRead(Device::CharacteristicReadResult aReadResult);
 
   void registerCharacteristic(characterHandleType aCharacteristicHndl, characteristicCallbackType aCallback);
   serviceCbRetType handleService(characteristicCbParamType params);
 
-  std::vector<esp_gattc_char_elem_t> getCharacteristics(const Device::ServiceSearchResult &aService,
+  std::vector<esp_gattc_char_elem_t> getCharacteristics(const Service &aService,
                                                         uint8_t propertiesFilter = 0b1111111,
                                                         CharacteristicFilterType filtertype = Device::CharacteristicFilterType::Any,
                                                         std::vector<int> uuidFilter = {});
-  std::vector<esp_gattc_descr_elem_t> getDescriptors(const Device::ServiceSearchResult &aService, const esp_gattc_char_elem_t &aCharacteristic);
+  std::vector<esp_gattc_descr_elem_t> getDescriptors(const Service &aService, const esp_gattc_char_elem_t &aCharacteristic);
 
-  void describeCharacteristic(const esp_gattc_char_elem_t &aCharacteristic, const Device::ServiceSearchResult &aService);
-  void describeService(const Device::ServiceSearchResult &aService);
+  void describeCharacteristic(const esp_gattc_char_elem_t &aCharacteristic, const Service &aService);
+  void describeService(const Service &aService);
   void describeServices();
 
   void logAllCharacteristicData();
@@ -84,7 +87,7 @@ private:
   uint8_t mGattcIf;
 
   bool mIsServiceSearching = false;
-  std::vector<ServiceSearchResult> mServicesFound;
+  std::vector<Service> mServicesFound;
   std::map<characterHandleType, characteristicCallbackType> mserviceCallbacks;
 
   esp_bd_addr_t mRemoteAddress;

@@ -1,4 +1,5 @@
 #include "device.hpp"
+
 #include "esp_gattc_api.h"
 #include "esp_log.h"
 
@@ -112,19 +113,12 @@ void Device::searchServices()
     }
 }
 
-void Device::addFoundService(ServiceSearchResult aService)
+void Device::addFoundService(Service aService)
 {
     mServicesFound.push_back(aService);
 }
 void Device::serviceSearchComplete()
 {
-    // ESP_LOGI(LOG_TAG, "Sevices for %s", getName().c_str());
-    // for (ServiceSearchResult service : mServicesFound)
-    // {
-    //     esp_gatt_id_t attributeId = service.srvc_id;
-    //     ESP_LOGI(LOG_TAG, "UUID: %d", attributeId.uuid.uuid.uuid16);
-    // }
-
     mIsServiceSearching = true;
 }
 bool Device::isServicesSearchComplete() { return mIsServiceSearching; }
@@ -150,7 +144,7 @@ Device::serviceCbRetType Device::handleService(characteristicCbParamType aParam)
     // Do we need to let the API know we failed to handle service???
 }
 
-std::vector<esp_gattc_char_elem_t> Device::getCharacteristics(const Device::ServiceSearchResult &aService, uint8_t propertiesFilter, CharacteristicFilterType filtertype, std::vector<int> uuidFilter)
+std::vector<esp_gattc_char_elem_t> Device::getCharacteristics(const Service &aService, uint8_t propertiesFilter, CharacteristicFilterType filtertype, std::vector<int> uuidFilter)
 {
     esp_gatt_status_t status = ESP_GATT_OK;
     std::vector<esp_gattc_char_elem_t> characteristics;
@@ -162,9 +156,9 @@ std::vector<esp_gattc_char_elem_t> Device::getCharacteristics(const Device::Serv
         numCharacteristics = 1; // only fetch one at a time
         esp_gattc_char_elem_t characteristic;
         status = esp_ble_gattc_get_all_char(mGattcIf,
-                                            aService.conn_id,
-                                            aService.start_handle,
-                                            aService.end_handle,
+                                            aService.conn_id(),
+                                            aService.start_handle(),
+                                            aService.end_handle(),
                                             &characteristic,
                                             &numCharacteristics, // this will update to total number of characteristics
                                             characteristics.size());
@@ -192,7 +186,7 @@ std::vector<esp_gattc_char_elem_t> Device::getCharacteristics(const Device::Serv
     return characteristics;
 }
 
-std::vector<esp_gattc_descr_elem_t> Device::getDescriptors(const Device::ServiceSearchResult &aService, const esp_gattc_char_elem_t &aCharacteristic)
+std::vector<esp_gattc_descr_elem_t> Device::getDescriptors(const Service &aService, const esp_gattc_char_elem_t &aCharacteristic)
 {
 
     esp_gatt_status_t status = ESP_GATT_OK;
@@ -203,7 +197,7 @@ std::vector<esp_gattc_descr_elem_t> Device::getDescriptors(const Device::Service
         numDescriptions = 1; // only fetch one at a time
         esp_gattc_descr_elem_t charaDescription;
         status = esp_ble_gattc_get_all_descr(mGattcIf,
-                                             aService.conn_id,
+                                             aService.conn_id(),
                                              aCharacteristic.char_handle,
                                              &charaDescription,
                                              &numDescriptions, // this will update to total number of descriptions
@@ -230,9 +224,9 @@ void Device::describeServices()
     }
 }
 
-void Device::describeService(const Device::ServiceSearchResult &aService)
+void Device::describeService(const Service &aService)
 {
-    ESP_LOGI(LOG_TAG, "%s Service UUID: %s ", getName().c_str(), uuidToStr(aService.srvc_id.uuid).c_str());
+    ESP_LOGI(LOG_TAG, "%s Service UUID: %s ", getName().c_str(), uuidToStr(aService.srvc_id().uuid).c_str());
     auto characteristics = getCharacteristics(aService);
     for (auto characteristic : characteristics)
     {
@@ -240,7 +234,7 @@ void Device::describeService(const Device::ServiceSearchResult &aService)
     }
 }
 
-void Device::describeCharacteristic(const esp_gattc_char_elem_t &aCharacteristic, const Device::ServiceSearchResult &aService)
+void Device::describeCharacteristic(const esp_gattc_char_elem_t &aCharacteristic, const Service &aService)
 {
     ESP_LOGI(LOG_TAG, "---Handle: %d , UUID: %s", aCharacteristic.char_handle, uuidToStr(aCharacteristic.uuid).c_str());
     ESP_LOGI(LOG_TAG, "------ Properties- BroadCast: %d Read: %d Write_NR: %d Write: %d Notify: %d Indicate: %d Auth: %d Ext_Prop: %d ",
@@ -256,8 +250,8 @@ void Device::describeCharacteristic(const esp_gattc_char_elem_t &aCharacteristic
 
 void Device::registerForJoystickCharacteristics()
 {
-    auto service = std::find_if(mServicesFound.begin(), mServicesFound.end(), [](Device::ServiceSearchResult aService)
-                                { return aService.srvc_id.uuid.uuid.uuid32 == ESP_GATT_UUID_HID_SVC; });
+    auto service = std::find_if(mServicesFound.begin(), mServicesFound.end(), [](Service aService)
+                                { return aService.srvc_id().uuid.uuid.uuid32 == ESP_GATT_UUID_HID_SVC; });
 
     uint8_t propFilter = ESP_GATT_CHAR_PROP_BIT_NOTIFY | ESP_GATT_CHAR_PROP_BIT_READ;
     std::vector<int> uuidFilter = {};
@@ -284,9 +278,9 @@ void Device::handleCharacteristicRead(Device::CharacteristicReadResult aReadResu
     }
 }
 
-void Device::readCharacteristic(const Device::ServiceSearchResult aService, const esp_gattc_char_elem_t &aCharacteristic)
+void Device::readCharacteristic(const Service aService, const esp_gattc_char_elem_t &aCharacteristic)
 {
-    esp_ble_gattc_read_char(mGattcIf, aService.conn_id, aCharacteristic.char_handle, ESP_GATT_AUTH_REQ_NONE);
+    esp_ble_gattc_read_char(mGattcIf, aService.conn_id(), aCharacteristic.char_handle, ESP_GATT_AUTH_REQ_NONE);
 }
 
 void Device::logAllCharacteristicData()
