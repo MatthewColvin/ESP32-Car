@@ -18,7 +18,7 @@
 Ble *Ble::mInstance = nullptr;
 
 std::vector<Device> scannedDevices;
-std::vector<Device> connectedDevices;
+std::vector<std::shared_ptr<Device>> connectedDevices;
 
 Ble::Ble()
 {
@@ -82,7 +82,7 @@ std::vector<Device> Ble::scan(uint32_t secondsToScan,
     return scannedDevices;
 }
 
-Device *Ble::connect(Device aDevice)
+std::shared_ptr<Device> Ble::connect(Device aDevice)
 {
     // Use index to try to get reference to device will pose issue if accounting
     // for case of disconnect
@@ -100,8 +100,8 @@ Device *Ble::connect(Device aDevice)
                            aDevice.getAddressType(), true);
     if (ret == ESP_OK)
     {
-        connectedDevices.push_back(aDevice);
-        return &*connectedDevices.end() - 1;
+        connectedDevices.push_back(std::make_shared<Device>(aDevice));
+        return *(connectedDevices.end() - 1);
     }
     return nullptr;
 }
@@ -195,17 +195,29 @@ bool gattcEventHandledByDevice(esp_gattc_cb_event_t event)
 void Ble::esp_gattc_cb(esp_gattc_cb_event_t event, esp_gatt_if_t gattc_if,
                        esp_ble_gattc_cb_param_t *param)
 {
-    size_t cbDeviceIdx = gattc_if - 3;
-    Device *cbDevice = &connectedDevices[cbDeviceIdx];
+    if (event == ESP_GATTC_REG_EVT){
+        ESP_LOGI(LOG_TAG, "Registered Gattc Callback :)");
+        return;
+    }
 
-    if (!gattcEventHandledByDevice(event))
-    {
-        ESP_LOGI(LOG_TAG, "EVT %d, gattc if %d", event, gattc_if);
-        if (connectedDevices.size() > cbDeviceIdx)
+    size_t cbDeviceIdx = gattc_if - 3;
+    std::shared_ptr<Device> cbDevice = nullptr;
+
+    if(cbDeviceIdx < connectedDevices.size()){
+
+        cbDevice = connectedDevices[cbDeviceIdx];
+
+        if (!gattcEventHandledByDevice(event))
         {
-            ESP_LOGI(LOG_TAG, "Found Device %s",
-                     cbDevice->getName().c_str());
+            ESP_LOGI(LOG_TAG, "EVT %d, gattc if %d", event, gattc_if);
+            if (connectedDevices.size() > cbDeviceIdx)
+            {
+                ESP_LOGI(LOG_TAG, "Found Device %s",
+                        cbDevice->getName().c_str());
+            }
         }
+    }else{
+        ESP_LOGE(LOG_TAG,"No Device to handle event %d",event);
     }
 
     switch (event)

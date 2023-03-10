@@ -18,7 +18,7 @@ extern "C" void app_main(void)
     auto *bt = Ble::getInstance();
 
     bool joystickFound = false;
-    Device *joystick = nullptr;
+    std::shared_ptr<Device> joystick = nullptr;
     while (!joystickFound)
     {
         auto devices = bt->scan(5);

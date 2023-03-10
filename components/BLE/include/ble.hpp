@@ -7,6 +7,7 @@
 #include <stdio.h>
 #include <string.h>
 #include <vector>
+#include <memory>
 
 #include "device.hpp"
 #include "esp_gap_ble_api.h"
@@ -48,7 +49,7 @@ public:
    *                          make it a vector anyway.
    * @return nullptr - device failed to connect
    */
-  static Device *connect(Device aDevice);
+  static std::shared_ptr<Device> connect(Device aDevice);
 
 protected:
   Ble();
