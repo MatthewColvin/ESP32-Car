@@ -10,7 +10,7 @@
             "args": [
                 "chmod",
                 "a+rw",
-                "/dev/ttyUSB1"
+                "/dev/ttyUSB0"
             ],
             "presentation": {
                 "echo": true,

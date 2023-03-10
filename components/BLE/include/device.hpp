@@ -27,6 +27,12 @@ public:
   typedef uint16_t characterHandleType;
   typedef std::pair<characterHandleType, characteristicCallbackType> characteristicCBPairType;
 
+  enum class CharacteristicFilterType
+  {
+    Any,
+    All
+  };
+
   Device(bleScanResult res);
 
   // Pre-Connetion
@@ -52,10 +58,13 @@ public:
   void readCharacteristic(const Device::ServiceSearchResult aService, const esp_gattc_char_elem_t &aCharacteristic);
   void handleCharacteristicRead(Device::CharacteristicReadResult aReadResult);
 
-  void registerService(characterHandleType aCharacteristicHndl, characteristicCallbackType aCallback);
+  void registerCharacteristic(characterHandleType aCharacteristicHndl, characteristicCallbackType aCallback);
   serviceCbRetType handleService(characteristicCbParamType params);
 
-  std::vector<esp_gattc_char_elem_t> getCharacteristics(const Device::ServiceSearchResult &aService, uint8_t propertiesFilter = 0b1111111, std::vector<int> uuidFilter = {});
+  std::vector<esp_gattc_char_elem_t> getCharacteristics(const Device::ServiceSearchResult &aService,
+                                                        uint8_t propertiesFilter = 0b1111111,
+                                                        CharacteristicFilterType filtertype = Device::CharacteristicFilterType::Any,
+                                                        std::vector<int> uuidFilter = {});
   std::vector<esp_gattc_descr_elem_t> getDescriptors(const Device::ServiceSearchResult &aService, const esp_gattc_char_elem_t &aCharacteristic);
 
   void describeCharacteristic(const esp_gattc_char_elem_t &aCharacteristic, const Device::ServiceSearchResult &aService);
