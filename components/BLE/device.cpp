@@ -127,11 +127,11 @@ void Device::serviceSearchComplete()
 }
 bool Device::isServicesSearchComplete() { return mIsServiceSearching; }
 
-void Device::registerCharacteristic(characterHandleType aCharacteristicHndl, characteristicCallbackType aCallback)
+void Device::registerforCharacteristicNotify(characterHandleType aCharacteristicHndl, characteristicCallbackType aCallback)
 {
     mserviceCallbacks.emplace(aCharacteristicHndl, std::move(aCallback));
 }
-Device::serviceCbRetType Device::handleService(characteristicCbParamType aParam)
+Device::serviceCbRetType Device::handleCharacteristicNotify(characteristicCbParamType aParam)
 {
     characterHandleType hndl = aParam.handle;
     ESP_LOGI(LOG_TAG, "Handeling Characteristic: %d for %s", hndl, getName().c_str());

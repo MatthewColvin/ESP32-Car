@@ -32,35 +32,35 @@ public:
 
   Device(bleScanResult res);
 
-  // Pre-Connetion
+  // Pre Connection
   std::string getName();
   esp_bd_addr_t *getAddress();
   esp_ble_addr_type_t getAddressType();
-
-  // Post-Connection
-  void openConnection(OpenEventInfo aOpenEvent);
   bool isConnected();
 
+  // Post Connection
   esp_bd_addr_t *getRemoteAddress();
   uint16_t getConnectionId();
+
+  void searchServices();
+  bool isServicesSearchComplete();
+  void describeServices();
+
+  void registerforCharacteristicNotify(characterHandleType aCharacteristicHndl, characteristicCallbackType aCallback);
+
+  void registerForJoystickCharacteristics();
+
+  // Interface with ESP BLE API To update Device state
+  void openConnection(OpenEventInfo aOpenEvent);
+
+  void serviceSearchComplete();
+  void addFoundService(Service::espIdfTy aService);
 
   void setGattcIf(uint8_t aGattcIf);
   uint8_t getGattcIf();
 
-  void searchServices();
-  void addFoundService(Service::espIdfTy aService);
-  void serviceSearchComplete();
-  bool isServicesSearchComplete();
-
-  void readCharacteristic(const Service aService, const esp_gattc_char_elem_t &aCharacteristic);
+  serviceCbRetType handleCharacteristicNotify(characteristicCbParamType params);
   void handleCharacteristicRead(Device::CharacteristicReadResult aReadResult);
-
-  void registerCharacteristic(characterHandleType aCharacteristicHndl, characteristicCallbackType aCallback);
-  serviceCbRetType handleService(characteristicCbParamType params);
-
-  void describeServices();
-
-  void registerForJoystickCharacteristics();
 
 private:
   // Pre Connection

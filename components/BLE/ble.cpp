@@ -257,7 +257,7 @@ void Ble::esp_gattc_cb(esp_gattc_cb_event_t event, esp_gatt_if_t gattc_if,
     }
     case ESP_GATTC_NOTIFY_EVT:
     {
-        cbDevice->handleService(param->notify);
+        cbDevice->handleCharacteristicNotify(param->notify);
         break;
     }
     case ESP_GATTC_REG_FOR_NOTIFY_EVT:
