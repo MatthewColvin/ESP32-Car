@@ -12,6 +12,11 @@ public:
 
     Service(Service::espServiceTy anEspService);
 
+    std::vector<esp_gattc_char_elem_t> getCharacteristics(uint8_t aGattIf,
+                                                          uint8_t propertiesFilter = 0b1111111,
+                                                          Characteristic::FilterType filtertype = Characteristic::FilterType::Any,
+                                                          std::vector<int> uuidFilter = {});
+
     // Expose internals for API CALL integration for now
     uint16_t conn_id() const { return mService.conn_id; };
     uint16_t start_handle() const { return mService.start_handle; }

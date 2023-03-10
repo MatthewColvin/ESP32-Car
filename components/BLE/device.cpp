@@ -1,10 +1,14 @@
+// Library
 #include "device.hpp"
 
+// ESP API
 #include "esp_gattc_api.h"
 #include "esp_log.h"
 
+// RTOS
 #include "freertos/FreeRTOS.h"
 
+// STD
 #include <cstring>
 #include <algorithm>
 
@@ -144,48 +148,6 @@ Device::serviceCbRetType Device::handleService(characteristicCbParamType aParam)
     // Do we need to let the API know we failed to handle service???
 }
 
-std::vector<esp_gattc_char_elem_t> Device::getCharacteristics(const Service &aService, uint8_t propertiesFilter, CharacteristicFilterType filtertype, std::vector<int> uuidFilter)
-{
-    esp_gatt_status_t status = ESP_GATT_OK;
-    std::vector<esp_gattc_char_elem_t> characteristics;
-
-    uint16_t numCharacteristics; // outside scope of loop for end read check
-    uint16_t numFilterdOutCharacteristics = 0;
-    do
-    {
-        numCharacteristics = 1; // only fetch one at a time
-        esp_gattc_char_elem_t characteristic;
-        status = esp_ble_gattc_get_all_char(mGattcIf,
-                                            aService.conn_id(),
-                                            aService.start_handle(),
-                                            aService.end_handle(),
-                                            &characteristic,
-                                            &numCharacteristics, // this will update to total number of characteristics
-                                            characteristics.size());
-        if (status == ESP_GATT_OK)
-        {
-            bool isUUIDWanted = uuidFilter.empty() || std::find(uuidFilter.begin(), uuidFilter.end(), characteristic.uuid.uuid.uuid32) != uuidFilter.end();
-            // Trust me on the bit mask :)
-            bool isPropWanted = filtertype == Device::CharacteristicFilterType::Any ? characteristic.properties & propertiesFilter : ((characteristic.properties & propertiesFilter) == propertiesFilter);
-            if (isPropWanted && isUUIDWanted)
-            {
-                characteristics.push_back(characteristic);
-            }
-            else
-            {
-                numFilterdOutCharacteristics++;
-            }
-        }
-        else if (status != ESP_GATT_NOT_FOUND)
-        {
-            ESP_LOGE(LOG_TAG, "FETCH CHAR STATUS: %d", status);
-        }
-    } while (characteristics.size() + numFilterdOutCharacteristics < numCharacteristics && // ensure we found all characteristics
-             status != ESP_GATT_NOT_FOUND);
-
-    return characteristics;
-}
-
 std::vector<esp_gattc_descr_elem_t> Device::getDescriptors(const Service &aService, const esp_gattc_char_elem_t &aCharacteristic)
 {
 
@@ -224,10 +186,10 @@ void Device::describeServices()
     }
 }
 
-void Device::describeService(const Service &aService)
+void Device::describeService(Service &aService)
 {
     ESP_LOGI(LOG_TAG, "%s Service UUID: %s ", getName().c_str(), uuidToStr(aService.srvc_id().uuid).c_str());
-    auto characteristics = getCharacteristics(aService);
+    auto characteristics = aService.getCharacteristics(mGattcIf);
     for (auto characteristic : characteristics)
     {
         describeCharacteristic(characteristic, aService);
@@ -255,7 +217,7 @@ void Device::registerForJoystickCharacteristics()
 
     uint8_t propFilter = ESP_GATT_CHAR_PROP_BIT_NOTIFY | ESP_GATT_CHAR_PROP_BIT_READ;
     std::vector<int> uuidFilter = {};
-    auto characteristics = getCharacteristics(*service, propFilter, Device::CharacteristicFilterType::Any, uuidFilter);
+    auto characteristics = service->getCharacteristics(mGattcIf, propFilter, Characteristic::FilterType::Any, uuidFilter);
     if (characteristics.empty())
     {
         ESP_LOGI(LOG_TAG, "empty");
@@ -287,7 +249,7 @@ void Device::logAllCharacteristicData()
 {
     for (auto service : mServicesFound)
     {
-        for (auto characteristic : getCharacteristics(service))
+        for (auto characteristic : service.getCharacteristics(mGattcIf))
         {
             if (characteristic.properties & ESP_GATT_CHAR_PROP_BIT_READ)
             {
