@@ -62,7 +62,7 @@ public:
   serviceCbRetType handleCharacteristicNotify(characteristicCbParamType params);
   void handleCharacteristicRead(Device::CharacteristicReadResult aReadResult);
 
-private:
+protected:
   // Pre Connection
   bleScanResult mScanResult;
 

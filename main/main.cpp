@@ -1,4 +1,5 @@
 #include "ble.hpp"
+#include "joystick.hpp"
 
 #include "driver/gpio.h"
 #include "esp_bt.h"
@@ -44,11 +45,9 @@ extern "C" void app_main(void)
     {
         while (!joystick->isServicesSearchComplete()){};
 
-        joystick->describeServices();
+        //joystick->registerForJoystickCharacteristics();
         while (true)
         {
-            //joystick->describeServices();
-            joystick->registerForJoystickCharacteristics();
             vTaskDelay(10000 / portTICK_PERIOD_MS);
         }
     }

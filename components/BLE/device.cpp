@@ -156,22 +156,6 @@ void Device::describeServices()
     }
 }
 
-void Device::registerForJoystickCharacteristics()
-{
-
-    constexpr uint8_t propFilter = ESP_GATT_CHAR_PROP_BIT_NOTIFY;
-    std::vector reportFilter{ESP_GATT_UUID_HID_REPORT};
-
-    for (auto service: mServicesFound){
-        auto reports = service.getCharacteristics(propFilter,Characteristic::PropFilterType::Any);
-        for (auto report : reports){
-            ESP_LOGI(LOG_TAG,"Service: %s", service.uuidstr().c_str());
-            report.describe();
-            //esp_ble_gattc_register_for_notify(mGattcIf, mRemoteAddress, characteristic.char_handle());
-        }
-    }
-}
-
 void Device::handleCharacteristicRead(Device::CharacteristicReadResult aReadResult)
 {
 
