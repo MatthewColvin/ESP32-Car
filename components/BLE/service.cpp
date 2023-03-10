@@ -53,8 +53,8 @@ std::vector<Characteristic> Service::getCharacteristics(uint8_t propertiesFilter
 
 void Service::describe()
 {
-    // ESP_LOGI(LOG_TAG, "%s Service UUID: %s ", getName().c_str(), uuidToStr(aService.srvc_id().uuid).c_str());
-    auto characteristics = getCharacteristics(mdeviceGattif);
+    ESP_LOGI(LOG_TAG, "Service UUID: %d ", uuid());
+    auto characteristics = getCharacteristics();
     for (auto characteristic : characteristics)
     {
         characteristic.describe();

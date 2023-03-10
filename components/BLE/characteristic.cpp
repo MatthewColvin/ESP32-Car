@@ -60,10 +60,10 @@ void Characteristic::read()
 
 bool Characteristic::matchesFilters(uint8_t aFilter, PropFilterType aType, std::vector<int> uuidFilter)
 {
-    bool isUUIDWanted = uuidFilter.empty() || std::find(uuidFilter.begin(), uuidFilter.end(), characteristic.uuid.uuid.uuid32) != uuidFilter.end();
+    bool isUUIDWanted = uuidFilter.empty() || std::find(uuidFilter.begin(), uuidFilter.end(), uuid()) != uuidFilter.end();
     if (isUUIDWanted)
     {
-        ESP_LOGI(LOG_TAG, "Filter: %x Prop: %x", aFilter, mCharacteristic.properties)
+        // ESP_LOGI(LOG_TAG, "Filter: %d Prop: %d", aFilter, mCharacteristic.properties);
         if (aType == PropFilterType::Any)
         {
             return (mCharacteristic.properties & aFilter) > 0;

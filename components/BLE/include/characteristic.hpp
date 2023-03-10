@@ -18,8 +18,9 @@ public:
 
     void describe();
     void read();
+    int uuid() { return mCharacteristic.uuid.uuid.uuid32; }
 
-    bool matchesFilters(uint8_t aFilter = 0b11111111, PropFilterType aType = PropFilterType::Any, std::vector<int> uuidFilter = {});
+    bool matchesFilters(uint8_t aFilter, PropFilterType aType = PropFilterType::Any, std::vector<int> uuidFilter = {});
 
 private:
     uint8_t mDeviceGattIf;

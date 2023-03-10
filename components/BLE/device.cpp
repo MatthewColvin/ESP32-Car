@@ -160,6 +160,10 @@ void Device::registerForJoystickCharacteristics()
 {
     auto service = std::find_if(mServicesFound.begin(), mServicesFound.end(), [](Service aService)
                                 { return aService.uuid() == ESP_GATT_UUID_HID_SVC; });
+    if (service == mServicesFound.end())
+    {
+        ESP_LOGE(LOG_TAG, "DIDNT FIND THE SERVICE");
+    }
 
     uint8_t propFilter = ESP_GATT_CHAR_PROP_BIT_NOTIFY;
     std::vector<int> uuidFilter = {};
