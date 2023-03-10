@@ -13,7 +13,7 @@ public:
     Service(uint8_t aDeviceGattIf, Service::espIdfTy anEspService);
 
     std::vector<Characteristic> getCharacteristics(uint8_t propertiesFilter = 0b1111111,
-                                                   Characteristic::FilterType filtertype = Characteristic::FilterType::Any,
+                                                   Characteristic::PropFilterType filtertype = Characteristic::PropFilterType::Any,
                                                    std::vector<int> uuidFilter = {});
 
     void describe();

@@ -11,7 +11,7 @@ Service::Service(uint8_t aDeviceGattIf, Service::espIdfTy anEspService) : mdevic
 {
 }
 
-std::vector<Characteristic> Service::getCharacteristics(uint8_t propertiesFilter, Characteristic::FilterType filtertype, std::vector<int> uuidFilter)
+std::vector<Characteristic> Service::getCharacteristics(uint8_t propertiesFilter, Characteristic::PropFilterType filtertype, std::vector<int> uuidFilter)
 {
     esp_gatt_status_t status = ESP_GATT_OK;
     std::vector<Characteristic> characteristics;
@@ -31,12 +31,10 @@ std::vector<Characteristic> Service::getCharacteristics(uint8_t propertiesFilter
                                             characteristics.size());
         if (status == ESP_GATT_OK)
         {
-            bool isUUIDWanted = uuidFilter.empty() || std::find(uuidFilter.begin(), uuidFilter.end(), characteristic.uuid.uuid.uuid32) != uuidFilter.end();
-            // Trust me on the bit mask :)
-            bool isPropWanted = filtertype == Characteristic::FilterType::Any ? characteristic.properties & propertiesFilter : ((characteristic.properties & propertiesFilter) == propertiesFilter);
-            if (isPropWanted && isUUIDWanted)
+            Characteristic chara(mdeviceGattif, mService.conn_id, characteristic);
+            if (chara.matchesFilters(propertiesFilter, filtertype, uuidFilter))
             {
-                characteristics.push_back(Characteristic(mdeviceGattif, mService.conn_id, characteristic));
+                characteristics.push_back(chara);
             }
             else
             {

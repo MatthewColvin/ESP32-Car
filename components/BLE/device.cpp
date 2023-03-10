@@ -161,9 +161,9 @@ void Device::registerForJoystickCharacteristics()
     auto service = std::find_if(mServicesFound.begin(), mServicesFound.end(), [](Service aService)
                                 { return aService.uuid() == ESP_GATT_UUID_HID_SVC; });
 
-    uint8_t propFilter = ESP_GATT_CHAR_PROP_BIT_NOTIFY | ESP_GATT_CHAR_PROP_BIT_READ;
+    uint8_t propFilter = ESP_GATT_CHAR_PROP_BIT_NOTIFY;
     std::vector<int> uuidFilter = {};
-    auto characteristics = service->getCharacteristics(propFilter, Characteristic::FilterType::Any, uuidFilter);
+    auto characteristics = service->getCharacteristics(propFilter, Characteristic::PropFilterType::Any, uuidFilter);
     if (characteristics.empty())
     {
         ESP_LOGI(LOG_TAG, "empty");
