@@ -82,7 +82,7 @@ std::vector<Device> Ble::scan(uint32_t secondsToScan,
     return scannedDevices;
 }
 
-std::shared_ptr<Device> Ble::connect(Device aDevice)
+bool Ble::connect(std::shared_ptr<Device> aDevice)
 {
     // Use index to try to get reference to device will pose issue if accounting
     // for case of disconnect
@@ -92,18 +92,18 @@ std::shared_ptr<Device> Ble::connect(Device aDevice)
     if (connectedDevices.size() + 2 > 8)
     {
         ESP_LOGE(LOG_TAG, "ERROR Can only Connect 6 devices!");
-        return nullptr;
+        return false;
     }
 
     esp_err_t ret =
-        esp_ble_gattc_open(connectedDevices.size() + 3, *aDevice.getAddress(),
-                           aDevice.getAddressType(), true);
+        esp_ble_gattc_open(connectedDevices.size() + 3, *aDevice->getAddress(),
+                           aDevice->getAddressType(), true);
     if (ret == ESP_OK)
     {
-        connectedDevices.push_back(std::make_shared<Device>(aDevice));
-        return *(connectedDevices.end() - 1);
+        connectedDevices.push_back(aDevice);
+        return true;
     }
-    return nullptr;
+    return false;
 }
 
 void Ble::esp_gap_cb(esp_gap_ble_cb_event_t event,

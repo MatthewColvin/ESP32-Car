@@ -32,6 +32,8 @@ public:
 
   Device(bleScanResult res);
 
+  bleScanResult getScanResult(){return mScanResult;}
+
   // Pre Connection
   std::string getName();
   esp_bd_addr_t *getAddress();

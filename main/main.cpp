@@ -10,6 +10,8 @@
 #include "esp_system.h"
 #include "nvs_flash.h"
 
+#include <memory>
+
 #define LOG_TAG "Main"
 
 extern "C" void app_main(void)
@@ -17,27 +19,26 @@ extern "C" void app_main(void)
     nvs_flash_init();
     auto *bt = Ble::getInstance();
 
-    bool joystickFound = false;
-    std::shared_ptr<Device> joystick = nullptr;
-    while (!joystickFound)
+    bool joystickConnected = false;
+    std::shared_ptr<Joystick> joystick = nullptr;
+    while (!joystickConnected)
     {
         auto devices = bt->scan(5);
 
-        ESP_LOGI(LOG_TAG, "Found %d Devices", devices.size());
-        for (auto device : devices)
-        {
-            if (device.getName() != "")
-            {
-                ESP_LOGI(LOG_TAG, "Device Name: %s", device.getName().c_str());
-            }
-            if (device.getName() == "VR-PARK")
-            {
-                joystickFound = true;
-                joystick = bt->connect(device);
-                ESP_LOGI(LOG_TAG, "FOUND THE REMOTE!!!!");
+        auto joystickDevice = std::find_if(devices.begin(),devices.end(),[](Device device){return device.getName() == "VR-PARK";});
+
+        if(joystickDevice != devices.end()){
+            ESP_LOGI(LOG_TAG, "FOUND THE REMOTE!!!!");
+            joystick = std::make_shared<Joystick>(joystickDevice->getScanResult());
+
+            if(bt->connect(joystick)){
+                joystickConnected = true;
                 break;
             }
+        }else{
+            ESP_LOGI(LOG_TAG, "Found %d Devices but no Joystick", devices.size());
         }
+
         vTaskDelay(10000 / portTICK_PERIOD_MS);
     }
 
@@ -48,6 +49,7 @@ extern "C" void app_main(void)
         //joystick->registerForJoystickCharacteristics();
         while (true)
         {
+            joystick->describeServices();
             vTaskDelay(10000 / portTICK_PERIOD_MS);
         }
     }

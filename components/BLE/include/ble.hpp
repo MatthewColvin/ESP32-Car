@@ -43,13 +43,13 @@ public:
    * @brief Function to connect to a device
    *
    * @param aDevice - a Device to connect to
-   * @return deviceIterator - a refrence the device that was connected stored in the connectedDevice vector
    *                          NOTE: this has the potential to change so should look at redesign here.
    *                          Also there is a limit on the number of devices that can be connected so we should really
    *                          make it a vector anyway.
-   * @return nullptr - device failed to connect
+   * @return false device failed to connect
+   *         true device connected and added to connected devices
    */
-  static std::shared_ptr<Device> connect(Device aDevice);
+  static bool connect(std::shared_ptr<Device> aDevice);
 
 protected:
   Ble();
