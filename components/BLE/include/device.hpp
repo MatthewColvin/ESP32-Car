@@ -58,12 +58,7 @@ public:
   void registerCharacteristic(characterHandleType aCharacteristicHndl, characteristicCallbackType aCallback);
   serviceCbRetType handleService(characteristicCbParamType params);
 
-  std::vector<esp_gattc_descr_elem_t> getDescriptors(const Service &aService, const esp_gattc_char_elem_t &aCharacteristic);
-
-  void describeCharacteristic(const esp_gattc_char_elem_t &aCharacteristic, const Service &aService);
   void describeServices();
-
-  void logAllCharacteristicData();
 
   void registerForJoystickCharacteristics();
 

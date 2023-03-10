@@ -18,12 +18,15 @@ public:
 
     void describe();
 
+    // Simplifiy UUID handeling by assuming 32bit
+    int uuid() { return mService.srvc_id.uuid.uuid.uuid32; };
+
     // Expose internals for API CALL integration for now
-    uint16_t conn_id() const { return mService.conn_id; };
-    uint16_t start_handle() const { return mService.start_handle; }
-    uint16_t end_handle() const { return mService.end_handle; }
-    esp_gatt_id_t srvc_id() const { return mService.srvc_id; }
-    bool is_primary() const { return mService.is_primary; }
+    // uint16_t conn_id() const { return mService.conn_id; };
+    // uint16_t start_handle() const { return mService.start_handle; }
+    // uint16_t end_handle() const { return mService.end_handle; }
+    // esp_gatt_id_t srvc_id() const { return mService.srvc_id; }
+    // bool is_primary() const { return mService.is_primary; }
 
 private:
     uint8_t mdeviceGattif;

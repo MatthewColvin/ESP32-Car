@@ -2,6 +2,8 @@
 
 #include "esp_gattc_api.h"
 
+#include <vector>
+
 class Characteristic
 {
 public:
@@ -11,11 +13,15 @@ public:
         All
     };
 
-    Characteristic(esp_gattc_char_elem_t anIdfCharacteristic);
+    Characteristic(uint8_t aDeviceGattIf, uint8_t mServiceConnId, esp_gattc_char_elem_t anIdfCharacteristic);
 
     void describe();
-    void read(uint8_t mDeviceGattIf, uint8_t serviceConnId);
+    std::vector<esp_gattc_descr_elem_t> getDescriptors();
+
+    void read();
 
 private:
+    uint8_t mDeviceGattIf;
+    uint8_t mServiceConnId;
     esp_gattc_char_elem_t mCharacteristic;
 };

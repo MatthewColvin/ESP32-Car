@@ -148,36 +148,6 @@ Device::serviceCbRetType Device::handleService(characteristicCbParamType aParam)
     // Do we need to let the API know we failed to handle service???
 }
 
-std::vector<esp_gattc_descr_elem_t> Device::getDescriptors(const Service &aService, const esp_gattc_char_elem_t &aCharacteristic)
-{
-
-    esp_gatt_status_t status = ESP_GATT_OK;
-    std::vector<esp_gattc_descr_elem_t> descriptors;
-    uint16_t numDescriptions; // outside scope of loop for end read check
-    do
-    {
-        numDescriptions = 1; // only fetch one at a time
-        esp_gattc_descr_elem_t charaDescription;
-        status = esp_ble_gattc_get_all_descr(mGattcIf,
-                                             aService.conn_id(),
-                                             aCharacteristic.char_handle,
-                                             &charaDescription,
-                                             &numDescriptions, // this will update to total number of descriptions
-                                             descriptors.size());
-        if (status == ESP_GATT_OK)
-        {
-            descriptors.push_back(charaDescription);
-        }
-        else if (status != ESP_GATT_NOT_FOUND)
-        {
-            ESP_LOGE(LOG_TAG, "FETCH DESC STATUS: %d", status);
-        }
-    } while (descriptors.size() < numDescriptions && // Check num descriptions
-             status != ESP_GATT_NOT_FOUND);
-
-    return descriptors;
-}
-
 void Device::describeServices()
 {
     for (auto service : mServicesFound)
@@ -189,7 +159,7 @@ void Device::describeServices()
 void Device::registerForJoystickCharacteristics()
 {
     auto service = std::find_if(mServicesFound.begin(), mServicesFound.end(), [](Service aService)
-                                { return aService.srvc_id().uuid.uuid.uuid32 == ESP_GATT_UUID_HID_SVC; });
+                                { return aService.uuid() == ESP_GATT_UUID_HID_SVC; });
 
     uint8_t propFilter = ESP_GATT_CHAR_PROP_BIT_NOTIFY | ESP_GATT_CHAR_PROP_BIT_READ;
     std::vector<int> uuidFilter = {};
@@ -214,8 +184,4 @@ void Device::handleCharacteristicRead(Device::CharacteristicReadResult aReadResu
         memcpy(buff, aReadResult.value, sizeof(char) * aReadResult.value_len);
         ESP_LOG_BUFFER_HEX(LOG_TAG, buff, aReadResult.value_len);
     }
-}
-
-void Device::logAllCharacteristicData()
-{
 }

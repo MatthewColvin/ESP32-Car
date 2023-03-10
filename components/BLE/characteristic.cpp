@@ -4,8 +4,39 @@
 
 #define LOG_TAG "Characteristic"
 
-Characteristic::Characteristic(esp_gattc_char_elem_t anIdfCharacteristic) : mCharacteristic(anIdfCharacteristic)
+Characteristic::Characteristic(uint8_t aDeviceGattIf, uint8_t aServiceConnId, esp_gattc_char_elem_t anIdfCharacteristic) : mDeviceGattIf(aDeviceGattIf),
+                                                                                                                           mServiceConnId(aServiceConnId),
+                                                                                                                           mCharacteristic(anIdfCharacteristic)
 {
+}
+
+std::vector<esp_gattc_descr_elem_t> Characteristic::getDescriptors()
+{
+    esp_gatt_status_t status = ESP_GATT_OK;
+    std::vector<esp_gattc_descr_elem_t> descriptors;
+    uint16_t numDescriptions; // outside scope of loop for end read check
+    do
+    {
+        numDescriptions = 1; // only fetch one at a time
+        esp_gattc_descr_elem_t charaDescription;
+        status = esp_ble_gattc_get_all_descr(mDeviceGattIf,
+                                             mServiceConnId,
+                                             mCharacteristic.char_handle,
+                                             &charaDescription,
+                                             &numDescriptions, // this will update to total number of descriptions
+                                             descriptors.size());
+        if (status == ESP_GATT_OK)
+        {
+            descriptors.push_back(charaDescription);
+        }
+        else if (status != ESP_GATT_NOT_FOUND)
+        {
+            ESP_LOGE(LOG_TAG, "FETCH DESC STATUS: %d", status);
+        }
+    } while (descriptors.size() < numDescriptions && // Check num descriptions
+             status != ESP_GATT_NOT_FOUND);
+
+    return descriptors;
 }
 
 void Characteristic::describe()
@@ -22,7 +53,7 @@ void Characteristic::describe()
              (mCharacteristic.properties & ESP_GATT_CHAR_PROP_BIT_EXT_PROP) > 0);
 }
 
-void Characteristic::read(uint8_t mDeviceGattIf, uint8_t serviceConnId)
+void Characteristic::read()
 {
-    esp_ble_gattc_read_char(mDeviceGattIf, serviceConnId, mCharacteristic.char_handle, ESP_GATT_AUTH_REQ_NONE);
+    esp_ble_gattc_read_char(mDeviceGattIf, mServiceConnId, mCharacteristic.char_handle, ESP_GATT_AUTH_REQ_NONE);
 }

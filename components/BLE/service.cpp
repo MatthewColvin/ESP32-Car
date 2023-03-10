@@ -36,7 +36,7 @@ std::vector<Characteristic> Service::getCharacteristics(uint8_t propertiesFilter
             bool isPropWanted = filtertype == Characteristic::FilterType::Any ? characteristic.properties & propertiesFilter : ((characteristic.properties & propertiesFilter) == propertiesFilter);
             if (isPropWanted && isUUIDWanted)
             {
-                characteristics.push_back(Characteristic(characteristic));
+                characteristics.push_back(Characteristic(mdeviceGattif, mService.conn_id, characteristic));
             }
             else
             {
