@@ -8,14 +8,15 @@
 class Service
 {
 public:
-    typedef esp_ble_gattc_cb_param_t::gattc_search_res_evt_param espServiceTy;
+    typedef esp_ble_gattc_cb_param_t::gattc_search_res_evt_param espIdfTy;
 
-    Service(Service::espServiceTy anEspService);
+    Service(uint8_t aDeviceGattIf, Service::espIdfTy anEspService);
 
-    std::vector<esp_gattc_char_elem_t> getCharacteristics(uint8_t aGattIf,
-                                                          uint8_t propertiesFilter = 0b1111111,
-                                                          Characteristic::FilterType filtertype = Characteristic::FilterType::Any,
-                                                          std::vector<int> uuidFilter = {});
+    std::vector<Characteristic> getCharacteristics(uint8_t propertiesFilter = 0b1111111,
+                                                   Characteristic::FilterType filtertype = Characteristic::FilterType::Any,
+                                                   std::vector<int> uuidFilter = {});
+
+    void describe();
 
     // Expose internals for API CALL integration for now
     uint16_t conn_id() const { return mService.conn_id; };
@@ -25,6 +26,7 @@ public:
     bool is_primary() const { return mService.is_primary; }
 
 private:
-    espServiceTy mService;
+    uint8_t mdeviceGattif;
+    espIdfTy mService;
     std::vector<Characteristic> characteristics;
 };

@@ -13,6 +13,9 @@ public:
 
     Characteristic(esp_gattc_char_elem_t anIdfCharacteristic);
 
+    void describe();
+    void read(uint8_t mDeviceGattIf, uint8_t serviceConnId);
+
 private:
     esp_gattc_char_elem_t mCharacteristic;
 };

@@ -48,7 +48,7 @@ public:
   uint8_t getGattcIf();
 
   void searchServices();
-  void addFoundService(Service aService);
+  void addFoundService(Service::espIdfTy aService);
   void serviceSearchComplete();
   bool isServicesSearchComplete();
 
@@ -61,7 +61,6 @@ public:
   std::vector<esp_gattc_descr_elem_t> getDescriptors(const Service &aService, const esp_gattc_char_elem_t &aCharacteristic);
 
   void describeCharacteristic(const esp_gattc_char_elem_t &aCharacteristic, const Service &aService);
-  void describeService(Service &aService);
   void describeServices();
 
   void logAllCharacteristicData();

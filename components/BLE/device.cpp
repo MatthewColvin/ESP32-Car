@@ -117,9 +117,9 @@ void Device::searchServices()
     }
 }
 
-void Device::addFoundService(Service aService)
+void Device::addFoundService(Service::espIdfTy aService)
 {
-    mServicesFound.push_back(aService);
+    mServicesFound.push_back(Service(mGattcIf, aService));
 }
 void Device::serviceSearchComplete()
 {
@@ -182,32 +182,8 @@ void Device::describeServices()
 {
     for (auto service : mServicesFound)
     {
-        describeService(service);
+        service.describe();
     }
-}
-
-void Device::describeService(Service &aService)
-{
-    ESP_LOGI(LOG_TAG, "%s Service UUID: %s ", getName().c_str(), uuidToStr(aService.srvc_id().uuid).c_str());
-    auto characteristics = aService.getCharacteristics(mGattcIf);
-    for (auto characteristic : characteristics)
-    {
-        describeCharacteristic(characteristic, aService);
-    }
-}
-
-void Device::describeCharacteristic(const esp_gattc_char_elem_t &aCharacteristic, const Service &aService)
-{
-    ESP_LOGI(LOG_TAG, "---Handle: %d , UUID: %s", aCharacteristic.char_handle, uuidToStr(aCharacteristic.uuid).c_str());
-    ESP_LOGI(LOG_TAG, "------ Properties- BroadCast: %d Read: %d Write_NR: %d Write: %d Notify: %d Indicate: %d Auth: %d Ext_Prop: %d ",
-             (aCharacteristic.properties & ESP_GATT_CHAR_PROP_BIT_BROADCAST) > 0,
-             (aCharacteristic.properties & ESP_GATT_CHAR_PROP_BIT_READ) > 0,
-             (aCharacteristic.properties & ESP_GATT_CHAR_PROP_BIT_WRITE_NR) > 0,
-             (aCharacteristic.properties & ESP_GATT_CHAR_PROP_BIT_WRITE) > 0,
-             (aCharacteristic.properties & ESP_GATT_CHAR_PROP_BIT_NOTIFY) > 0,
-             (aCharacteristic.properties & ESP_GATT_CHAR_PROP_BIT_INDICATE) > 0,
-             (aCharacteristic.properties & ESP_GATT_CHAR_PROP_BIT_AUTH) > 0,
-             (aCharacteristic.properties & ESP_GATT_CHAR_PROP_BIT_EXT_PROP) > 0);
 }
 
 void Device::registerForJoystickCharacteristics()
@@ -217,14 +193,14 @@ void Device::registerForJoystickCharacteristics()
 
     uint8_t propFilter = ESP_GATT_CHAR_PROP_BIT_NOTIFY | ESP_GATT_CHAR_PROP_BIT_READ;
     std::vector<int> uuidFilter = {};
-    auto characteristics = service->getCharacteristics(mGattcIf, propFilter, Characteristic::FilterType::Any, uuidFilter);
+    auto characteristics = service->getCharacteristics(propFilter, Characteristic::FilterType::Any, uuidFilter);
     if (characteristics.empty())
     {
         ESP_LOGI(LOG_TAG, "empty");
     }
     for (auto characteristic : characteristics)
     {
-        describeCharacteristic(characteristic, *service);
+        characteristic.describe();
         // esp_ble_gattc_register_for_notify(mGattcIf, mRemoteAddress, characteristic.char_handle);
     }
 }
@@ -240,21 +216,6 @@ void Device::handleCharacteristicRead(Device::CharacteristicReadResult aReadResu
     }
 }
 
-void Device::readCharacteristic(const Service aService, const esp_gattc_char_elem_t &aCharacteristic)
-{
-    esp_ble_gattc_read_char(mGattcIf, aService.conn_id(), aCharacteristic.char_handle, ESP_GATT_AUTH_REQ_NONE);
-}
-
 void Device::logAllCharacteristicData()
 {
-    for (auto service : mServicesFound)
-    {
-        for (auto characteristic : service.getCharacteristics(mGattcIf))
-        {
-            if (characteristic.properties & ESP_GATT_CHAR_PROP_BIT_READ)
-            {
-                readCharacteristic(service, characteristic);
-            }
-        }
-    }
 }

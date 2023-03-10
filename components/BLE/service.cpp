@@ -6,14 +6,15 @@
 
 #define LOG_TAG "Service"
 
-Service::Service(Service::espServiceTy anEspService) : mService(anEspService)
+Service::Service(uint8_t aDeviceGattIf, Service::espIdfTy anEspService) : mdeviceGattif(aDeviceGattIf),
+                                                                          mService(anEspService)
 {
 }
 
-std::vector<esp_gattc_char_elem_t> Service::getCharacteristics(uint8_t aGattIf, uint8_t propertiesFilter, Characteristic::FilterType filtertype, std::vector<int> uuidFilter)
+std::vector<Characteristic> Service::getCharacteristics(uint8_t propertiesFilter, Characteristic::FilterType filtertype, std::vector<int> uuidFilter)
 {
     esp_gatt_status_t status = ESP_GATT_OK;
-    std::vector<esp_gattc_char_elem_t> characteristics;
+    std::vector<Characteristic> characteristics;
 
     uint16_t numCharacteristics; // outside scope of loop for end read check
     uint16_t numFilterdOutCharacteristics = 0;
@@ -21,7 +22,7 @@ std::vector<esp_gattc_char_elem_t> Service::getCharacteristics(uint8_t aGattIf, 
     {
         numCharacteristics = 1; // only fetch one at a time
         esp_gattc_char_elem_t characteristic;
-        status = esp_ble_gattc_get_all_char(aGattIf,
+        status = esp_ble_gattc_get_all_char(mdeviceGattif,
                                             mService.conn_id,
                                             mService.start_handle,
                                             mService.end_handle,
@@ -35,7 +36,7 @@ std::vector<esp_gattc_char_elem_t> Service::getCharacteristics(uint8_t aGattIf, 
             bool isPropWanted = filtertype == Characteristic::FilterType::Any ? characteristic.properties & propertiesFilter : ((characteristic.properties & propertiesFilter) == propertiesFilter);
             if (isPropWanted && isUUIDWanted)
             {
-                characteristics.push_back(characteristic);
+                characteristics.push_back(Characteristic(characteristic));
             }
             else
             {
@@ -50,4 +51,14 @@ std::vector<esp_gattc_char_elem_t> Service::getCharacteristics(uint8_t aGattIf, 
              status != ESP_GATT_NOT_FOUND);
 
     return characteristics;
+}
+
+void Service::describe()
+{
+    // ESP_LOGI(LOG_TAG, "%s Service UUID: %s ", getName().c_str(), uuidToStr(aService.srvc_id().uuid).c_str());
+    auto characteristics = getCharacteristics(mdeviceGattif);
+    for (auto characteristic : characteristics)
+    {
+        characteristic.describe();
+    }
 }
