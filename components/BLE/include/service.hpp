@@ -3,7 +3,8 @@
 
 #include "characteristic.hpp"
 
-#include "vector"
+#include <vector>
+#include <string>
 
 class Service
 {
@@ -19,7 +20,8 @@ public:
     void describe();
 
     // Simplifiy UUID handeling by assuming 32bit
-    int uuid() { return mService.srvc_id.uuid.uuid.uuid32; };
+    int uuid();
+    std::string uuidstr();
 
     // Expose internals for API CALL integration for now
     // uint16_t conn_id() const { return mService.conn_id; };

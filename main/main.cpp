@@ -42,19 +42,14 @@ extern "C" void app_main(void)
 
     if (joystick)
     {
-        while (!joystick->isServicesSearchComplete())
-        {
-        };
+        while (!joystick->isServicesSearchComplete()){};
+
+        joystick->describeServices();
         while (true)
         {
-            joystick->describeServices();
-            // joystick->describeServices();
-            vTaskDelay(5000 / portTICK_PERIOD_MS);
+            //joystick->describeServices();
+            joystick->registerForJoystickCharacteristics();
+            vTaskDelay(10000 / portTICK_PERIOD_MS);
         }
-    }
-
-    while (true)
-    {
-        vTaskDelay(10000 / portTICK_PERIOD_MS);
     }
 }
