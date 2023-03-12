@@ -25,17 +25,22 @@ extern "C" void app_main(void)
     {
         auto devices = bt->scan(5);
 
-        auto joystickDevice = std::find_if(devices.begin(),devices.end(),[](Device device){return device.getName() == "VR-PARK";});
+        auto joystickDevice = std::find_if(devices.begin(), devices.end(), [](Device device)
+                                           { return device.getName() == "VR-PARK"; });
 
-        if(joystickDevice != devices.end()){
+        if (joystickDevice != devices.end())
+        {
             ESP_LOGI(LOG_TAG, "FOUND THE REMOTE!!!!");
             joystick = std::make_shared<Joystick>(joystickDevice->getScanResult());
 
-            if(bt->connect(joystick)){
+            if (bt->connect(joystick))
+            {
                 joystickConnected = true;
                 break;
             }
-        }else{
+        }
+        else
+        {
             ESP_LOGI(LOG_TAG, "Found %d Devices but no Joystick", devices.size());
         }
 
@@ -44,12 +49,14 @@ extern "C" void app_main(void)
 
     if (joystick)
     {
-        while (!joystick->isServicesSearchComplete()){};
+        while (!joystick->isServicesSearchComplete())
+        {
+        };
 
-        //joystick->registerForJoystickCharacteristics();
+        // joystick->registerForJoystickCharacteristics();
+        joystick->describeServices();
         while (true)
         {
-            joystick->describeServices();
             vTaskDelay(10000 / portTICK_PERIOD_MS);
         }
     }

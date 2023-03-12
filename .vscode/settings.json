@@ -91,7 +91,9 @@
         "string_view": "cpp",
         "shared_mutex": "cpp",
         "cinttypes": "cpp",
-        "*.inc": "cpp"
+        "*.inc": "cpp",
+        "numbers": "cpp",
+        "semaphore": "cpp"
     },
     "idf.port": "/dev/ttyUSB0"
 }
