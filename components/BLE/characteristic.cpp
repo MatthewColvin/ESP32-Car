@@ -10,7 +10,7 @@ Characteristic::Characteristic(uint8_t aDeviceGattIf, uint8_t aServiceConnId, es
 {
 }
 
-std::vector<esp_gattc_descr_elem_t> Characteristic::getDescriptors()
+std::vector<esp_gattc_descr_elem_t> Characteristic::getDescriptors() const
 {
     esp_gatt_status_t status = ESP_GATT_OK;
     std::vector<esp_gattc_descr_elem_t> descriptors;
@@ -53,6 +53,11 @@ void Characteristic::describe() const
              (mCharacteristic.properties & ESP_GATT_CHAR_PROP_BIT_WRITE_NR) > 0,
              (mCharacteristic.properties & ESP_GATT_CHAR_PROP_BIT_READ) > 0,
              (mCharacteristic.properties & ESP_GATT_CHAR_PROP_BIT_BROADCAST) > 0);
+
+    for (auto descriptor : getDescriptors())
+    {
+        ESP_LOGI(LOG_TAG, "-Descriptor UUID: %d", descriptor.uuid.uuid.uuid16);
+    }
 }
 
 void Characteristic::read()

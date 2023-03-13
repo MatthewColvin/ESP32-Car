@@ -186,6 +186,9 @@ bool gattcEventHandledByDevice(esp_gattc_cb_event_t event)
     case ESP_GATTC_NOTIFY_EVT:
     case ESP_GATTC_READ_DESCR_EVT:
     case ESP_GATTC_READ_CHAR_EVT:
+    // BLE Handeled
+    case ESP_GATTC_WRITE_CHAR_EVT:
+    case ESP_GATTC_WRITE_DESCR_EVT:
         return true;
     default:
         return false;
@@ -195,7 +198,8 @@ bool gattcEventHandledByDevice(esp_gattc_cb_event_t event)
 void Ble::esp_gattc_cb(esp_gattc_cb_event_t event, esp_gatt_if_t gattc_if,
                        esp_ble_gattc_cb_param_t *param)
 {
-    if (event == ESP_GATTC_REG_EVT){
+    if (event == ESP_GATTC_REG_EVT)
+    {
         ESP_LOGI(LOG_TAG, "Registered Gattc Callback :)");
         return;
     }
@@ -203,7 +207,8 @@ void Ble::esp_gattc_cb(esp_gattc_cb_event_t event, esp_gatt_if_t gattc_if,
     size_t cbDeviceIdx = gattc_if - 3;
     std::shared_ptr<Device> cbDevice = nullptr;
 
-    if(cbDeviceIdx < connectedDevices.size()){
+    if (cbDeviceIdx < connectedDevices.size())
+    {
 
         cbDevice = connectedDevices[cbDeviceIdx];
 
@@ -213,11 +218,13 @@ void Ble::esp_gattc_cb(esp_gattc_cb_event_t event, esp_gatt_if_t gattc_if,
             if (connectedDevices.size() > cbDeviceIdx)
             {
                 ESP_LOGI(LOG_TAG, "Found Device %s",
-                        cbDevice->getName().c_str());
+                         cbDevice->getName().c_str());
             }
         }
-    }else{
-        ESP_LOGE(LOG_TAG,"No Device to handle event %d",event);
+    }
+    else
+    {
+        ESP_LOGE(LOG_TAG, "No Device to handle event %d", event);
     }
 
     switch (event)
@@ -275,7 +282,18 @@ void Ble::esp_gattc_cb(esp_gattc_cb_event_t event, esp_gatt_if_t gattc_if,
     case ESP_GATTC_READ_DESCR_EVT:
     {
         cbDevice->handleCharacteristicRead(param->read);
+        break;
     }
+    case ESP_GATTC_WRITE_CHAR_EVT:
+    case ESP_GATTC_WRITE_DESCR_EVT:
+    {
+        if (param->write.status != ESP_OK)
+        {
+            ESP_LOGE(LOG_TAG, "Failed to Write to Characteristic or Descriptor.");
+        }
+        break;
+    }
+
     default:
     {
         break;

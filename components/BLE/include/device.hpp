@@ -32,7 +32,7 @@ public:
 
   Device(bleScanResult res);
 
-  bleScanResult getScanResult(){return mScanResult;}
+  bleScanResult getScanResult() { return mScanResult; }
 
   // Pre Connection
   std::string getName();
@@ -50,8 +50,6 @@ public:
 
   void registerforCharacteristicNotify(characterHandleType aCharacteristicHndl, characteristicCallbackType aCallback);
 
-  void registerForJoystickCharacteristics();
-
   // Interface with ESP BLE API To update Device state
   void openConnection(OpenEventInfo aOpenEvent);
 
@@ -63,6 +61,9 @@ public:
 
   serviceCbRetType handleCharacteristicNotify(characteristicCbParamType params);
   void handleCharacteristicRead(Device::CharacteristicReadResult aReadResult);
+
+  void enableNotifitcation(Characteristic aCharacteristic);
+  // void disableNotifictaion(Characteristic aCharacteristic);
 
 protected:
   // Pre Connection

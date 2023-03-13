@@ -14,8 +14,9 @@ public:
         All
     };
 
+    Characteristic() = default; // Seems potentially bug prone
     Characteristic(uint8_t aDeviceGattIf, uint8_t mServiceConnId, esp_gattc_char_elem_t anIdfCharacteristic);
-    std::vector<esp_gattc_descr_elem_t> getDescriptors();
+    std::vector<esp_gattc_descr_elem_t> getDescriptors() const;
 
     void describe() const;
     void read();
