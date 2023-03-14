@@ -54,10 +54,11 @@ extern "C" void app_main(void)
         };
 
         joystick->describeServices();
-        joystick->registerCharacteristics();
+        // joystick->registerCharacteristics();
         while (true)
         {
-            vTaskDelay(5000 / portTICK_PERIOD_MS);
+            joystick->readAllCharacteristics();
+            vTaskDelay(1000 / portTICK_PERIOD_MS);
         }
     }
 }

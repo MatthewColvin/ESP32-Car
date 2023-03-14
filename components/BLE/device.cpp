@@ -193,3 +193,17 @@ void Device::handleCharacteristicRead(Device::CharacteristicReadResult aReadResu
         ESP_LOG_BUFFER_HEX(LOG_TAG, buff, aReadResult.value_len);
     }
 }
+
+void Device::readAllCharacteristics()
+{
+    uint8_t charaFilters = ESP_GATT_CHAR_PROP_BIT_READ;
+    std::vector<int> uuidFilter{ESP_GATT_UUID_HID_BT_MOUSE_INPUT};
+    for (auto service : mServicesFound)
+    {
+        auto charas = service.getCharacteristics(charaFilters, Characteristic::PropFilterType::Any, uuidFilter);
+        for (auto characteristic : charas)
+        {
+            characteristic.read();
+        }
+    }
+}

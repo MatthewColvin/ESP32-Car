@@ -61,6 +61,7 @@ public:
 
   serviceCbRetType handleCharacteristicNotify(characteristicCbParamType params);
   void handleCharacteristicRead(Device::CharacteristicReadResult aReadResult);
+  void readAllCharacteristics();
 
   void enableNotifitcation(Characteristic aCharacteristic);
   // void disableNotifictaion(Characteristic aCharacteristic);
