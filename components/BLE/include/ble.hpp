@@ -54,6 +54,9 @@ public:
 protected:
   Ble();
   static Ble *mInstance;
+  static int secToScan;
+  static std::vector<Device> scannedDevices;
+  static std::vector<std::shared_ptr<Device>> connectedDevices;
 
 private:
   static void ble_client_appRegister();

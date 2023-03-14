@@ -197,13 +197,43 @@ void Device::handleCharacteristicRead(Device::CharacteristicReadResult aReadResu
 void Device::readAllCharacteristics()
 {
     uint8_t charaFilters = ESP_GATT_CHAR_PROP_BIT_READ;
-    std::vector<int> uuidFilter{ESP_GATT_UUID_HID_BT_MOUSE_INPUT};
+    std::vector<int> uuidFilter{ESP_GATT_UUID_HID_REPORT};
+    for (auto service : mServicesFound)
+    {
+        auto charas = service.getCharacteristics(charaFilters, Characteristic::PropFilterType::Any,uuidFilter);
+        for (auto characteristic : charas)
+        {
+            characteristic.read();
+        }
+    }
+}
+void Device::protocolMode()
+{
+    uint8_t bootmode {0};
+
+    uint8_t charaFilters = ESP_GATT_CHAR_PROP_BIT_READ;
+    std::vector<int> uuidFilter{ESP_GATT_UUID_HID_PROTO_MODE};
     for (auto service : mServicesFound)
     {
         auto charas = service.getCharacteristics(charaFilters, Characteristic::PropFilterType::Any, uuidFilter);
         for (auto characteristic : charas)
         {
-            characteristic.read();
+            characteristic.write(&bootmode,1);
+        }
+    }
+}
+void Device::exitSuspend()
+{
+    uint8_t exitSuspend {1};
+
+    uint8_t charaFilters = ESP_GATT_CHAR_PROP_BIT_READ;
+    std::vector<int> uuidFilter{ESP_GATT_UUID_HID_CONTROL_POINT};
+    for (auto service : mServicesFound)
+    {
+        auto charas = service.getCharacteristics(charaFilters, Characteristic::PropFilterType::Any, uuidFilter);
+        for (auto characteristic : charas)
+        {
+            characteristic.write(&exitSuspend,1);
         }
     }
 }

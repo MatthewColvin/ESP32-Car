@@ -55,6 +55,8 @@ extern "C" void app_main(void)
 
         joystick->describeServices();
         // joystick->registerCharacteristics();
+        //joystick->protocolMode(); // got to boot mode i hope
+        joystick->exitSuspend();
         while (true)
         {
             joystick->readAllCharacteristics();
