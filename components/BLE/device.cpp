@@ -127,15 +127,21 @@ void Device::serviceSearchComplete()
 }
 bool Device::isServicesSearchComplete() { return mIsServiceSearching; }
 
-void Device::registerforCharacteristicNotify(characterHandleType aCharacteristicHndl, characteristicCallbackType aCallback)
+void Device::registerforCharacteristicNotify(Characteristic aCharacteristic, characteristicCallbackType aCallback)
 {
-    mserviceCallbacks.emplace(aCharacteristicHndl, std::move(aCallback));
+    mserviceCallbacks.emplace(aCharacteristic, std::move(aCallback));
 }
+void Device::unRegisterForCharacterisitcNotify(Characteristic aCharacteristic)
+{
+    auto unRegCharaIt = mserviceCallbacks.find(aCharacteristic);
+
+}
+
 Device::serviceCbRetType Device::handleCharacteristicNotify(characteristicCbParamType aParam)
 {
-    characterHandleType hndl = aParam.handle;
-    ESP_LOGI(LOG_TAG, "Handeling Characteristic: %d for %s", hndl, getName().c_str());
-    if (auto callbackPair = mserviceCallbacks.find(hndl); callbackPair != mserviceCallbacks.end())
+    auto chara = getCharacteristic(aParam.handle);
+    ESP_LOGI(LOG_TAG, "Handeling Characteristic: %s for %s", chara.uuidstr().c_str(), getName().c_str());
+    if (auto callbackPair = mserviceCallbacks.find(chara); callbackPair != mserviceCallbacks.end())
     {
         return callbackPair->second(aParam);
     }
@@ -148,32 +154,34 @@ Device::serviceCbRetType Device::handleCharacteristicNotify(characteristicCbPara
     // Do we need to let the API know we failed to handle service???
 }
 
-void Device::enableNotifitcation(Characteristic aCharacteristic)
+void Device::handleNotifyRegistration(NotifyRegistrationType aRegistration)
 {
-    // Add check to ensure that characteristic existis in the map of characteristics and throw error if not?
-    auto descriptors = aCharacteristic.getDescriptors();
+    auto characteristicToNotify = getCharacteristic(aRegistration.handle);
+
+    auto descriptors = characteristicToNotify.getDescriptors();
     auto clientConfig = std::find_if(descriptors.begin(), descriptors.end(), [](esp_gattc_descr_elem_t desc)
                                      { return desc.uuid.uuid.uuid16 == ESP_GATT_UUID_CHAR_CLIENT_CONFIG; });
 
     if (clientConfig == descriptors.end())
     {
-        ESP_LOGE(LOG_TAG, "%s with Char: %s Missing descriptor cannot enable notification.", getName().c_str(), aCharacteristic.uuidstr().c_str());
+        ESP_LOGE(LOG_TAG, "%s with Char: %s Missing descriptor cannot enable notification.", getName().c_str(), characteristicToNotify.uuidstr().c_str());
     }
     else
     {
         uint16_t notify_en = 1;
-        ESP_LOGI(LOG_TAG, "READING: Client config descriptor for Characteristic: %s", aCharacteristic.uuidstr().c_str());
-        esp_ble_gattc_read_char_descr(mGattcIf, mConnectionId, aCharacteristic.char_handle(), ESP_GATT_AUTH_REQ_NONE);
 
-        auto status = esp_ble_gattc_write_char_descr(mGattcIf, mConnectionId, aCharacteristic.char_handle(), sizeof(notify_en),
+        auto status = esp_ble_gattc_write_char_descr(mGattcIf, mConnectionId, characteristicToNotify.char_handle(), sizeof(notify_en),
                                                      (uint8_t *)&notify_en, ESP_GATT_WRITE_TYPE_RSP, ESP_GATT_AUTH_REQ_NONE);
         if (status != ESP_OK)
         {
-            ESP_LOGE(LOG_TAG, "%s with Char: %s Failed to write descriptor to enable notification.", getName().c_str(), aCharacteristic.uuidstr().c_str());
+            ESP_LOGE(LOG_TAG, "%s with Char: %s Failed to write descriptor to enable notification.", getName().c_str(), characteristicToNotify.uuidstr().c_str());
         }
     }
 }
-// void Device::disableNotifictaion(Characteristic aCharacteristic);
+
+void Device::handleNotifyUnregistration(NotifyUnregistrationType anUnregistration){
+
+}
 
 void Device::describeServices()
 {
@@ -236,4 +244,26 @@ void Device::exitSuspend()
             characteristic.write(&exitSuspend,1);
         }
     }
+}
+
+Characteristic Device::getCharacteristic(uint16_t aSearchHandle){
+    Characteristic characteristic;
+    bool found = false;
+    // Add check to ensure that characteristic existis in the map of characteristics and throw error if not?
+    for (auto service : mServicesFound){
+        auto charas = service.getCharacteristics();
+        auto charaToNotify = std::find_if(charas.begin(),charas.end(),[aSearchHandle](Characteristic aChara){
+            return aChara.char_handle() == aSearchHandle;
+        });
+        if (charaToNotify != charas.end()){
+            characteristic = *charaToNotify;
+            found = true;
+            break;
+        }
+    }
+    if (!found){
+        ESP_LOGE(LOG_TAG,"Unable To Find Characteristic with handle:%d", aSearchHandle);
+    }
+
+    return characteristic;
 }

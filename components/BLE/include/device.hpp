@@ -18,17 +18,16 @@ public:
   typedef esp_ble_gap_cb_param_t::ble_scan_result_evt_param bleScanResult;
   typedef esp_ble_gattc_cb_param_t::gattc_read_char_evt_param CharacteristicReadResult;
   typedef esp_ble_gattc_cb_param_t::gattc_open_evt_param OpenEventInfo;
-  typedef esp_ble_gattc_cb_param_t::gattc_search_res_evt_param
-      ServiceSearchResult;
+  typedef esp_ble_gattc_cb_param_t::gattc_search_res_evt_param ServiceSearchResult;
+  typedef esp_ble_gattc_cb_param_t::gattc_reg_for_notify_evt_param NotifyRegistrationType;
+  typedef esp_ble_gattc_cb_param_t::gattc_unreg_for_notify_evt_param NotifyUnregistrationType;
   typedef esp_bt_uuid_t serviceUUIDType;
 
   typedef esp_ble_gattc_cb_param_t::gattc_notify_evt_param characteristicCbParamType;
   typedef int serviceCbRetType;
   typedef std::function<serviceCbRetType(characteristicCbParamType)> characteristicCallbackType;
-  // serviceCbreturnType aFunctionName(characteristicCbParamType aParam){}
 
-  typedef uint16_t characterHandleType;
-  typedef std::pair<characterHandleType, characteristicCallbackType> characteristicCBPairType;
+  typedef std::pair<Characteristic, characteristicCallbackType> characteristicCBPairType;
 
   Device(bleScanResult res);
 
@@ -48,7 +47,11 @@ public:
   bool isServicesSearchComplete();
   void describeServices();
 
-  void registerforCharacteristicNotify(characterHandleType aCharacteristicHndl, characteristicCallbackType aCallback);
+  void registerforCharacteristicNotify(Characteristic aCharacteristic, characteristicCallbackType aCallback);
+  void unRegisterForCharacterisitcNotify(Characteristic aCharacteristic);
+
+  void protocolMode();
+  void exitSuspend();
 
   // Interface with ESP BLE API To update Device state
   void openConnection(OpenEventInfo aOpenEvent);
@@ -62,8 +65,9 @@ public:
   serviceCbRetType handleCharacteristicNotify(characteristicCbParamType params);
   void handleCharacteristicRead(Device::CharacteristicReadResult aReadResult);
   void readAllCharacteristics();
-  void protocolMode();
-  void exitSuspend();
+
+  void handleNotifyRegistration(NotifyRegistrationType aRegistration);
+  void handleNotifyUnregistration(NotifyUnregistrationType anUnregistration);
 
 
   void enableNotifitcation(Characteristic aCharacteristic);
@@ -79,8 +83,13 @@ protected:
 
   bool mIsServiceSearching = false;
   std::vector<Service> mServicesFound;
-  std::map<characterHandleType, characteristicCallbackType> mserviceCallbacks;
+  std::map<Characteristic, characteristicCallbackType> mserviceCallbacks;
 
   esp_bd_addr_t mRemoteAddress;
   uint16_t mConnectionId;
+
+private:
+
+Characteristic getCharacteristic(uint16_t aSearchHandle);
+
 };

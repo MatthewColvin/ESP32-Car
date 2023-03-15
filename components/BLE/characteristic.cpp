@@ -104,6 +104,16 @@ int Characteristic::uuid() const
     return retval;
 }
 
+bool Characteristic::regForNotify(){
+    return true;
+}
+
+bool Characteristic::unRegForNotify(){
+    return true;
+}
+
+
+
 std::string Characteristic::uuidstr() const
 {
     switch (uuid())

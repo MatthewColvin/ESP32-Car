@@ -264,9 +264,9 @@ void Ble::esp_gattc_cb(esp_gattc_cb_event_t event, esp_gatt_if_t gattc_if,
     cbDevice = connectedDevices[cbDeviceIdx];
 
     if (!gattcEventHandledByDevice(event)) {
-      ESP_LOGI(LOG_TAG, "EVT %d, gattc if %d", event, gattc_if);
+      ESP_LOGE(LOG_TAG, "UnHandled EVT %d, gattc if %d", event, gattc_if);
       if (connectedDevices.size() > cbDeviceIdx) {
-        ESP_LOGI(LOG_TAG, "Found Device %s", cbDevice->getName().c_str());
+        ESP_LOGE(LOG_TAG, "Found Device %s", cbDevice->getName().c_str());
       }
     }
   } else {
@@ -299,7 +299,11 @@ void Ble::esp_gattc_cb(esp_gattc_cb_event_t event, esp_gatt_if_t gattc_if,
     break;
   }
   case ESP_GATTC_REG_FOR_NOTIFY_EVT: {
-    ESP_LOGI(LOG_TAG, "REGISTERED:)");
+    cbDevice->handleNotifyRegistration(param->reg_for_notify);
+    break;
+  }
+  case ESP_GATTC_UNREG_FOR_NOTIFY_EVT:{
+    cbDevice->handleNotifyUnregistration(param->unreg_for_notify);
     break;
   }
   case ESP_GATTC_READ_CHAR_EVT:
