@@ -129,12 +129,19 @@ bool Device::isServicesSearchComplete() { return mIsServiceSearching; }
 
 void Device::registerforCharacteristicNotify(Characteristic aCharacteristic, characteristicCallbackType aCallback)
 {
+    ESP_ERROR_CHECK(esp_ble_gattc_register_for_notify(mGattcIf, mRemoteAddress, aCharacteristic.char_handle()));
     mserviceCallbacks.emplace(aCharacteristic, std::move(aCallback));
 }
 void Device::unRegisterForCharacterisitcNotify(Characteristic aCharacteristic)
 {
-    auto unRegCharaIt = mserviceCallbacks.find(aCharacteristic);
 
+    auto unRegCharaIt = mserviceCallbacks.find(aCharacteristic);
+    if(unRegCharaIt == mserviceCallbacks.end()){
+        ESP_LOGE(LOG_TAG,"Cannot Find Characteristic:%s Did you register it??",aCharacteristic.uuidstr().c_str());
+    }else{
+        ESP_ERROR_CHECK(esp_ble_gattc_unregister_for_notify(mGattcIf, mRemoteAddress, aCharacteristic.char_handle()));
+
+    }
 }
 
 Device::serviceCbRetType Device::handleCharacteristicNotify(characteristicCbParamType aParam)
@@ -171,7 +178,7 @@ void Device::handleNotifyRegistration(NotifyRegistrationType aRegistration)
         uint16_t notify_en = 1;
 
         auto status = esp_ble_gattc_write_char_descr(mGattcIf, mConnectionId, characteristicToNotify.char_handle(), sizeof(notify_en),
-                                                     (uint8_t *)&notify_en, ESP_GATT_WRITE_TYPE_RSP, ESP_GATT_AUTH_REQ_NONE);
+                                                     (uint8_t *)&notify_en, ESP_GATT_WRITE_TYPE_NO_RSP, ESP_GATT_AUTH_REQ_NO_MITM);
         if (status != ESP_OK)
         {
             ESP_LOGE(LOG_TAG, "%s with Char: %s Failed to write descriptor to enable notification.", getName().c_str(), characteristicToNotify.uuidstr().c_str());
@@ -180,6 +187,25 @@ void Device::handleNotifyRegistration(NotifyRegistrationType aRegistration)
 }
 
 void Device::handleNotifyUnregistration(NotifyUnregistrationType anUnregistration){
+    auto characteristicToNotify = getCharacteristic(anUnregistration.handle);
+
+    auto descriptors = characteristicToNotify.getDescriptors();
+    auto clientConfig = std::find_if(descriptors.begin(), descriptors.end(), [](esp_gattc_descr_elem_t desc)
+                                     { return desc.uuid.uuid.uuid16 == ESP_GATT_UUID_CHAR_CLIENT_CONFIG; });
+
+    if (clientConfig == descriptors.end())
+    {
+        ESP_LOGE(LOG_TAG, "%s with Char: %s Missing descriptor cannot disable notification.", getName().c_str(), characteristicToNotify.uuidstr().c_str());
+    }
+    uint16_t notify_en = 0;
+
+    auto status = esp_ble_gattc_write_char_descr(mGattcIf, mConnectionId, characteristicToNotify.char_handle(), sizeof(notify_en),
+                                                    (uint8_t *)&notify_en, ESP_GATT_WRITE_TYPE_NO_RSP, ESP_GATT_AUTH_REQ_NO_MITM);
+    if (status != ESP_OK)
+    {
+        ESP_LOGE(LOG_TAG, "%s with Char: %s Failed to write descriptor to disable notification.", getName().c_str(), characteristicToNotify.uuidstr().c_str());
+    }
+
 
 }
 

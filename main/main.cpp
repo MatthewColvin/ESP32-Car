@@ -53,14 +53,10 @@ extern "C" void app_main(void)
         {
         };
 
-        joystick->describeServices();
-        // joystick->registerCharacteristics();
-        //joystick->protocolMode(); // got to boot mode i hope
-        joystick->exitSuspend();
+        joystick->registerReportNotifications();
         while (true)
         {
-            joystick->readAllCharacteristics();
-            vTaskDelay(1000 / portTICK_PERIOD_MS);
+            vTaskDelay(10000 / portTICK_PERIOD_MS);
         }
     }
 }

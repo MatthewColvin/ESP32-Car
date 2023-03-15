@@ -33,9 +33,6 @@ public:
 
     bool canNotify(){ return mCharacteristic.properties & ESP_GATT_CHAR_PROP_BIT_NOTIFY; }
 
-    bool regForNotify();
-    bool unRegForNotify();
-
 private:
     uint8_t mDeviceGattIf;
     uint8_t mServiceConnId;

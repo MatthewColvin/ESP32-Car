@@ -9,11 +9,9 @@ public:
 
     void init();
 
-    void registerCharacteristics();
+    void registerReportNotifications();
 
-    void getPosition();
     void readAll();
 
 private:
-    Characteristic mPositionChar;
 };

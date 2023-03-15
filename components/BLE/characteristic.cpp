@@ -4,9 +4,11 @@
 
 #define LOG_TAG "Characteristic"
 
-Characteristic::Characteristic(uint8_t aDeviceGattIf, uint8_t aServiceConnId, esp_gattc_char_elem_t anIdfCharacteristic) : mDeviceGattIf(aDeviceGattIf),
-                                                                                                                           mServiceConnId(aServiceConnId),
-                                                                                                                           mCharacteristic(anIdfCharacteristic)
+Characteristic::Characteristic(uint8_t aDeviceGattIf,
+                               uint8_t aServiceConnId,
+                               esp_gattc_char_elem_t anIdfCharacteristic): mDeviceGattIf(aDeviceGattIf),
+                                                                           mServiceConnId(aServiceConnId),
+                                                                           mCharacteristic(anIdfCharacteristic)
 {
 }
 
@@ -103,16 +105,6 @@ int Characteristic::uuid() const
     }
     return retval;
 }
-
-bool Characteristic::regForNotify(){
-    return true;
-}
-
-bool Characteristic::unRegForNotify(){
-    return true;
-}
-
-
 
 std::string Characteristic::uuidstr() const
 {
