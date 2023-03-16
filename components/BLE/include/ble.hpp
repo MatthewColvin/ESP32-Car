@@ -26,7 +26,7 @@ class Ble
 public:
   Ble(Ble &other) = delete;
   void operator=(const Ble &) = delete;
-  static Ble *getInstance();
+  static std::shared_ptr<Ble> getInstance();
 
   /**
    * @brief Function to get a list of devices in pairing mode
@@ -53,8 +53,8 @@ public:
 
 protected:
   Ble();
-  static Ble *mInstance;
-  static int secToScan;
+  // pointer to the Ble instance
+  static std::shared_ptr<Ble> mInstance;
   static std::vector<Device> scannedDevices;
   static std::vector<std::shared_ptr<Device>> connectedDevices;
 

@@ -17,7 +17,7 @@
 extern "C" void app_main(void)
 {
     nvs_flash_init();
-    auto *bt = Ble::getInstance();
+    auto bt = Ble::getInstance();
 
     bool joystickConnected = false;
     std::shared_ptr<Joystick> joystick = nullptr;
