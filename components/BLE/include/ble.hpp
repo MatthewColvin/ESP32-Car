@@ -1,17 +1,19 @@
 #pragma once
-
+// BLE Component
+#include "device.hpp"
+// ESP API
+#include "esp_gap_ble_api.h"
+#include "esp_gattc_api.h"
 #include "driver/uart.h"
+// RTOS
 #include "freertos/FreeRTOS.h"
+// STD
 #include <stdbool.h>
 #include <stdint.h>
 #include <stdio.h>
 #include <string.h>
 #include <vector>
 #include <memory>
-
-#include "device.hpp"
-#include "esp_gap_ble_api.h"
-#include "esp_gattc_api.h"
 
 static constexpr esp_ble_scan_params_t default_ble_scan_params = {
     .scan_type = BLE_SCAN_TYPE_ACTIVE,

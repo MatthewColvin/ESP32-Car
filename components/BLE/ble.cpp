@@ -1,4 +1,6 @@
+// BLE Component
 #include "ble.hpp"
+// ESP API
 #include "esp_bt.h"
 #include "esp_bt_device.h"
 #include "esp_bt_main.h"
@@ -6,9 +8,11 @@
 #include "esp_gatt_defs.h"
 #include "esp_log.h"
 #include "esp_system.h"
-#include "freertos/FreeRTOS.h"
 #include "nvs_flash.h"
-#include "string.h"
+// RTOS
+#include "freertos/FreeRTOS.h"
+// STD
+#include <string>
 #include <optional>
 #include <vector>
 

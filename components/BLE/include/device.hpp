@@ -1,11 +1,12 @@
 #pragma once
-
+// BLE Component
 #include "service.hpp"
-
+// ESP API
 #include "esp_bt_defs.h"
 #include "esp_gap_ble_api.h"
 #include "esp_gattc_api.h"
-
+// RTOS
+// STD
 #include <functional>
 #include <map>
 #include <string>
@@ -69,7 +70,6 @@ public:
   void handleNotifyRegistration(NotifyRegistrationType aRegistration);
   void handleNotifyUnregistration(NotifyUnregistrationType anUnregistration);
 
-
   void enableNotifitcation(Characteristic aCharacteristic);
   // void disableNotifictaion(Characteristic aCharacteristic);
 
@@ -89,7 +89,5 @@ protected:
   uint16_t mConnectionId;
 
 private:
-
-Characteristic getCharacteristic(uint16_t aSearchHandle);
-
+  Characteristic getCharacteristic(uint16_t aSearchHandle);
 };

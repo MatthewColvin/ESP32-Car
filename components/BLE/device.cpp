@@ -1,13 +1,10 @@
-// Library
+// BLE Component
 #include "device.hpp"
-
 // ESP API
 #include "esp_gattc_api.h"
 #include "esp_log.h"
-
 // RTOS
 #include "freertos/FreeRTOS.h"
-
 // STD
 #include <cstring>
 #include <algorithm>
@@ -136,11 +133,13 @@ void Device::unRegisterForCharacterisitcNotify(Characteristic aCharacteristic)
 {
 
     auto unRegCharaIt = mserviceCallbacks.find(aCharacteristic);
-    if(unRegCharaIt == mserviceCallbacks.end()){
-        ESP_LOGE(LOG_TAG,"Cannot Find Characteristic:%s Did you register it??",aCharacteristic.uuidstr().c_str());
-    }else{
+    if (unRegCharaIt == mserviceCallbacks.end())
+    {
+        ESP_LOGE(LOG_TAG, "Cannot Find Characteristic:%s Did you register it??", aCharacteristic.uuidstr().c_str());
+    }
+    else
+    {
         ESP_ERROR_CHECK(esp_ble_gattc_unregister_for_notify(mGattcIf, mRemoteAddress, aCharacteristic.char_handle()));
-
     }
 }
 
@@ -186,7 +185,8 @@ void Device::handleNotifyRegistration(NotifyRegistrationType aRegistration)
     }
 }
 
-void Device::handleNotifyUnregistration(NotifyUnregistrationType anUnregistration){
+void Device::handleNotifyUnregistration(NotifyUnregistrationType anUnregistration)
+{
     auto characteristicToNotify = getCharacteristic(anUnregistration.handle);
 
     auto descriptors = characteristicToNotify.getDescriptors();
@@ -200,13 +200,11 @@ void Device::handleNotifyUnregistration(NotifyUnregistrationType anUnregistratio
     uint16_t notify_en = 0;
 
     auto status = esp_ble_gattc_write_char_descr(mGattcIf, mConnectionId, characteristicToNotify.char_handle(), sizeof(notify_en),
-                                                    (uint8_t *)&notify_en, ESP_GATT_WRITE_TYPE_NO_RSP, ESP_GATT_AUTH_REQ_NO_MITM);
+                                                 (uint8_t *)&notify_en, ESP_GATT_WRITE_TYPE_NO_RSP, ESP_GATT_AUTH_REQ_NO_MITM);
     if (status != ESP_OK)
     {
         ESP_LOGE(LOG_TAG, "%s with Char: %s Failed to write descriptor to disable notification.", getName().c_str(), characteristicToNotify.uuidstr().c_str());
     }
-
-
 }
 
 void Device::describeServices()
@@ -234,7 +232,7 @@ void Device::readAllCharacteristics()
     std::vector<int> uuidFilter{ESP_GATT_UUID_HID_REPORT};
     for (auto service : mServicesFound)
     {
-        auto charas = service.getCharacteristics(charaFilters, Characteristic::PropFilterType::Any,uuidFilter);
+        auto charas = service.getCharacteristics(charaFilters, Characteristic::PropFilterType::Any, uuidFilter);
         for (auto characteristic : charas)
         {
             characteristic.read();
@@ -243,7 +241,7 @@ void Device::readAllCharacteristics()
 }
 void Device::protocolMode()
 {
-    uint8_t bootmode {0};
+    uint8_t bootmode{0};
 
     uint8_t charaFilters = ESP_GATT_CHAR_PROP_BIT_READ;
     std::vector<int> uuidFilter{ESP_GATT_UUID_HID_PROTO_MODE};
@@ -252,13 +250,13 @@ void Device::protocolMode()
         auto charas = service.getCharacteristics(charaFilters, Characteristic::PropFilterType::Any, uuidFilter);
         for (auto characteristic : charas)
         {
-            characteristic.write(&bootmode,1);
+            characteristic.write(&bootmode, 1);
         }
     }
 }
 void Device::exitSuspend()
 {
-    uint8_t exitSuspend {1};
+    uint8_t exitSuspend{1};
 
     uint8_t charaFilters = ESP_GATT_CHAR_PROP_BIT_READ;
     std::vector<int> uuidFilter{ESP_GATT_UUID_HID_CONTROL_POINT};
@@ -267,28 +265,31 @@ void Device::exitSuspend()
         auto charas = service.getCharacteristics(charaFilters, Characteristic::PropFilterType::Any, uuidFilter);
         for (auto characteristic : charas)
         {
-            characteristic.write(&exitSuspend,1);
+            characteristic.write(&exitSuspend, 1);
         }
     }
 }
 
-Characteristic Device::getCharacteristic(uint16_t aSearchHandle){
+Characteristic Device::getCharacteristic(uint16_t aSearchHandle)
+{
     Characteristic characteristic;
     bool found = false;
     // Add check to ensure that characteristic existis in the map of characteristics and throw error if not?
-    for (auto service : mServicesFound){
+    for (auto service : mServicesFound)
+    {
         auto charas = service.getCharacteristics();
-        auto charaToNotify = std::find_if(charas.begin(),charas.end(),[aSearchHandle](Characteristic aChara){
-            return aChara.char_handle() == aSearchHandle;
-        });
-        if (charaToNotify != charas.end()){
+        auto charaToNotify = std::find_if(charas.begin(), charas.end(), [aSearchHandle](Characteristic aChara)
+                                          { return aChara.char_handle() == aSearchHandle; });
+        if (charaToNotify != charas.end())
+        {
             characteristic = *charaToNotify;
             found = true;
             break;
         }
     }
-    if (!found){
-        ESP_LOGE(LOG_TAG,"Unable To Find Characteristic with handle:%d", aSearchHandle);
+    if (!found)
+    {
+        ESP_LOGE(LOG_TAG, "Unable To Find Characteristic with handle:%d", aSearchHandle);
     }
 
     return characteristic;

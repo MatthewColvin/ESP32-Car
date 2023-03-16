@@ -1,8 +1,10 @@
 #pragma once
-#include "esp_gattc_api.h"
-
+// BLE Component
 #include "characteristic.hpp"
-
+// ESP API
+#include "esp_gattc_api.h"
+// RTOS
+// STD
 #include <vector>
 #include <string>
 
