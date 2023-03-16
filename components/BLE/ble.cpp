@@ -71,6 +71,7 @@ std::shared_ptr<Ble> Ble::getInstance()
 {
   if (mInstance == nullptr)
   {
+    // not thread save
     mInstance = std::shared_ptr<Ble>(new Ble());
   }
   return mInstance;
