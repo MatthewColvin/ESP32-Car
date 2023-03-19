@@ -11,7 +11,7 @@
 
 #define LOG_TAG "Device"
 
-bool operator<(const Device::UUIDType &aLeftUUID, const Device::UUIDType &aRightUUID)
+bool operator<(const esp_bt_uuid_t &aLeftUUID, const esp_bt_uuid_t &aRightUUID)
 {
     if (aLeftUUID.len != aRightUUID.len)
     {
@@ -33,7 +33,7 @@ bool operator<(const Device::UUIDType &aLeftUUID, const Device::UUIDType &aRight
     return false;
 }
 
-std::string uuidToStr(Device::UUIDType aUUID)
+std::string uuidToStr(esp_bt_uuid_t aUUID)
 {
     std::string result;
     switch (aUUID.len)
@@ -117,12 +117,12 @@ void Device::serviceSearchComplete()
 }
 bool Device::isServicesSearchComplete() { return mIsServiceSearching; }
 
-void Device::registerforCharacteristicNotify(Characteristic aCharacteristic, characteristicCallbackType aCallback)
+void Device::registerForCharacteristicNotify(Characteristic aCharacteristic, characteristicCallbackType aCallback)
 {
     ESP_ERROR_CHECK(esp_ble_gattc_register_for_notify(mGattcIf, mRemoteAddress, aCharacteristic.char_handle()));
     mserviceCallbacks.emplace(aCharacteristic, std::move(aCallback));
 }
-void Device::unRegisterForCharacterisitcNotify(Characteristic aCharacteristic)
+void Device::unRegisterForCharacteristicNotify(Characteristic aCharacteristic)
 {
 
     auto unRegCharaIt = mserviceCallbacks.find(aCharacteristic);
@@ -216,20 +216,6 @@ void Device::handleCharacteristicRead(Device::CharacteristicReadResult aReadResu
         uint8_t buff[aReadResult.value_len];
         memcpy(buff, aReadResult.value, sizeof(char) * aReadResult.value_len);
         ESP_LOG_BUFFER_HEX(LOG_TAG, buff, aReadResult.value_len);
-    }
-}
-
-void Device::readAllCharacteristics()
-{
-    uint8_t charaFilters = ESP_GATT_CHAR_PROP_BIT_READ;
-    std::vector<int> uuidFilter{ESP_GATT_UUID_HID_REPORT};
-    for (auto service : mServicesFound)
-    {
-        auto charas = service.getCharacteristics(charaFilters, Characteristic::PropFilterType::Any, uuidFilter);
-        for (auto characteristic : charas)
-        {
-            characteristic.read();
-        }
     }
 }
 

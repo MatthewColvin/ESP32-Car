@@ -8,19 +8,10 @@ Joystick::Joystick(Device::bleScanResult aScanResult) : Device(aScanResult){};
 
 void Joystick::init()
 {
-
-}
-
-void Joystick::readAll()
-{
-    constexpr uint8_t propFilter = ESP_GATT_CHAR_PROP_BIT_READ;
-    for (auto s : mServicesFound)
+    // TODO: binary semaphore in device during construction to block until its done?
+    while (!isServicesSearchComplete()) // Block until we finish service discovery
     {
-        for (auto c : s.getCharacteristics())
-        {
-            c.read();
-        }
-    }
+    };
 }
 
 void Joystick::registerReportNotifications()
@@ -35,9 +26,10 @@ void Joystick::registerReportNotifications()
         {
             ESP_LOGI(LOG_TAG, "Service: %s", service.uuidstr().c_str());
             report.describe();
-            registerforCharacteristicNotify(report,[](Device::characteristicCbParamType aParam) -> int {
+            registerForCharacteristicNotify(report, [](Device::characteristicCbParamType aParam) -> int
+                                            {
                 ESP_LOGI(LOG_TAG,"HOLY CRAP IT WORKED");
-                return 5;});
+                return 5; });
         }
     }
     init();

@@ -11,7 +11,5 @@ public:
 
     void registerReportNotifications();
 
-    void readAll();
-
 private:
 };

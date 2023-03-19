@@ -297,7 +297,7 @@ void Ble::esp_gattc_cb(esp_gattc_cb_event_t event, esp_gatt_if_t gattc_if,
   }
   case ESP_GATTC_CONNECT_EVT:
   {
-    cbDevice->setGattcIf(gattc_if);
+    cbDevice->mGattcIf = gattc_if;
     break;
   }
   case ESP_GATTC_SEARCH_RES_EVT:

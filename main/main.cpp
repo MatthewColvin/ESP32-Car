@@ -49,14 +49,8 @@ extern "C" void app_main(void)
 
     if (joystick)
     {
-        while (!joystick->isServicesSearchComplete())
-        {
-        };
-
+        joystick->init();
         joystick->registerReportNotifications();
-        while (true)
-        {
-            vTaskDelay(10000 / portTICK_PERIOD_MS);
-        }
     }
+    vTaskDelete(NULL); // Delete Main Task
 }

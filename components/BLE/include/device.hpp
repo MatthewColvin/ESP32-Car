@@ -21,20 +21,14 @@ class Device
 
 public:
   typedef esp_ble_gap_cb_param_t::ble_scan_result_evt_param bleScanResult;
-  typedef esp_bt_uuid_t UUIDType;
-
-  typedef esp_ble_gattc_cb_param_t::gattc_notify_evt_param characteristicCbParamType;
-  typedef int serviceCbRetType;
-  typedef std::function<serviceCbRetType(characteristicCbParamType)> characteristicCallbackType;
-
-  typedef std::pair<Characteristic, characteristicCallbackType> characteristicCBPairType;
-
   Device(bleScanResult res);
 
+  // Pre-Connection
   bleScanResult getScanResult() { return mScanResult; }
-
-  // Pre Connection
   std::string getName();
+
+protected:
+  // Pre Connection
   esp_bd_addr_t *getAddress();
   esp_ble_addr_type_t getAddressType();
   bool isConnected() { return mConnected; };
@@ -47,10 +41,15 @@ public:
   bool isServicesSearchComplete();
   void describeServices();
 
-  void registerforCharacteristicNotify(Characteristic aCharacteristic, characteristicCallbackType aCallback);
-  void unRegisterForCharacterisitcNotify(Characteristic aCharacteristic);
+  // Notification Handling types and Decelerations
+  typedef esp_ble_gattc_cb_param_t::gattc_notify_evt_param characteristicCbParamType;
+  typedef int serviceCbRetType;
+  typedef std::function<serviceCbRetType(characteristicCbParamType)> characteristicCallbackType;
+  typedef std::pair<Characteristic, characteristicCallbackType> characteristicCBPairType;
+  void registerForCharacteristicNotify(Characteristic aCharacteristic, characteristicCallbackType aCallback);
+  void unRegisterForCharacteristicNotify(Characteristic aCharacteristic);
 
-protected: // Interface with ESP BLE API To update Device state
+private: // Interface with ESP BLE API To update Device state
   // Typedefs into the ESP GATTC API
   typedef esp_ble_gattc_cb_param_t::gattc_read_char_evt_param CharacteristicReadResult;
   typedef esp_ble_gattc_cb_param_t::gattc_open_evt_param OpenEventInfo;
@@ -58,30 +57,64 @@ protected: // Interface with ESP BLE API To update Device state
   typedef esp_ble_gattc_cb_param_t::gattc_reg_for_notify_evt_param NotifyRegistrationType;
   typedef esp_ble_gattc_cb_param_t::gattc_unreg_for_notify_evt_param NotifyUnregistrationType;
 
+  /**
+   * @brief Update Device state to connected and copy in
+   *        remote address from the aOpenEvent
+   *
+   * @param aOpenEvent - GATTC Alias to the open even
+   */
   void openConnection(OpenEventInfo aOpenEvent);
-
+  /**
+   * @brief Function to check if we have found all services
+   *        associated with the server we are connected with
+   */
   void serviceSearchComplete();
+  /**
+   * @brief Add Service to the @ref mFoundServices vector
+   *
+   * @param aService - service to add
+   */
   void addFoundService(Service::espIdfTy aService);
 
-  void setGattcIf(uint8_t aGattcIf) { mGattcIf = aGattcIf; };
-  uint8_t getGattcIf() { return mGattcIf; };
-
-  serviceCbRetType handleCharacteristicNotify(characteristicCbParamType params);
+  /**
+   * @brief Gattc Callback returns read result and this function handles the
+   *        read. Right now it just dumps the hex to a log.
+   *  TODO:May be able to make this take a callback
+   *       and call it when we receive this
+   *
+   * @param aReadResult - GATTC event for reading
+   */
   void handleCharacteristicRead(Device::CharacteristicReadResult aReadResult);
-  void readAllCharacteristics();
 
+  // Notification Handling Section
+  /**
+   * @brief Use ESP GATTC Api to register the notification by writing the
+   *        the a descriptor called the client characteristic config
+   * @param aRegistration - GATTC event to register
+   */
   void handleNotifyRegistration(NotifyRegistrationType aRegistration);
+  /**
+   * @brief Use ESP GATTC Api to unregister the notification by writing the
+   *        the a descriptor called the client characteristic config
+   * @param anUnregistration - GATTC event to unregister
+   */
   void handleNotifyUnregistration(NotifyUnregistrationType anUnregistration);
+  /**
+   * @brief Function that is called when a notification is received by the
+   *        ESP GATTC API from the server.
+   *
+   * @param params - Data the server sent describing the event and
+   * @return serviceCbRetType - TODO: need to find out how to use this maybe an error return val?
+   */
+  serviceCbRetType handleCharacteristicNotify(characteristicCbParamType params);
 
-  void enableNotifitcation(Characteristic aCharacteristic);
-  // void disableNotifictaion(Characteristic aCharacteristic);
-
+protected: // Protect data members so extened class can use them
   // Pre Connection
   bleScanResult mScanResult;
 
   // Post Connection
   bool mConnected = false;
-  uint8_t mGattcIf;
+  uint8_t mGattcIf; // A simple handle that GATTC uses to identify the Device
 
   bool mIsServiceSearching = false;
   std::vector<Service> mServicesFound;
@@ -90,6 +123,15 @@ protected: // Interface with ESP BLE API To update Device state
   esp_bd_addr_t mRemoteAddress;
   uint16_t mConnectionId;
 
-private:
+  /**
+   * @brief Get the Characteristic associated with the servers handle associated with it.
+   *        When a Characteristic is not found it will print an error and return a default Characteristic
+   *        which will surely not be what is expected.
+   *
+   *        TODO: may want to look into handling error here better than just printing error std::optional return?
+   *
+   * @param aSearchHandle - aService Handle for a device used in many places throughout esp_gattc_api.h
+   * @return Characteristic - an instance of a characteristic that this device has in one of its services
+   */
   Characteristic getCharacteristic(uint16_t aSearchHandle);
 };
