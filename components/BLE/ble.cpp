@@ -128,43 +128,6 @@ bool gap_event_handeled(esp_gap_ble_cb_event_t event)
   }
 }
 
-static char *esp_auth_req_to_str(esp_ble_auth_req_t auth_req)
-{
-  char *auth_str = NULL;
-  switch (auth_req)
-  {
-  case ESP_LE_AUTH_NO_BOND:
-    auth_str = "ESP_LE_AUTH_NO_BOND";
-    break;
-  case ESP_LE_AUTH_BOND:
-    auth_str = "ESP_LE_AUTH_BOND";
-    break;
-  case ESP_LE_AUTH_REQ_MITM:
-    auth_str = "ESP_LE_AUTH_REQ_MITM";
-    break;
-  case ESP_LE_AUTH_REQ_BOND_MITM:
-    auth_str = "ESP_LE_AUTH_REQ_BOND_MITM";
-    break;
-  case ESP_LE_AUTH_REQ_SC_ONLY:
-    auth_str = "ESP_LE_AUTH_REQ_SC_ONLY";
-    break;
-  case ESP_LE_AUTH_REQ_SC_BOND:
-    auth_str = "ESP_LE_AUTH_REQ_SC_BOND";
-    break;
-  case ESP_LE_AUTH_REQ_SC_MITM:
-    auth_str = "ESP_LE_AUTH_REQ_SC_MITM";
-    break;
-  case ESP_LE_AUTH_REQ_SC_MITM_BOND:
-    auth_str = "ESP_LE_AUTH_REQ_SC_MITM_BOND";
-    break;
-  default:
-    auth_str = "INVALID BLE AUTH REQ";
-    break;
-  }
-
-  return auth_str;
-}
-
 void Ble::esp_gap_cb(esp_gap_ble_cb_event_t event,
                      esp_ble_gap_cb_param_t *param)
 {
@@ -180,20 +143,25 @@ void Ble::esp_gap_cb(esp_gap_ble_cb_event_t event,
   case ESP_GAP_BLE_AUTH_CMPL_EVT:
     esp_bd_addr_t bd_addr;
     memcpy(bd_addr, param->ble_security.auth_cmpl.bd_addr, sizeof(esp_bd_addr_t));
-    ESP_LOGI(LOG_TAG, "remote BD_ADDR: %08x%04x",
-             (bd_addr[0] << 24) + (bd_addr[1] << 16) + (bd_addr[2] << 8) + bd_addr[3],
-             (bd_addr[4] << 8) + bd_addr[5]);
-    ESP_LOGI(LOG_TAG, "address type = %d", param->ble_security.auth_cmpl.addr_type);
-    ESP_LOGI(LOG_TAG, "pair status = %s", param->ble_security.auth_cmpl.success ? "success" : "fail");
-    if (!param->ble_security.auth_cmpl.success)
+
+    auto authDevice = std::find_if(connectedDevices.begin(), connectedDevices.end(),
+                                   [](std::shared_ptr<Device> device)
+                                   { device->getRemoteAddress() == bd_addr; });
+
+    if (authDevice != connectedDevices.end())
     {
-      ESP_LOGI(LOG_TAG, "fail reason = 0x%x", param->ble_security.auth_cmpl.fail_reason);
+      ESP_LOGI(LOG_TAG, "Found device: %s", (*authDevice)->getName());
+    }
+
+    if (param->ble_security.auth_cmpl.success)
+    {
+      ESP_LOGI(LOG_TAG, "Authentication Success mode = %d", param->ble_security.auth_cmpl.auth_mode);
     }
     else
     {
-      ESP_LOGI(LOG_TAG, "auth mode = %s", esp_auth_req_to_str(param->ble_security.auth_cmpl.auth_mode));
+      ESP_LOGI(LOG_TAG, "Authentication Fail reason: 0x%x", param->ble_security.auth_cmpl.fail_reason);
     }
-    break;
+
     break;
   case ESP_GAP_BLE_PASSKEY_NOTIF_EVT:
   {
