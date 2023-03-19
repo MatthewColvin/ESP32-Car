@@ -141,16 +141,17 @@ void Ble::esp_gap_cb(esp_gap_ble_cb_event_t event,
   switch (event)
   {
   case ESP_GAP_BLE_AUTH_CMPL_EVT:
+  {
     esp_bd_addr_t bd_addr;
     memcpy(bd_addr, param->ble_security.auth_cmpl.bd_addr, sizeof(esp_bd_addr_t));
 
     auto authDevice = std::find_if(connectedDevices.begin(), connectedDevices.end(),
-                                   [](std::shared_ptr<Device> device)
-                                   { device->getRemoteAddress() == bd_addr; });
+                                   [bd_addr](std::shared_ptr<Device> device)
+                                   { return *device->getRemoteAddress() == bd_addr; });
 
     if (authDevice != connectedDevices.end())
     {
-      ESP_LOGI(LOG_TAG, "Found device: %s", (*authDevice)->getName());
+      ESP_LOGI(LOG_TAG, "Found device: %s", (*authDevice)->getName().c_str());
     }
 
     if (param->ble_security.auth_cmpl.success)
@@ -163,6 +164,7 @@ void Ble::esp_gap_cb(esp_gap_ble_cb_event_t event,
     }
 
     break;
+  }
   case ESP_GAP_BLE_PASSKEY_NOTIF_EVT:
   {
     ESP_LOGI(LOG_TAG, "GAP Recieved Event: %d", event);
