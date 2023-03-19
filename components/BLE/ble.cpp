@@ -20,52 +20,8 @@
 #define PROFILE_APP_ID 0
 
 std::shared_ptr<Ble> Ble::mInstance = nullptr;
-
 std::vector<Device> Ble::scannedDevices;
 std::vector<std::shared_ptr<Device>> Ble::connectedDevices;
-
-Ble::Ble()
-{
-  // Release Bluetooth Classic we will not need it.
-  ESP_ERROR_CHECK(esp_bt_controller_mem_release(ESP_BT_MODE_CLASSIC_BT));
-
-  esp_bt_controller_config_t bt_cfg = BT_CONTROLLER_INIT_CONFIG_DEFAULT();
-
-  esp_err_t ret;
-  ret = esp_bt_controller_init(&bt_cfg);
-  if (ret)
-  {
-    ESP_LOGE(LOG_TAG, "%s enable controller failed: %s\n", __func__,
-             esp_err_to_name(ret));
-    return;
-  }
-
-  ret = esp_bt_controller_enable(ESP_BT_MODE_BLE);
-  if (ret)
-  {
-    ESP_LOGE(LOG_TAG, "%s enable controller failed: %s\n", __func__,
-             esp_err_to_name(ret));
-    return;
-  }
-
-  ESP_LOGI(LOG_TAG, "%s init bluetooth\n", __func__);
-  ret = esp_bluedroid_init();
-  if (ret)
-  {
-    ESP_LOGE(LOG_TAG, "%s init bluetooth failed: %s\n", __func__,
-             esp_err_to_name(ret));
-    return;
-  }
-  ret = esp_bluedroid_enable();
-  if (ret)
-  {
-    ESP_LOGE(LOG_TAG, "%s enable bluetooth failed: %s\n", __func__,
-             esp_err_to_name(ret));
-    return;
-  }
-
-  ble_client_appRegister();
-}
 
 std::shared_ptr<Ble> Ble::getInstance()
 {
@@ -111,6 +67,50 @@ bool Ble::connect(std::shared_ptr<Device> aDevice)
   return false;
 }
 
+Ble::Ble()
+{
+  // Release Bluetooth Classic we will not need it.
+  ESP_ERROR_CHECK(esp_bt_controller_mem_release(ESP_BT_MODE_CLASSIC_BT));
+
+  esp_bt_controller_config_t bt_cfg = BT_CONTROLLER_INIT_CONFIG_DEFAULT();
+
+  esp_err_t ret;
+  ret = esp_bt_controller_init(&bt_cfg);
+  if (ret)
+  {
+    ESP_LOGE(LOG_TAG, "%s enable controller failed: %s\n", __func__,
+             esp_err_to_name(ret));
+    return;
+  }
+
+  ret = esp_bt_controller_enable(ESP_BT_MODE_BLE);
+  if (ret)
+  {
+    ESP_LOGE(LOG_TAG, "%s enable controller failed: %s\n", __func__,
+             esp_err_to_name(ret));
+    return;
+  }
+
+  ESP_LOGI(LOG_TAG, "%s init bluetooth\n", __func__);
+  ret = esp_bluedroid_init();
+  if (ret)
+  {
+    ESP_LOGE(LOG_TAG, "%s init bluetooth failed: %s\n", __func__,
+             esp_err_to_name(ret));
+    return;
+  }
+  ret = esp_bluedroid_enable();
+  if (ret)
+  {
+    ESP_LOGE(LOG_TAG, "%s enable bluetooth failed: %s\n", __func__,
+             esp_err_to_name(ret));
+    return;
+  }
+
+  ble_client_appRegister();
+}
+
+// Helper for logging events
 bool gap_event_handeled(esp_gap_ble_cb_event_t event)
 {
   switch (event)
@@ -234,6 +234,7 @@ void Ble::esp_gap_cb(esp_gap_ble_cb_event_t event,
   }
 }
 
+// Helper for logging events
 bool gattcEventHandledByDevice(esp_gattc_cb_event_t event)
 {
   switch (event)

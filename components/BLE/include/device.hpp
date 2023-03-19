@@ -13,16 +13,15 @@
 #include <utility>
 #include <vector>
 
+class Ble;
+
 class Device
 {
+  friend Ble;
+
 public:
   typedef esp_ble_gap_cb_param_t::ble_scan_result_evt_param bleScanResult;
-  typedef esp_ble_gattc_cb_param_t::gattc_read_char_evt_param CharacteristicReadResult;
-  typedef esp_ble_gattc_cb_param_t::gattc_open_evt_param OpenEventInfo;
-  typedef esp_ble_gattc_cb_param_t::gattc_search_res_evt_param ServiceSearchResult;
-  typedef esp_ble_gattc_cb_param_t::gattc_reg_for_notify_evt_param NotifyRegistrationType;
-  typedef esp_ble_gattc_cb_param_t::gattc_unreg_for_notify_evt_param NotifyUnregistrationType;
-  typedef esp_bt_uuid_t serviceUUIDType;
+  typedef esp_bt_uuid_t UUIDType;
 
   typedef esp_ble_gattc_cb_param_t::gattc_notify_evt_param characteristicCbParamType;
   typedef int serviceCbRetType;
@@ -38,11 +37,11 @@ public:
   std::string getName();
   esp_bd_addr_t *getAddress();
   esp_ble_addr_type_t getAddressType();
-  bool isConnected();
+  bool isConnected() { return mConnected; };
 
   // Post Connection
-  esp_bd_addr_t *getRemoteAddress();
-  uint16_t getConnectionId();
+  esp_bd_addr_t *getRemoteAddress() { return &mRemoteAddress; };
+  uint16_t getConnectionId() { return mConnectionId; };
 
   void searchServices();
   bool isServicesSearchComplete();
@@ -51,17 +50,21 @@ public:
   void registerforCharacteristicNotify(Characteristic aCharacteristic, characteristicCallbackType aCallback);
   void unRegisterForCharacterisitcNotify(Characteristic aCharacteristic);
 
-  void protocolMode();
-  void exitSuspend();
+protected: // Interface with ESP BLE API To update Device state
+  // Typedefs into the ESP GATTC API
+  typedef esp_ble_gattc_cb_param_t::gattc_read_char_evt_param CharacteristicReadResult;
+  typedef esp_ble_gattc_cb_param_t::gattc_open_evt_param OpenEventInfo;
+  typedef esp_ble_gattc_cb_param_t::gattc_search_res_evt_param ServiceSearchResult;
+  typedef esp_ble_gattc_cb_param_t::gattc_reg_for_notify_evt_param NotifyRegistrationType;
+  typedef esp_ble_gattc_cb_param_t::gattc_unreg_for_notify_evt_param NotifyUnregistrationType;
 
-  // Interface with ESP BLE API To update Device state
   void openConnection(OpenEventInfo aOpenEvent);
 
   void serviceSearchComplete();
   void addFoundService(Service::espIdfTy aService);
 
-  void setGattcIf(uint8_t aGattcIf);
-  uint8_t getGattcIf();
+  void setGattcIf(uint8_t aGattcIf) { mGattcIf = aGattcIf; };
+  uint8_t getGattcIf() { return mGattcIf; };
 
   serviceCbRetType handleCharacteristicNotify(characteristicCbParamType params);
   void handleCharacteristicRead(Device::CharacteristicReadResult aReadResult);
@@ -73,7 +76,6 @@ public:
   void enableNotifitcation(Characteristic aCharacteristic);
   // void disableNotifictaion(Characteristic aCharacteristic);
 
-protected:
   // Pre Connection
   bleScanResult mScanResult;
 

@@ -11,7 +11,7 @@
 
 #define LOG_TAG "Device"
 
-bool operator<(const Device::serviceUUIDType &aLeftUUID, const Device::serviceUUIDType &aRightUUID)
+bool operator<(const Device::UUIDType &aLeftUUID, const Device::UUIDType &aRightUUID)
 {
     if (aLeftUUID.len != aRightUUID.len)
     {
@@ -33,7 +33,7 @@ bool operator<(const Device::serviceUUIDType &aLeftUUID, const Device::serviceUU
     return false;
 }
 
-std::string uuidToStr(Device::serviceUUIDType aUUID)
+std::string uuidToStr(Device::UUIDType aUUID)
 {
     std::string result;
     switch (aUUID.len)
@@ -53,6 +53,7 @@ std::string uuidToStr(Device::serviceUUIDType aUUID)
     }
     return result;
 }
+
 Device::Device(bleScanResult res) { mScanResult = res; }
 
 std::string Device::getName()
@@ -84,19 +85,11 @@ esp_ble_addr_type_t Device::getAddressType()
 
 void Device::openConnection(OpenEventInfo aOpenEvent)
 {
-
     mConnected = true;
 
     memcpy(mRemoteAddress, aOpenEvent.remote_bda, sizeof(esp_bd_addr_t));
     mConnectionId = aOpenEvent.conn_id;
 }
-
-bool Device::isConnected() { return mConnected; }
-esp_bd_addr_t *Device::getRemoteAddress() { return &mRemoteAddress; }
-uint16_t Device::getConnectionId() { return mConnectionId; }
-
-uint8_t Device::getGattcIf() { return mGattcIf; }
-void Device::setGattcIf(uint8_t aGattcIf) { mGattcIf = aGattcIf; }
 
 void Device::searchServices()
 {
@@ -236,36 +229,6 @@ void Device::readAllCharacteristics()
         for (auto characteristic : charas)
         {
             characteristic.read();
-        }
-    }
-}
-void Device::protocolMode()
-{
-    uint8_t bootmode{0};
-
-    uint8_t charaFilters = ESP_GATT_CHAR_PROP_BIT_READ;
-    std::vector<int> uuidFilter{ESP_GATT_UUID_HID_PROTO_MODE};
-    for (auto service : mServicesFound)
-    {
-        auto charas = service.getCharacteristics(charaFilters, Characteristic::PropFilterType::Any, uuidFilter);
-        for (auto characteristic : charas)
-        {
-            characteristic.write(&bootmode, 1);
-        }
-    }
-}
-void Device::exitSuspend()
-{
-    uint8_t exitSuspend{1};
-
-    uint8_t charaFilters = ESP_GATT_CHAR_PROP_BIT_READ;
-    std::vector<int> uuidFilter{ESP_GATT_UUID_HID_CONTROL_POINT};
-    for (auto service : mServicesFound)
-    {
-        auto charas = service.getCharacteristics(charaFilters, Characteristic::PropFilterType::Any, uuidFilter);
-        for (auto characteristic : charas)
-        {
-            characteristic.write(&exitSuspend, 1);
         }
     }
 }
