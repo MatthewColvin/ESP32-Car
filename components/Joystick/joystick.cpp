@@ -12,25 +12,40 @@ void Joystick::init()
     while (!isServicesSearchComplete()) // Block until we finish service discovery
     {
     };
-}
 
-void Joystick::registerReportNotifications()
-{
     constexpr uint8_t propFilter = ESP_GATT_CHAR_PROP_BIT_NOTIFY;
     std::vector reportFilter{ESP_GATT_UUID_HID_REPORT};
-
     for (auto service : mServicesFound)
     {
         auto reports = service.getCharacteristics(propFilter, Characteristic::PropFilterType::Any, reportFilter);
         for (auto report : reports)
         {
-            ESP_LOGI(LOG_TAG, "Service: %s", service.uuidstr().c_str());
-            report.describe();
-            registerForCharacteristicNotify(report, [](Device::characteristicCbParamType aParam) -> int
-                                            {
-                ESP_LOGI(LOG_TAG,"HOLY CRAP IT WORKED");
-                return 5; });
+            mHIDReports.push_back(report);
         }
     }
-    init();
+}
+
+void Joystick::nextReports(int start)
+{
+    // Unregister for all current characteristic's
+    for (auto registration : mserviceCallbacks)
+    {
+        unRegisterForCharacteristicNotify(registration.first);
+    }
+
+    for (int i = start; i < start + 3; i++)
+    {
+        int reportIdx = i % mHIDReports.size();
+        ESP_LOGI(LOG_TAG, "Registering Report #%d", reportIdx);
+
+        registerForCharacteristicNotify(mHIDReports[reportIdx], [](Device::characteristicCbParamType aParam) -> int
+                                        {
+                ESP_LOGI(LOG_TAG,"Handle: %d   Data:",aParam.handle);
+                ESP_LOG_BUFFER_HEX(LOG_TAG,aParam.value,aParam.value_len);
+                return 5; });
+    }
+}
+
+void Joystick::registerReportNotifications()
+{
 }

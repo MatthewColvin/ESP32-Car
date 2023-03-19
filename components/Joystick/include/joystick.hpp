@@ -10,6 +10,8 @@ public:
     void init();
 
     void registerReportNotifications();
+    void nextReports(int start);
 
 private:
+    std::vector<Characteristic> mHIDReports;
 };

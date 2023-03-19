@@ -50,7 +50,13 @@ extern "C" void app_main(void)
     if (joystick)
     {
         joystick->init();
-        joystick->registerReportNotifications();
+        int i = 0;
+        while (true)
+        {
+            joystick->nextReports(i);
+            vTaskDelay(20 * 1000 / portTICK_PERIOD_MS); // delay 20 seconds
+            i += 3;                                     // move to next 3 reports
+        }
     }
     vTaskDelete(NULL); // Delete Main Task
 }

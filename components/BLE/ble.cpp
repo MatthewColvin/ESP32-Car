@@ -245,6 +245,8 @@ bool gattcEventHandledByDevice(esp_gattc_cb_event_t event)
   case ESP_GATTC_SEARCH_CMPL_EVT:
   case ESP_GATTC_DIS_SRVC_CMPL_EVT:
   case ESP_GATTC_NOTIFY_EVT:
+  case ESP_GATTC_REG_FOR_NOTIFY_EVT:
+  case ESP_GATTC_UNREG_FOR_NOTIFY_EVT:
   case ESP_GATTC_READ_DESCR_EVT:
   case ESP_GATTC_READ_CHAR_EVT:
   // BLE Handeled
