@@ -70,6 +70,11 @@ void Characteristic::read()
     esp_ble_gattc_read_char(mDeviceGattIf, mServiceConnId, mCharacteristic.char_handle, ESP_GATT_AUTH_REQ_NO_MITM);
 }
 
+void Characteristic::readDescriptor()
+{
+    esp_ble_gattc_read_char_descr(mDeviceGattIf, mServiceConnId, mCharacteristic.char_handle, ESP_GATT_AUTH_REQ_NO_MITM);
+}
+
 void Characteristic::write(uint8_t *value, uint16_t len)
 {
     esp_ble_gattc_write_char(mDeviceGattIf, mServiceConnId, mCharacteristic.char_handle, len, value, ESP_GATT_WRITE_TYPE_NO_RSP, ESP_GATT_AUTH_REQ_NO_MITM);

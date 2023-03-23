@@ -6,6 +6,8 @@
 #include "esp_gap_ble_api.h"
 #include "esp_gattc_api.h"
 // RTOS
+#include "freertos/FreeRTOS.h"
+#include "freertos/semphr.h"
 // STD
 #include <functional>
 #include <map>
@@ -31,7 +33,18 @@ protected:
   // Pre Connection
   esp_bd_addr_t *getAddress();
   esp_ble_addr_type_t getAddressType();
-  bool isConnected() { return mConnected; };
+  /**
+   * @brief Check if device is connected
+   *
+   *  TODO Support the Gatt and Gap events that signal disconnection currently
+   *       device will still seem connected if it loses inital connection
+   *
+   *  Quickly take the semaphore and give it back to check our connection.
+   *
+   * @return true - Device is connected
+   * @return false - Device is not connected
+   */
+  bool isConnected();
 
   // Post Connection
   esp_bd_addr_t *getRemoteAddress() { return &mRemoteAddress; };
@@ -40,6 +53,12 @@ protected:
   void searchServices();
   bool isServicesSearchComplete();
   void describeServices();
+
+  bool isAuthenticated();
+  /**
+   * @brief attempt to read the Device Name in order to force authentication
+   */
+  void authenticate();
 
   // Notification Handling types and Decelerations
   typedef esp_ble_gattc_cb_param_t::gattc_notify_evt_param characteristicCbParamType;
@@ -56,6 +75,18 @@ private: // Interface with ESP BLE API To update Device state
   typedef esp_ble_gattc_cb_param_t::gattc_search_res_evt_param ServiceSearchResult;
   typedef esp_ble_gattc_cb_param_t::gattc_reg_for_notify_evt_param NotifyRegistrationType;
   typedef esp_ble_gattc_cb_param_t::gattc_unreg_for_notify_evt_param NotifyUnregistrationType;
+
+  /**
+   * @brief Blocking call to help find out if we completed an event.
+   *
+   * @param anEvent - an Event semaphore
+   * @param aTimeout - Time to wait for it to be given
+   * @param anErrorMsg - Message to log if we do not get the semaphore in time.
+
+   * @return true - event has occurred
+   * @return false - event has not occured and we timed out.
+   */
+  bool checkEventSema(SemaphoreHandle_t anEvent, int aTimeout, std::string anErrorMsg);
 
   /**
    * @brief Update Device state to connected and copy in
@@ -108,15 +139,23 @@ private: // Interface with ESP BLE API To update Device state
    */
   serviceCbRetType handleCharacteristicNotify(characteristicCbParamType params);
 
+  /**
+   * @brief Handler for After GAP authenticates the device
+   *
+   */
+  void handleAuthComplete(esp_ble_sec_t aSecurityInfo);
+
 protected: // Protect data members so extened class can use them
   // Pre Connection
   bleScanResult mScanResult;
 
   // Post Connection
-  bool mConnected = false;
-  uint8_t mGattcIf; // A simple handle that GATTC uses to identify the Device
+  SemaphoreHandle_t mConnectedEvent = xSemaphoreCreateBinary();
 
-  bool mIsServiceSearching = false;
+  uint8_t mGattcIf; // A simple handle that GATTC uses to identify the Device
+  SemaphoreHandle_t mAuthenticatedEvent = xSemaphoreCreateBinary();
+
+  SemaphoreHandle_t mServiceSearchCompleteEvent = xSemaphoreCreateBinary();
   std::vector<Service> mServicesFound;
   std::map<Characteristic, characteristicCallbackType> mserviceCallbacks;
 

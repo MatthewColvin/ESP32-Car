@@ -23,6 +23,18 @@ std::shared_ptr<Ble> Ble::mInstance = nullptr;
 std::vector<Device> Ble::scannedDevices;
 std::vector<std::shared_ptr<Device>> Ble::connectedDevices;
 
+bool addrEq(const esp_bd_addr_t lhs, const esp_bd_addr_t rhs)
+{
+  for (int i = 0; i < sizeof(esp_bd_addr_t); i++)
+  {
+    if (lhs[i] != rhs[i])
+    {
+      return false;
+    }
+  }
+  return true;
+}
+
 std::shared_ptr<Ble> Ble::getInstance()
 {
   if (mInstance == nullptr)
@@ -147,20 +159,15 @@ void Ble::esp_gap_cb(esp_gap_ble_cb_event_t event,
 
     auto authDevice = std::find_if(connectedDevices.begin(), connectedDevices.end(),
                                    [bd_addr](std::shared_ptr<Device> device)
-                                   { return *device->getRemoteAddress() == bd_addr; });
+                                   { return addrEq(bd_addr, *device->getAddress()); });
 
     if (authDevice != connectedDevices.end())
     {
-      ESP_LOGI(LOG_TAG, "Found device: %s", (*authDevice)->getName().c_str());
-    }
-
-    if (param->ble_security.auth_cmpl.success)
-    {
-      ESP_LOGI(LOG_TAG, "Authentication Success mode = %d", param->ble_security.auth_cmpl.auth_mode);
+      (*authDevice)->handleAuthComplete(param->ble_security);
     }
     else
     {
-      ESP_LOGI(LOG_TAG, "Authentication Fail reason: 0x%x", param->ble_security.auth_cmpl.fail_reason);
+      ESP_LOGE(LOG_TAG, "Unable to Find Device During Authentication!");
     }
 
     break;

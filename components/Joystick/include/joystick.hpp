@@ -12,6 +12,12 @@ public:
     void registerReportNotifications();
     void nextReports(int start);
 
+    void readHIDReport();
+    void readReportsDescriptors();
+
+protected:
+    int handleJoystickReport(Device::characteristicCbParamType aParam);
+
 private:
     std::vector<Characteristic> mHIDReports;
 };

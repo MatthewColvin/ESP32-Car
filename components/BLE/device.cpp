@@ -4,7 +4,6 @@
 #include "esp_gattc_api.h"
 #include "esp_log.h"
 // RTOS
-#include "freertos/FreeRTOS.h"
 // STD
 #include <cstring>
 #include <algorithm>
@@ -54,7 +53,10 @@ std::string uuidToStr(esp_bt_uuid_t aUUID)
     return result;
 }
 
-Device::Device(bleScanResult res) { mScanResult = res; }
+Device::Device(bleScanResult res)
+{
+    mScanResult = res;
+}
 
 std::string Device::getName()
 {
@@ -83,9 +85,29 @@ esp_ble_addr_type_t Device::getAddressType()
     return mScanResult.ble_addr_type;
 }
 
+bool Device::isConnected()
+{
+    return checkEventSema(mConnectedEvent, 5000, "Could not Establish Connection!!");
+}
+
+bool Device::checkEventSema(SemaphoreHandle_t anEvent, int aTimeout, std::string anErrorMsg)
+{
+    bool eventDone = xSemaphoreTake(anEvent, aTimeout / portTICK_PERIOD_MS) == pdTRUE;
+    if (eventDone)
+    {
+        xSemaphoreGive(anEvent);
+    }
+    else
+    {
+        ESP_LOGE(LOG_TAG, "Event Timed out in %d ms ERROR: %s", aTimeout, anErrorMsg.c_str());
+    }
+    return eventDone;
+}
+
 void Device::openConnection(OpenEventInfo aOpenEvent)
 {
-    mConnected = true;
+    // Give the initial connection.
+    xSemaphoreGive(mConnectedEvent);
 
     memcpy(mRemoteAddress, aOpenEvent.remote_bda, sizeof(esp_bd_addr_t));
     mConnectionId = aOpenEvent.conn_id;
@@ -93,13 +115,12 @@ void Device::openConnection(OpenEventInfo aOpenEvent)
 
 void Device::searchServices()
 {
-    if (!mConnected)
+    if (!isConnected())
     {
         ESP_LOGE(LOG_TAG, "Cannot Search for Services without connection!");
         return;
     }
     ESP_LOGI(LOG_TAG, "Searching %s for Services", getName().c_str());
-    mIsServiceSearching = true;
     auto res = esp_ble_gattc_search_service(mGattcIf, mConnectionId, nullptr);
     if (res != ESP_OK)
     {
@@ -111,11 +132,17 @@ void Device::addFoundService(Service::espIdfTy aService)
 {
     mServicesFound.push_back(Service(mGattcIf, aService));
 }
+
 void Device::serviceSearchComplete()
 {
-    mIsServiceSearching = true;
+    xSemaphoreGive(mServiceSearchCompleteEvent);
+    authenticate();
 }
-bool Device::isServicesSearchComplete() { return mIsServiceSearching; }
+
+bool Device::isServicesSearchComplete()
+{
+    return checkEventSema(mServiceSearchCompleteEvent, 5000, "Could not Finish Service Search!");
+}
 
 void Device::registerForCharacteristicNotify(Characteristic aCharacteristic, characteristicCallbackType aCallback)
 {
@@ -133,6 +160,8 @@ void Device::unRegisterForCharacteristicNotify(Characteristic aCharacteristic)
     else
     {
         ESP_ERROR_CHECK(esp_ble_gattc_unregister_for_notify(mGattcIf, mRemoteAddress, aCharacteristic.char_handle()));
+        ESP_LOGI(LOG_TAG, "size %d", mserviceCallbacks.size());
+        mserviceCallbacks.erase(unRegCharaIt);
     }
 }
 
@@ -151,6 +180,19 @@ Device::serviceCbRetType Device::handleCharacteristicNotify(characteristicCbPara
 
     return 10; // TODO need to update serviceCbRetType when better understand ESPIDF api
     // Do we need to let the API know we failed to handle service???
+}
+
+void Device::handleAuthComplete(esp_ble_sec_t aSecurityInfo)
+{
+    if (aSecurityInfo.auth_cmpl.success)
+    {
+        ESP_LOGI(LOG_TAG, "Authentication for %s Success mode = %d", getName().c_str(), aSecurityInfo.auth_cmpl.auth_mode);
+        xSemaphoreGive(mAuthenticatedEvent);
+    }
+    else
+    {
+        ESP_LOGI(LOG_TAG, "Authentication Fail: 0x%x", aSecurityInfo.auth_cmpl.fail_reason);
+    }
 }
 
 void Device::handleNotifyRegistration(NotifyRegistrationType aRegistration)
@@ -205,6 +247,26 @@ void Device::describeServices()
     for (auto service : mServicesFound)
     {
         service.describe();
+    }
+}
+
+bool Device::isAuthenticated()
+{
+    return checkEventSema(mAuthenticatedEvent, 5000, "Could not Authenticate Device!!");
+}
+
+void Device::authenticate()
+{
+    if (isServicesSearchComplete())
+    {
+        for (auto s : mServicesFound)
+        {
+            auto chars = s.getCharacteristics(ESP_GATT_CHAR_PROP_BIT_READ, Characteristic::PropFilterType::Any, {ESP_GATT_UUID_GAP_DEVICE_NAME});
+            for (auto c : chars)
+            {
+                c.read();
+            }
+        }
     }
 }
 
