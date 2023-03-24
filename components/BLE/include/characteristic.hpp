@@ -25,7 +25,7 @@ public:
 
     void describe() const;
     void read();
-    void readDescriptor();
+    void readDescriptors();
 
     void write(uint8_t *value, uint16_t len);
     int uuid() const;

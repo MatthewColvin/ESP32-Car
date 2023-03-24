@@ -11,10 +11,6 @@ Joystick::Joystick(Device::bleScanResult aScanResult) : Device(aScanResult){};
 
 void Joystick::init()
 {
-    if (!isServicesSearchComplete())
-    {
-        ESP_LOGE(LOG_TAG, "could not finish Search");
-    }
     if (!isAuthenticated())
     {
         ESP_LOGE(LOG_TAG, "could not auth!!");
@@ -33,15 +29,31 @@ void Joystick::init()
     ESP_LOGI(LOG_TAG, "successful init %d service and %d reports", mServicesFound.size(), mHIDReports.size());
 }
 
+void Joystick::cycleReports()
+{
+    int i = 0;
+    while (true)
+    {
+        int reportIdx = i % mHIDReports.size();
+        unRegisterAllCharacteristicNotifications();
+        ESP_LOGI(LOG_TAG, "registering report at idx:%d", reportIdx);
+
+        registerForCharacteristicNotify(mHIDReports[reportIdx], [](Device::characteristicCbParamType aParam) -> int
+                                        {
+                ESP_LOGI(LOG_TAG,"Handle: %d   Data:",aParam.handle);
+                ESP_LOG_BUFFER_HEX(LOG_TAG,aParam.value,aParam.value_len);
+                return 5; });
+
+        vTaskDelay(5000 / portTICK_PERIOD_MS);
+        i++;
+    }
+}
+
 void Joystick::nextReports(int start)
 {
     // Unregister for all current characteristic's
     // mserviceCallbacks likely needs to be private and
     // need an unreg from all function.
-    for (auto registration : mserviceCallbacks)
-    {
-        unRegisterForCharacteristicNotify(registration.first);
-    }
 
     for (int i = start; i < start + 3; i++)
     {
@@ -67,9 +79,9 @@ int Joystick::handleJoystickReport(Device::characteristicCbParamType data)
 
 void Joystick::registerReportNotifications()
 {
-    registerForCharacteristicNotify(mHIDReports[1], std::bind(&Joystick::handleJoystickReport, this, std::placeholders::_1));
-    registerForCharacteristicNotify(mHIDReports[2], [](auto data)
-                                    { ESP_LOG_BUFFER_HEX(LOG_TAG, data.value, data.value_len); return 0; });
+    mHIDReports[3].readDescriptors();
+    registerForCharacteristicNotify(mHIDReports[3], std::bind(&Joystick::handleJoystickReport, this, std::placeholders::_1));
+    // registerForCharacteristicNotify(mHIDReports[4], std::bind(&Joystick::handleJoystickReport, this, std::placeholders::_1));
 }
 
 void Joystick::readReportsDescriptors()
@@ -77,7 +89,7 @@ void Joystick::readReportsDescriptors()
     for (auto report : mHIDReports)
     {
         ESP_LOGI(LOG_TAG, "report handle: %d ", report.char_handle());
-        report.readDescriptor();
+        report.readDescriptors();
     }
 }
 

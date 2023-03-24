@@ -149,9 +149,9 @@ void Device::registerForCharacteristicNotify(Characteristic aCharacteristic, cha
     ESP_ERROR_CHECK(esp_ble_gattc_register_for_notify(mGattcIf, mRemoteAddress, aCharacteristic.char_handle()));
     mserviceCallbacks.emplace(aCharacteristic, std::move(aCallback));
 }
+
 void Device::unRegisterForCharacteristicNotify(Characteristic aCharacteristic)
 {
-
     auto unRegCharaIt = mserviceCallbacks.find(aCharacteristic);
     if (unRegCharaIt == mserviceCallbacks.end())
     {
@@ -163,6 +163,15 @@ void Device::unRegisterForCharacteristicNotify(Characteristic aCharacteristic)
         ESP_LOGI(LOG_TAG, "size %d", mserviceCallbacks.size());
         mserviceCallbacks.erase(unRegCharaIt);
     }
+}
+
+void Device::unRegisterAllCharacteristicNotifications()
+{
+    for (auto registration : mserviceCallbacks)
+    {
+        ESP_ERROR_CHECK(esp_ble_gattc_unregister_for_notify(mGattcIf, mRemoteAddress, registration.first.char_handle()));
+    }
+    mserviceCallbacks.clear();
 }
 
 Device::serviceCbRetType Device::handleCharacteristicNotify(characteristicCbParamType aParam)

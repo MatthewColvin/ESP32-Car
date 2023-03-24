@@ -70,9 +70,13 @@ void Characteristic::read()
     esp_ble_gattc_read_char(mDeviceGattIf, mServiceConnId, mCharacteristic.char_handle, ESP_GATT_AUTH_REQ_NO_MITM);
 }
 
-void Characteristic::readDescriptor()
+void Characteristic::readDescriptors()
 {
-    esp_ble_gattc_read_char_descr(mDeviceGattIf, mServiceConnId, mCharacteristic.char_handle, ESP_GATT_AUTH_REQ_NO_MITM);
+    for (esp_gattc_descr_elem_t descriptor : getDescriptors())
+    {
+        ESP_LOGI(LOG_TAG, "Descriptor handle:%d", descriptor.handle);
+        esp_ble_gattc_read_char_descr(mDeviceGattIf, mServiceConnId, descriptor.handle, ESP_GATT_AUTH_REQ_NO_MITM);
+    }
 }
 
 void Characteristic::write(uint8_t *value, uint16_t len)

@@ -67,6 +67,7 @@ protected:
   typedef std::pair<Characteristic, characteristicCallbackType> characteristicCBPairType;
   void registerForCharacteristicNotify(Characteristic aCharacteristic, characteristicCallbackType aCallback);
   void unRegisterForCharacteristicNotify(Characteristic aCharacteristic);
+  void unRegisterAllCharacteristicNotifications();
 
 private: // Interface with ESP BLE API To update Device state
   // Typedefs into the ESP GATTC API

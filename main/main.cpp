@@ -50,7 +50,7 @@ extern "C" void app_main(void)
     if (joystick)
     {
         joystick->init();
-        joystick->readReportsDescriptors();
+        joystick->cycleReports();
         // int i = 0;
         // while (true)
         // {

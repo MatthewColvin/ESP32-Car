@@ -9,6 +9,7 @@ public:
 
     void init();
 
+    void cycleReports();
     void registerReportNotifications();
     void nextReports(int start);
 
