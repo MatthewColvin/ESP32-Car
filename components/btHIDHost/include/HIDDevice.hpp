@@ -7,7 +7,8 @@ class HIDDevice
 public:
     HIDDevice(esp_hid_scan_result_t aScanResult);
 
-    std::string getName() { return std::string(mScanResult.name); }
+    uint8_t* getAddress() {return mScanResult.bda; }
+    bool hasAddress(esp_bd_addr_t anAddress);
 
 private:
     esp_hid_scan_result_t mScanResult;

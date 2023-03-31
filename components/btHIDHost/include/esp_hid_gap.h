@@ -4,6 +4,8 @@
  * SPDX-License-Identifier: Unlicense OR CC0-1.0
  */
 
+#include "sdkconfig.h"
+
 #ifndef _ESP_HID_GAP_H_
 #define _ESP_HID_GAP_H_
 

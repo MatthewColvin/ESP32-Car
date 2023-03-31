@@ -25,33 +25,35 @@ extern "C" void app_main(void)
     while (!joystickConnected)
     {
         auto devices = bt->scan(10);
+        esp_bd_addr_t remoteAddress{0xe0,0xf8,0x48,0x05,0x29,0x50};
 
+        ESP_LOGI(LOG_TAG,"found %d devices",devices.size());
         for (auto device : devices)
         {
-            if (auto name = device.getName(); name != "")
-            {
-                ESP_LOGI(LOG_TAG, "Found: %s", name.c_str());
+            if(device.hasAddress(remoteAddress)){
+                ESP_LOGI(LOG_TAG,"found it!!");
             }
+            ESP_LOGI(LOG_TAG, ESP_BD_ADDR_STR, ESP_BD_ADDR_HEX(device.getAddress()) );
         }
 
-        auto joystickDevice = std::find_if(devices.begin(), devices.end(), [](auto device)
-                                           { return device.getName() == "Fortune Tech Wireless"; });
+        // auto joystickDevice = std::find_if(devices.begin(), devices.end(), [](auto device)
+        //                                    { return device.getName() == "Fortune Tech Wireless"; });
 
-        if (joystickDevice != devices.end())
-        {
-            ESP_LOGI(LOG_TAG, "FOUND THE REMOTE!!!!");
-            // joystick = std::make_shared<Joystick>(joystickDevice->getScanResult());
+        // if (joystickDevice != devices.end())
+        // {
+        //     ESP_LOGI(LOG_TAG, "FOUND THE REMOTE!!!!");
+        //     // joystick = std::make_shared<Joystick>(joystickDevice->getScanResult());
 
-            // if (bt->connect(joystick))
-            // {
-            //     joystickConnected = true;
-            //     break;
-            // }
-        }
-        else
-        {
-            ESP_LOGI(LOG_TAG, "Found %d Devices but no Joystick", devices.size());
-        }
+        //     // if (bt->connect(joystick))
+        //     // {
+        //     //     joystickConnected = true;
+        //     //     break;
+        //     // }
+        // }
+        // else
+        // {
+        //     ESP_LOGI(LOG_TAG, "Found %d Devices but no Joystick", devices.size());
+        // }
 
         vTaskDelay(10000 / portTICK_PERIOD_MS);
     }

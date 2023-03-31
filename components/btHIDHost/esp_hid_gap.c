@@ -415,16 +415,16 @@ static void handle_ble_device_result(struct ble_scan_result_evt_param *scan_rst)
         name[adv_name_len] = 0;
     }
 
-    GAP_DBG_PRINTF("BLE: " ESP_BD_ADDR_STR ", ", ESP_BD_ADDR_HEX(scan_rst->bda));
-    GAP_DBG_PRINTF("RSSI: %d, ", scan_rst->rssi);
-    GAP_DBG_PRINTF("UUID: 0x%04x, ", uuid);
-    GAP_DBG_PRINTF("APPEARANCE: 0x%04x, ", appearance);
-    GAP_DBG_PRINTF("ADDR_TYPE: '%s'", ble_addr_type_str(scan_rst->ble_addr_type));
-    if (adv_name_len)
-    {
-        GAP_DBG_PRINTF(", NAME: '%s'", name);
-    }
-    GAP_DBG_PRINTF("\n");
+    // GAP_DBG_PRINTF("BLE: " ESP_BD_ADDR_STR ", ", ESP_BD_ADDR_HEX(scan_rst->bda));
+    // GAP_DBG_PRINTF("RSSI: %d, ", scan_rst->rssi);
+    // GAP_DBG_PRINTF("UUID: 0x%04x, ", uuid);
+    // GAP_DBG_PRINTF("APPEARANCE: 0x%04x, ", appearance);
+    // GAP_DBG_PRINTF("ADDR_TYPE: '%s'", ble_addr_type_str(scan_rst->ble_addr_type));
+    // if (adv_name_len)
+    // {
+    //     GAP_DBG_PRINTF(", NAME: '%s'", name);
+    // }
+    // GAP_DBG_PRINTF("\n");
 
     if (uuid == ESP_GATT_UUID_HID_SVC)
     {

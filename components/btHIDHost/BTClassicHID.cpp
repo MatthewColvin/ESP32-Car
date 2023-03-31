@@ -72,7 +72,12 @@ std::shared_ptr<BTClassicHID> BTClassicHID::getInstance()
 
 BTClassicHID::BTClassicHID()
 {
-    ESP_ERROR_CHECK(esp_hid_gap_init(ESP_BT_MODE_CLASSIC_BT));
+    xTaskCreate(&BTClassicHID::init, "hid_task", 6 * 1024, NULL, 2, NULL);
+}
+
+void BTClassicHID::init(void *params)
+{
+    ESP_ERROR_CHECK(esp_hid_gap_init(HID_HOST_MODE));
     esp_hidh_config_t config = {
         .callback = BTClassicHID::hidh_callback,
         .event_stack_size = 4096,
@@ -81,7 +86,7 @@ BTClassicHID::BTClassicHID()
     ESP_ERROR_CHECK(esp_hidh_init(&config));
 }
 
-std::vector<HIDDevice> BTClassicHID::scan(int seconds)
+std::vector<HIDDevice> BTClassicHID::scan(uint32_t seconds)
 {
     size_t numResults = 0;
     esp_hid_scan_result_t *results = nullptr;

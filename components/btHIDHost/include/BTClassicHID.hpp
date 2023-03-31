@@ -13,8 +13,9 @@ public:
     BTClassicHID(BTClassicHID &other) = delete;
     void operator=(const BTClassicHID &) = delete;
     static std::shared_ptr<BTClassicHID> getInstance();
+    static void init(void *params);
 
-    std::vector<HIDDevice> scan(int seconds);
+    std::vector<HIDDevice> scan(uint32_t seconds);
 
 protected:
     BTClassicHID();
