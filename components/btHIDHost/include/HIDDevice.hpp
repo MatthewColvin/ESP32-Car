@@ -13,6 +13,7 @@ class HIDDevice
 
 public:
     HIDDevice(esp_hid_scan_result_t aScanResult);
+    esp_hid_scan_result_t getScanResult() { return mScanResult; }
 
     uint8_t *getAddress() { return mScanResult.bda; }
     bool hasAddress(const esp_bd_addr_t anAddress);

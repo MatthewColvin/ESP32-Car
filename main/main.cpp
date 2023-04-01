@@ -1,5 +1,6 @@
 #include "ble.hpp"
 #include "BTClassicHID.hpp"
+#include "mocute052.hpp"
 
 #include "driver/gpio.h"
 #include "esp_bt.h"
@@ -20,7 +21,7 @@ extern "C" void app_main(void)
     auto bt = BTClassicHID::getInstance();
 
     bool joystickConnected = false;
-    std::shared_ptr<HIDDevice> classicJoystick = nullptr;
+    std::shared_ptr<Mocute052> classicJoystick = nullptr;
     while (!joystickConnected)
     {
         auto devices = bt->scan(10);
@@ -31,7 +32,7 @@ extern "C" void app_main(void)
         {
             if (device.hasAddress(remoteAddress))
             {
-                classicJoystick = std::make_shared<HIDDevice>(device);
+                classicJoystick = std::make_shared<Mocute052>(device);
                 if (bt->connect(classicJoystick))
                 {
                     ESP_LOGI(LOG_TAG, "Connected!");
