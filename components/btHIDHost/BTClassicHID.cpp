@@ -59,52 +59,33 @@ void BTClassicHID::hidh_callback(void *handler_args, esp_event_base_t base, int3
 
     auto device = getDevice(event, param);
 
+    // Event expects a device to run it.
+    if (!device && event <= ESP_HIDH_CLOSE_EVENT)
+    {
+        ESP_LOGE(LOG_TAG, "Cannot Preform HID Callback without Device");
+        return;
+    }
+
     switch (event)
     {
     case ESP_HIDH_OPEN_EVENT:
-    {
-        if (param->open.status == ESP_OK)
-        {
-            const uint8_t *bda = esp_hidh_dev_bda_get(param->open.dev);
-            ESP_LOGI(LOG_TAG, ESP_BD_ADDR_STR " OPEN: %s", ESP_BD_ADDR_HEX(bda), esp_hidh_dev_name_get(param->open.dev));
-            esp_hidh_dev_dump(param->open.dev, stdout);
-        }
-        else
-        {
-            ESP_LOGE(LOG_TAG, " OPEN failed!");
-        }
+        device->handleOpenEvent(param);
         break;
-    }
     case ESP_HIDH_BATTERY_EVENT:
-    {
-        const uint8_t *bda = esp_hidh_dev_bda_get(param->battery.dev);
-        ESP_LOGI(LOG_TAG, ESP_BD_ADDR_STR " BATTERY: %d%%", ESP_BD_ADDR_HEX(bda), param->battery.level);
+        device->handleBatteryEvent(param);
         break;
-    }
     case ESP_HIDH_INPUT_EVENT:
-    {
-        const uint8_t *bda = esp_hidh_dev_bda_get(param->input.dev);
-        ESP_LOGI(LOG_TAG, ESP_BD_ADDR_STR " INPUT: %8s, MAP: %2u, ID: %3u, Len: %d, Data:", ESP_BD_ADDR_HEX(bda), esp_hid_usage_str(param->input.usage), param->input.map_index, param->input.report_id, param->input.length);
-        ESP_LOG_BUFFER_HEX(LOG_TAG, param->input.data, param->input.length);
+        device->handleInputEvent(param);
         break;
-    }
     case ESP_HIDH_FEATURE_EVENT:
-    {
-        const uint8_t *bda = esp_hidh_dev_bda_get(param->feature.dev);
-        ESP_LOGI(LOG_TAG, ESP_BD_ADDR_STR " FEATURE: %8s, MAP: %2u, ID: %3u, Len: %d", ESP_BD_ADDR_HEX(bda),
-                 esp_hid_usage_str(param->feature.usage), param->feature.map_index, param->feature.report_id,
-                 param->feature.length);
-        ESP_LOG_BUFFER_HEX(LOG_TAG, param->feature.data, param->feature.length);
+        device->handleFeatureEvent(param);
         break;
-    }
     case ESP_HIDH_CLOSE_EVENT:
-    {
-        const uint8_t *bda = esp_hidh_dev_bda_get(param->close.dev);
-        ESP_LOGI(LOG_TAG, ESP_BD_ADDR_STR " CLOSE: %s", ESP_BD_ADDR_HEX(bda), esp_hidh_dev_name_get(param->close.dev));
+        device->handleCloseEvent(param);
+        // TODO to handle removal from mconnecteddevices
         break;
-    }
     default:
-        ESP_LOGI(LOG_TAG, "EVENT: %d", event);
+        ESP_LOGE(LOG_TAG, "HIDH EVENT: %d NOT HANDLED", event);
         break;
     }
 }

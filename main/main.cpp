@@ -1,6 +1,5 @@
 #include "ble.hpp"
 #include "BTClassicHID.hpp"
-#include "joystick.hpp"
 
 #include "driver/gpio.h"
 #include "esp_bt.h"
