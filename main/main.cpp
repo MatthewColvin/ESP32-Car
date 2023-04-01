@@ -22,22 +22,26 @@ extern "C" void app_main(void)
 
     bool joystickConnected = false;
     std::shared_ptr<Joystick> joystick = nullptr;
+    std::shared_ptr<HIDDevice> classicJoystick = nullptr;
     while (!joystickConnected)
     {
         auto devices = bt->scan(10);
-        esp_bd_addr_t remoteAddress{0xe0,0xf8,0x48,0x05,0x29,0x50};
+        esp_bd_addr_t remoteAddress{0xe0, 0xf8, 0x48, 0x05, 0x29, 0x50};
 
-        ESP_LOGI(LOG_TAG,"found %d devices",devices.size());
+        ESP_LOGI(LOG_TAG, "found %d devices", devices.size());
         for (auto device : devices)
         {
-            if(device.hasAddress(remoteAddress)){
-                ESP_LOGI(LOG_TAG,"found it!!");
+            if (device.hasAddress(remoteAddress))
+            {
+                classicJoystick = std::make_shared<HIDDevice>(device);
+                if (bt->connect(classicJoystick))
+                {
+                    ESP_LOGI(LOG_TAG, "Connected!");
+                    ESP_LOGI(LOG_TAG, ESP_BD_ADDR_STR, ESP_BD_ADDR_HEX(classicJoystick->getAddress()));
+                    joystickConnected = true;
+                }
             }
-            ESP_LOGI(LOG_TAG, ESP_BD_ADDR_STR, ESP_BD_ADDR_HEX(device.getAddress()) );
         }
-
-        // auto joystickDevice = std::find_if(devices.begin(), devices.end(), [](auto device)
-        //                                    { return device.getName() == "Fortune Tech Wireless"; });
 
         // if (joystickDevice != devices.end())
         // {
