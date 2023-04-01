@@ -21,7 +21,6 @@ extern "C" void app_main(void)
     auto bt = BTClassicHID::getInstance();
 
     bool joystickConnected = false;
-    std::shared_ptr<Joystick> joystick = nullptr;
     std::shared_ptr<HIDDevice> classicJoystick = nullptr;
     while (!joystickConnected)
     {
@@ -43,36 +42,8 @@ extern "C" void app_main(void)
             }
         }
 
-        // if (joystickDevice != devices.end())
-        // {
-        //     ESP_LOGI(LOG_TAG, "FOUND THE REMOTE!!!!");
-        //     // joystick = std::make_shared<Joystick>(joystickDevice->getScanResult());
-
-        //     // if (bt->connect(joystick))
-        //     // {
-        //     //     joystickConnected = true;
-        //     //     break;
-        //     // }
-        // }
-        // else
-        // {
-        //     ESP_LOGI(LOG_TAG, "Found %d Devices but no Joystick", devices.size());
-        // }
-
         vTaskDelay(10000 / portTICK_PERIOD_MS);
     }
 
-    // if (joystick)
-    // {
-    //     //joystick->init();
-    //     // joystick->cycleReports();
-    //     // int i = 0;
-    //     // while (true)
-    //     // {
-    //     //     joystick->nextReports(i);
-    //     //     vTaskDelay(20 * 1000 / portTICK_PERIOD_MS); // delay 20 seconds
-    //     //     i += 3;                                     // move to next 3 reports
-    //     // }
-    // }
     vTaskDelete(NULL); // Delete Main Task
 }
