@@ -1,11 +1,21 @@
 #pragma once
 
 #include "bdc_motor.h"
+#include "driver/pulse_cnt.h"
+#include "esp_log.h"
 
 class Motor
 {
 public:
+    static constexpr uint32_t MAX_SPEED = 20000;
+
     Motor(const int LeftPin, const int rightPin);
+
+    void setSpeed(uint32_t aSpeed);
+
+    void forward() { ESP_ERROR_CHECK(bdc_motor_forward(mHandle)); };
+    void reverse() { ESP_ERROR_CHECK(bdc_motor_reverse(mHandle)); };
+    void disable() { ESP_ERROR_CHECK(bdc_motor_disable(mHandle)); }
 
 private:
     bdc_motor_config_t mConfig;

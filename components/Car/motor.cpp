@@ -1,15 +1,4 @@
 #include "motor.hpp"
-#include "bdc_motor.h"
-
-// const byte rightMotorAPin = 15;
-// const byte rightMotorBPin = 2;
-// const byte leftMotorAPin = 16;
-// const byte leftMotorBPin = 17;
-
-// const byte rightMotorAChannel = 0;
-// const byte rightMotorBChannel = 1;
-// const byte leftMotorAChannel = 2;
-// const byte leftMotorBChannel = 3;
 
 // const byte redLED = 19;
 // const byte greenLED = 18;
@@ -24,6 +13,8 @@
 #define BDC_MCPWM_FREQ_HZ 25000                                                     // 25KHz PWM
 #define BDC_MCPWM_DUTY_TICK_MAX (BDC_MCPWM_TIMER_RESOLUTION_HZ / BDC_MCPWM_FREQ_HZ) // maximum value we can set for the duty cycle, in ticks
 
+#define LOG_TAG "Motor"
+
 Motor::Motor(int aLeftPin, int aRightPin)
 {
     mConfig.pwm_freq_hz = 500;
@@ -34,4 +25,15 @@ Motor::Motor(int aLeftPin, int aRightPin)
     mPwmConfig.resolution_hz = BDC_MCPWM_TIMER_RESOLUTION_HZ;
 
     ESP_ERROR_CHECK(bdc_motor_new_mcpwm_device(&mConfig, &mPwmConfig, &mHandle));
+    ESP_ERROR_CHECK(bdc_motor_enable(mHandle));
 }
+
+void Motor::setSpeed(uint32_t aSpeed)
+{
+    if (aSpeed > Motor::MAX_SPEED)
+    {
+        ESP_LOGE(LOG_TAG, "CANNOT SET SPEED %lu must be > %lu", aSpeed, Motor::MAX_SPEED);
+        aSpeed = Motor::MAX_SPEED;
+    }
+    ESP_ERROR_CHECK(bdc_motor_set_speed(mHandle, aSpeed));
+};
