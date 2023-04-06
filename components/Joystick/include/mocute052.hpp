@@ -7,6 +7,8 @@ class Mocute052 : public HIDDevice
 public:
     Mocute052(HIDDevice aDevice);
 
+    void setJoystickHandler(std::function<void(uint8_t, uint8_t)> aJoyStickHandler) { mHandleJoystick = std::move(aJoyStickHandler); };
+
 protected:
     virtual void handleInputEvent(esp_hidh_event_data_t *anInputEvent);
 

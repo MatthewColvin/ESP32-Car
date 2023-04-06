@@ -10,7 +10,7 @@
             "args": [
                 "chmod",
                 "a+rw",
-                "/dev/ttyUSB1"
+                "${config:idf.port}"
             ],
             "presentation": {
                 "echo": true,
