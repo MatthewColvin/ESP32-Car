@@ -19,21 +19,18 @@ extern "C" void app_main(void)
 {
     nvs_flash_init();
     auto bt = BTClassicHID::getInstance();
-
-    auto left = std::make_unique<Motor>(15, 2);
-    auto right = std::make_unique<Motor>(16, 17);
-
     bool joystickConnected = false;
     std::shared_ptr<Mocute052> classicJoystick = nullptr;
     while (!joystickConnected)
     {
-        auto devices = bt->scan(10);
-        esp_bd_addr_t remoteAddress{0xe0, 0xf8, 0x48, 0x05, 0x29, 0x50};
+        int btScanSeconds = 10;
+        auto devices = bt->scan(btScanSeconds);
+        esp_bd_addr_t joystickAddress{0xe0, 0xf8, 0x48, 0x05, 0x29, 0x50};
 
         ESP_LOGI(LOG_TAG, "found %d devices", devices.size());
         for (auto device : devices)
         {
-            if (device.hasAddress(remoteAddress))
+            if (device.hasAddress(joystickAddress))
             {
                 classicJoystick = std::make_shared<Mocute052>(device);
                 if (bt->connect(classicJoystick))
@@ -48,6 +45,8 @@ extern "C" void app_main(void)
         }
     }
 
+    auto left = std::make_unique<Motor>(15, 2);
+    auto right = std::make_unique<Motor>(16, 17);
     auto car = Car(classicJoystick, std::move(left), std::move(right));
 
     vTaskDelay(portMAX_DELAY); // Delay main task to keep car alive
