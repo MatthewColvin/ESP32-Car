@@ -10,6 +10,7 @@ public:
     static constexpr uint32_t MAX_SPEED = 20000;
 
     Motor(const int LeftPin, const int rightPin);
+    ~Motor();
 
     void setSpeed(uint32_t aSpeed);
 

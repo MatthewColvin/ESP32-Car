@@ -6,6 +6,7 @@ class Joystick : public Device
 {
 public:
     Joystick(Device::bleScanResult aScanResult);
+    ~Joystick() = default;
 
     void init();
 

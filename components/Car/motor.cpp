@@ -28,6 +28,12 @@ Motor::Motor(int aLeftPin, int aRightPin)
     ESP_ERROR_CHECK(bdc_motor_enable(mHandle));
 }
 
+Motor::~Motor()
+{
+    ESP_ERROR_CHECK(bdc_motor_disable(mHandle));
+    ESP_ERROR_CHECK(bdc_motor_del(mHandle));
+}
+
 void Motor::setSpeed(uint32_t aSpeed)
 {
     if (aSpeed > Motor::MAX_SPEED)
