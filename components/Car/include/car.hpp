@@ -12,6 +12,15 @@ public:
 private:
     void ControllerInputHandler(uint8_t x, uint8_t y);
 
+    enum class controlInputLocation
+    {
+        Directional,
+        Mixing,
+        ZeroTurn,
+        Error
+    } controlInputLocation
+    getPointLocation(int x, int y);
+
     std::unique_ptr<Motor> mLeftMotor;
     std::unique_ptr<Motor> mRightMotor;
 

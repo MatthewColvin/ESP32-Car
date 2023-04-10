@@ -1,5 +1,7 @@
 #include "car.hpp"
 
+#include "esp_log.h"
+
 #include <cmath>
 
 #define LOG_TAG "Car"
@@ -11,39 +13,67 @@ Car::Car(std::shared_ptr<Mocute052> remote, std::unique_ptr<Motor> leftMotor, st
     remote->setJoystickHandler(std::bind(&Car::ControllerInputHandler, this, std::placeholders::_1, std::placeholders::_2));
 }
 
+Car::controlInputLocation getPointLocation(int x, int y)
+{
+    // Smooth left and right turns both motors going forward or back throttle based on y value
+    bool isDirectionalZone = (y > abs(x) * mMixingZoneUpper) || (y < abs(x) * mMixingZoneUpper * -1);
+    // starting to move toward a zero turn type control need to pull power from one motor in this zone rely more on x to determine distributions
+    bool isMixingZone = (abs(x) * mMixingZoneUpper > y && y > abs(x) * mMixingZoneLower) ||
+                        (abs(x) * mMixingZoneUpper * -1 < y && y < abs(x) * mMixingZoneLower * -1);
+    // motors are moving opposite directions
+    bool isZeroTurnZone = (0 < y && y < abs(x) * mMixingZoneLower) ||
+                          (0 > y && y > abs(x) * mMixingZoneLower * -1);
+
+    // Ensure that we are in a zone and that we did not overlap zones
+    // BC + AC + AB + A'B'C'
+    bool a = isDirectionalZone;
+    bool b = isMixingZone;
+    bool c = isZeroTurnZone;
+    if ((b && c) || (a && c) || (a && c) || (!a && !b && !c))
+    {
+        ESPLOGE(LOG_TAG, "ERROR Multiple zones Detected Resetting upper and lower bounds");
+        mMixingZoneUpper = 1;
+        mMixingZoneLower = 0.25;
+        return getPointLocation(x, y);
+    }
+    if (isDirectionalZone)
+    {
+        return Car::controlInputLocation::Directional;
+    }
+    if (isMixingZone)
+    {
+        return Car::controlInputLocation::Mixing;
+    }
+    if (isZeroTurnZone)
+    {
+        return Car::controlInputLocation::ZeroTurn;
+    }
+    return Car::controlInputLocation::Error;
+}
+
 void Car::ControllerInputHandler(uint8_t x, uint8_t y)
 {
-    float refX = x - 128;
-    float refY = -1 * (y - 128);
+    int refX = x - 128;
+    int refY = -1 * (y - 128);
     // convert xy to be like 4 quadrant grid while holding joystick in portrait.
+    // 0,0 is position with no input
 
-    //  Use pathergy theorem to find distance from center and determine speed. 0 - 128
-    //  Both motors will distribute this based on x bias
-
-    constexpr float MixingZoneUpperLimit = 1;
-    constexpr float MixingZoneLowerLimit = .25;
-    // Smooth left and right turns both motors going forward or back throttle based on y value
-    bool isDirectionalZone = (refY > abs(refX) * MixingZoneUpperLimit) || (refY < abs(refX) * MixingZoneUpperLimit * -1);
-    // starting to move toward a zero turn type control need to pull power from one motor in this zone rely more on x to determine distributions
-    bool isMixingZone = (abs(refX) * MixingZoneUpperLimit > refY && refY > abs(refX) * MixingZoneLowerLimit) ||
-                        (abs(refX) * MixingZoneUpperLimit * -1 < refY && refY < abs(refX) * MixingZoneLowerLimit * -1);
-    // motors are moving opposite directions
-    bool isZeroTurnZone = (0 < refY && refY < abs(refX) * MixingZoneLowerLimit) ||
-                          (0 > refY && refY > abs(refX) * MixingZoneLowerLimit * -1);
-
+    //  Use pathergy theorem to find distance from center and determine speed
     float totalSpeed = std::sqrt(refX * refX + refY * refY);
     float rightMotorSpeed = 0;
     float leftMotorSpeed = 0;
-    float xBias = refX / 128.0;
-    if (isDirectionalZone)
+    switch (getPointLocation(refX, refY))
     {
+    case Car::controlInputLocation::Directional:
+    {
+        float xBias = refX / 128.0;
         if (xBias > 0)
-        { // right turn
+        { // slight right turn
             leftMotorSpeed = xBias * totalSpeed;
             rightMotorSpeed = totalSpeed - leftMotorSpeed;
         }
         else if (xBias < 0)
-        { // left turn
+        { // slight left turn
             rightMotorSpeed = xBias * totalSpeed;
             leftMotorSpeed = totalSpeed - rightMotorSpeed;
         }
@@ -54,13 +84,24 @@ void Car::ControllerInputHandler(uint8_t x, uint8_t y)
         }
         ESP_LOGI(LOG_TAG, "Directional Zone");
     }
-    if (isMixingZone)
+    break;
+    case Car::controlInputLocation::Mixing:
     {
         ESP_LOGI(LOG_TAG, "Mixing Zone");
+        float upperBoundY = mMixingZoneUpper * refX;
+        float lowerBoundY = mMixingZoneLower * refX;
+        float yLenghtInMixingZone = upperBoundY - lowerBoundY;
+        float percentToZeroTurnZone = refY / yLenghtInMixingZone;
     }
-    if (isZeroTurnZone)
+    break;
+    case Car::controlInputLocation::ZeroTurn:
     {
         ESP_LOGI(LOG_TAG, "Zero turn Zone");
+    }
+    break;
+    default:
+    {
+    }
     }
     // right.setSpeed(rightMotorSpeed);
     // left.setSpeed(leftMotorSpeed);
