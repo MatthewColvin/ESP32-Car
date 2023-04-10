@@ -13,7 +13,7 @@ Car::Car(std::shared_ptr<Mocute052> remote, std::unique_ptr<Motor> leftMotor, st
     remote->setJoystickHandler(std::bind(&Car::ControllerInputHandler, this, std::placeholders::_1, std::placeholders::_2));
 }
 
-Car::controlInputLocation getPointLocation(int x, int y)
+Car::controlInputLocation Car::getPointLocation(int x, int y)
 {
     // Smooth left and right turns both motors going forward or back throttle based on y value
     bool isDirectionalZone = (y > abs(x) * mMixingZoneUpper) || (y < abs(x) * mMixingZoneUpper * -1);
@@ -31,7 +31,7 @@ Car::controlInputLocation getPointLocation(int x, int y)
     bool c = isZeroTurnZone;
     if ((b && c) || (a && c) || (a && c) || (!a && !b && !c))
     {
-        ESPLOGE(LOG_TAG, "ERROR Multiple zones Detected Resetting upper and lower bounds");
+        ESP_LOGE(LOG_TAG, "ERROR Multiple zones Detected Resetting upper and lower bounds");
         mMixingZoneUpper = 1;
         mMixingZoneLower = 0.25;
         return getPointLocation(x, y);
@@ -106,5 +106,5 @@ void Car::ControllerInputHandler(uint8_t x, uint8_t y)
     // right.setSpeed(rightMotorSpeed);
     // left.setSpeed(leftMotorSpeed);
 
-    ESP_LOGI(LOG_TAG, "refx:%f,refy:%f xbias: %f Total Speed:%f RightSpeed: %f, LeftSpeed: %f", refX, refY, xBias, totalSpeed, rightMotorSpeed, leftMotorSpeed);
+    ESP_LOGI(LOG_TAG, "refx:%d,refy:%d Total Speed:%f RightSpeed: %f, LeftSpeed: %f", refX, refY, totalSpeed, rightMotorSpeed, leftMotorSpeed);
 }

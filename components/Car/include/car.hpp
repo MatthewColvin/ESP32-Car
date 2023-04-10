@@ -18,8 +18,9 @@ private:
         Mixing,
         ZeroTurn,
         Error
-    } controlInputLocation
-    getPointLocation(int x, int y);
+    };
+
+    controlInputLocation getPointLocation(int x, int y);
 
     std::unique_ptr<Motor> mLeftMotor;
     std::unique_ptr<Motor> mRightMotor;
