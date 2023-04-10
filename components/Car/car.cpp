@@ -8,6 +8,17 @@
 
 using namespace std;
 
+namespace
+{
+    float mapValues(float value,float aMin, float aMax, float aTargetMin, float aTargetMax)
+    {
+        float span = aMax - aMin;
+        float targetSpan = aTargetMax - aTargetMin;
+        float scaled = (value - aMin) / span;
+        return aTargetMin + (scaled * targetSpan);
+    }
+}
+
 Car::Car(std::shared_ptr<Mocute052> remote, std::unique_ptr<Motor> leftMotor, std::unique_ptr<Motor> rightMotor) : mLeftMotor(std::move(leftMotor)), mRightMotor(std::move(rightMotor))
 {
     remote->setJoystickHandler(std::bind(&Car::ControllerInputHandler, this, std::placeholders::_1, std::placeholders::_2));
@@ -55,6 +66,8 @@ Car::controlInputLocation Car::getPointLocation(int x, int y)
     return Car::controlInputLocation::Error;
 }
 
+
+
 void Car::ControllerInputHandler(uint8_t x, uint8_t y)
 {
     int refX = x - 128;
@@ -71,20 +84,22 @@ void Car::ControllerInputHandler(uint8_t x, uint8_t y)
     case Car::controlInputLocation::Directional:
     {
         float xBias = refX / 128.0;
-        if (refX > 0)
-        { // slight right turn
-            rightMotorSpeed = totalSpeed;
-            leftMotorSpeed = totalSpeed - (xBias * totalSpeed);
-        }
-        else if (refX < 0)
-        { // slight left turn
-            leftMotorSpeed = totalSpeed;
-            rightMotorSpeed = totalSpeed - (xBias * totalSpeed);
-        }
-        else
-        { // no bias straight forward or back
-            rightMotorSpeed = totalSpeed;
-            leftMotorSpeed = totalSpeed;
+        if(y >0){ // forward
+            if (xBias > 0)
+            { // slight right turn
+                leftMotorSpeed = totalSpeed;
+                rightMotorSpeed = totalSpeed - (xBias * totalSpeed);
+            }
+            else if (xBias < 0)
+            { // slight left turn
+                rightMotorSpeed = totalSpeed;
+                leftMotorSpeed = totalSpeed + (xBias * totalSpeed);
+            }
+            else
+            { // no bias straight forward or back
+                rightMotorSpeed = totalSpeed;
+                leftMotorSpeed = totalSpeed;
+            }
         }
         ESP_LOGI(LOG_TAG, "Directional Zone");
     }
@@ -125,12 +140,13 @@ void Car::ControllerInputHandler(uint8_t x, uint8_t y)
     }
     }
 
-    float rightMotorActualSpeed = (rightMotorSpeed / 128.0) * Motor::MAX_SPEED;
-    float leftMotorActualSpeed = (leftMotorSpeed / 128.0) * Motor::MAX_SPEED;
+    // Convert speed from controller based units to motor based units
+    float leftMotorConvertedSpeed =  mapValues(leftMotorSpeed, 0, 150, mLeftMotorStartSpinSpeed, Motor::MAX_SPEED);
+    float rightMotorConvertedSpeed =  mapValues(rightMotorSpeed, 0, 150, mRightMotorStartSpinSpeed, Motor::MAX_SPEED);
 
-    setMotorSpeed(leftMotorActualSpeed, rightMotorActualSpeed);
+    //setMotorSpeed(leftMotorConvertedSpeed, leftMotorConvertedSpeed);
 
-    ESP_LOGI(LOG_TAG, "refx:%d,refy:%d Total Speed:%f RightSpeed: %f, LeftSpeed: %f", refX, refY, totalSpeed, rightMotorActualSpeed, leftMotorActualSpeed);
+    ESP_LOGI(LOG_TAG, "refx:%d,refy:%d Total Speed:%f RightSpeed: %f, LeftSpeed: %f", refX, refY, totalSpeed, leftMotorConvertedSpeed, leftMotorConvertedSpeed);
 }
 
 void Car::setMotorSpeed(float aLeftMotorSpeed, float aRightMotorSpeed)
@@ -155,3 +171,6 @@ void Car::setMotorSpeed(float aLeftMotorSpeed, float aRightMotorSpeed)
     }
     mRightMotor->setSpeed(std::floor(std::abs(aRightMotorSpeed)));
 }
+
+
+

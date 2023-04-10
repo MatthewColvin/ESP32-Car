@@ -45,8 +45,8 @@ extern "C" void app_main(void)
         }
     }
 
-    auto left = std::make_unique<Motor>(15, 2);
-    auto right = std::make_unique<Motor>(16, 17);
+    auto right = std::make_unique<Motor>(15, 2);
+    auto left = std::make_unique<Motor>(16, 17);
     auto car = Car(classicJoystick, std::move(left), std::move(right));
 
     vTaskDelay(portMAX_DELAY); // Delay main task to keep car alive

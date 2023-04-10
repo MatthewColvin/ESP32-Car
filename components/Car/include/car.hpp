@@ -48,4 +48,12 @@ private:
      */
     float mMixingZoneUpper = 0.75;
     float mMixingZoneLower = 0.25;
+
+    /**
+     * @brief Motors don't start spinning until a pretty high threshold
+     *        so these should help balance this and tune left and right better.
+     */
+    uint32_t mLeftMotorStartSpinSpeed = 6000;
+    uint32_t mRightMotorStartSpinSpeed = 6000;
+
 };
