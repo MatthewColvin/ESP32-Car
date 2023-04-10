@@ -29,7 +29,7 @@ Car::controlInputLocation Car::getPointLocation(int x, int y)
     bool a = isDirectionalZone;
     bool b = isMixingZone;
     bool c = isZeroTurnZone;
-    if ((b && c) || (a && c) || (a && c) || (!a && !b && !c))
+    if ((b && c) || (a && c) || (a && c))
     {
         ESP_LOGE(LOG_TAG, "ERROR Multiple zones Detected Resetting upper and lower bounds");
         mMixingZoneUpper = 1;
@@ -47,6 +47,10 @@ Car::controlInputLocation Car::getPointLocation(int x, int y)
     if (isZeroTurnZone)
     {
         return Car::controlInputLocation::ZeroTurn;
+    }
+    if (!isDirectionalZone && !isMixingZone && !isZeroTurnZone)
+    {
+        return Car::controlInputLocation::Mixing;
     }
     return Car::controlInputLocation::Error;
 }
@@ -67,20 +71,20 @@ void Car::ControllerInputHandler(uint8_t x, uint8_t y)
     case Car::controlInputLocation::Directional:
     {
         float xBias = refX / 128.0;
-        if (xBias > 0)
+        if (refX > 0)
         { // slight right turn
-            leftMotorSpeed = xBias * totalSpeed;
-            rightMotorSpeed = totalSpeed - leftMotorSpeed;
+            rightMotorSpeed = totalSpeed;
+            leftMotorSpeed = totalSpeed - (xBias * totalSpeed);
         }
-        else if (xBias < 0)
+        else if (refX < 0)
         { // slight left turn
-            rightMotorSpeed = xBias * totalSpeed;
-            leftMotorSpeed = totalSpeed - rightMotorSpeed;
+            leftMotorSpeed = totalSpeed;
+            rightMotorSpeed = totalSpeed - (xBias * totalSpeed);
         }
         else
         { // no bias straight forward or back
-            rightMotorSpeed = totalSpeed * .5;
-            leftMotorSpeed = totalSpeed * .5;
+            rightMotorSpeed = totalSpeed;
+            leftMotorSpeed = totalSpeed;
         }
         ESP_LOGI(LOG_TAG, "Directional Zone");
     }
@@ -90,8 +94,25 @@ void Car::ControllerInputHandler(uint8_t x, uint8_t y)
         ESP_LOGI(LOG_TAG, "Mixing Zone");
         float upperBoundY = mMixingZoneUpper * refX;
         float lowerBoundY = mMixingZoneLower * refX;
-        float yLenghtInMixingZone = upperBoundY - lowerBoundY;
-        float percentToZeroTurnZone = refY / yLenghtInMixingZone;
+        float yLengthInMixingZone = upperBoundY - lowerBoundY;
+        float percentToZeroTurnZone = refY / yLengthInMixingZone;
+        if (y > 0) // Forward
+        {
+            if (x > 0) // Right
+            {
+                // leftMotorSpeed = totalSpeed;
+                // rightMotorSpeed = totalSpeed * percentToZeroTurnZone;
+            }
+            else // left
+            {
+                // rightMotorSpeed = totalSpeed;
+                // leftMotorSpeed = totalSpeed * percentToZeroTurnZone;
+            }
+        }
+        else // backward
+        {
+            // TODO
+        }
     }
     break;
     case Car::controlInputLocation::ZeroTurn:
@@ -103,8 +124,34 @@ void Car::ControllerInputHandler(uint8_t x, uint8_t y)
     {
     }
     }
-    // right.setSpeed(rightMotorSpeed);
-    // left.setSpeed(leftMotorSpeed);
 
-    ESP_LOGI(LOG_TAG, "refx:%d,refy:%d Total Speed:%f RightSpeed: %f, LeftSpeed: %f", refX, refY, totalSpeed, rightMotorSpeed, leftMotorSpeed);
+    float rightMotorActualSpeed = (rightMotorSpeed / 128.0) * Motor::MAX_SPEED;
+    float leftMotorActualSpeed = (leftMotorSpeed / 128.0) * Motor::MAX_SPEED;
+
+    setMotorSpeed(leftMotorActualSpeed, rightMotorActualSpeed);
+
+    ESP_LOGI(LOG_TAG, "refx:%d,refy:%d Total Speed:%f RightSpeed: %f, LeftSpeed: %f", refX, refY, totalSpeed, rightMotorActualSpeed, leftMotorActualSpeed);
+}
+
+void Car::setMotorSpeed(float aLeftMotorSpeed, float aRightMotorSpeed)
+{
+    if (aLeftMotorSpeed > 0)
+    {
+        mLeftMotor->forward();
+    }
+    else
+    {
+        mLeftMotor->reverse();
+    }
+    mLeftMotor->setSpeed(std::floor(std::abs(aLeftMotorSpeed)));
+
+    if (aRightMotorSpeed > 0)
+    {
+        mRightMotor->forward();
+    }
+    else
+    {
+        mRightMotor->reverse();
+    }
+    mRightMotor->setSpeed(std::floor(std::abs(aRightMotorSpeed)));
 }

@@ -10,6 +10,8 @@ public:
     Car(std::shared_ptr<Mocute052> remote, std::unique_ptr<Motor> leftMotor, std::unique_ptr<Motor> rightMotor);
 
 private:
+    static constexpr int maxControlSpeed = 151;
+
     void ControllerInputHandler(uint8_t x, uint8_t y);
 
     enum class controlInputLocation
@@ -24,6 +26,7 @@ private:
 
     std::unique_ptr<Motor> mLeftMotor;
     std::unique_ptr<Motor> mRightMotor;
+    void setMotorSpeed(float aLeftMotorSpeed, float aRightMotorSpeed);
 
     /**
      * @brief Motor controls handed differently depending on the location of the x,y coordinate
@@ -43,6 +46,6 @@ private:
      *  _____________|_______________
      *
      */
-    float mMixingZoneUpper = 1;
+    float mMixingZoneUpper = 0.75;
     float mMixingZoneLower = 0.25;
 };
