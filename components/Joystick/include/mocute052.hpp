@@ -5,6 +5,9 @@
 class Mocute052 : public HIDDevice
 {
 public:
+    static constexpr float MAX_XY = 128;
+    static constexpr float MIN_XY = -128;
+
     Mocute052(HIDDevice aDevice);
 
     void setJoystickHandler(std::function<void(uint8_t, uint8_t)> aJoyStickHandler) { mHandleJoystick = std::move(aJoyStickHandler); };

@@ -38,7 +38,7 @@ void Motor::setSpeed(uint32_t aSpeed)
 {
     if (aSpeed > Motor::MAX_SPEED)
     {
-        ESP_LOGE(LOG_TAG, "CANNOT SET SPEED %lu must be > %lu", aSpeed, Motor::MAX_SPEED);
+        ESP_LOGE(LOG_TAG, "CANNOT SET SPEED %lu must be > %f", aSpeed, Motor::MAX_SPEED);
         aSpeed = Motor::MAX_SPEED;
     }
     ESP_ERROR_CHECK(bdc_motor_set_speed(mHandle, aSpeed));

@@ -7,7 +7,8 @@
 class Motor
 {
 public:
-    static constexpr uint32_t MAX_SPEED = 20000;
+    static constexpr float MAX_SPEED = 20000;
+    static constexpr float MIN_SPEED = -20000;
 
     Motor(const int LeftPin, const int rightPin);
     ~Motor();
