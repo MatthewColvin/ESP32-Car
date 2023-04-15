@@ -3,8 +3,6 @@
 
 #include <algorithm>
 
-#define LOG_TAG "BTClassicHID"
-
 std::shared_ptr<BTClassicHID> BTClassicHID::mInstance = nullptr;
 std::array<std::shared_ptr<HIDDevice>, MAX_CONNECTED_DEVICES> BTClassicHID::mConnectedDevices{};
 

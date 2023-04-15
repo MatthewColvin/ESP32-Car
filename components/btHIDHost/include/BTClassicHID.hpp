@@ -20,6 +20,9 @@ public:
     static std::vector<HIDDevice> scan(uint32_t seconds);
     static bool connect(std::shared_ptr<HIDDevice> aDevice);
 
+    template <typename deviceType>
+    std::shared_ptr<deviceType> connect(esp_bd_addr_t aDeviceAddress, int numScans = -1, int secondsPerScan = 10);
+
 protected:
     BTClassicHID();
 
@@ -27,7 +30,44 @@ protected:
     static std::array<std::shared_ptr<HIDDevice>, MAX_CONNECTED_DEVICES> mConnectedDevices;
 
 private:
+    static constexpr char LOG_TAG[] = "BTClassicHID";
+
     static void init(void *params);
     static void hidh_callback(void *handler_args, esp_event_base_t base, int32_t id, void *event_data);
     static std::shared_ptr<HIDDevice> getDevice(esp_hidh_event_t anEvent, esp_hidh_event_data_t *aParam);
 };
+
+template <typename deviceType>
+std::shared_ptr<deviceType> BTClassicHID::connect(esp_bd_addr_t aDeviceAddress, int numScans, int secondsPerScan)
+{
+    bool connected = false;
+    if (numScans < 0)
+    {
+        numScans = INT_MAX;
+    }
+
+    std::shared_ptr<deviceType> retDevice = nullptr;
+    for (int i = 0; i < numScans && !connected; i++)
+    {
+        auto devices = scan(secondsPerScan);
+        ESP_LOGI(LOG_TAG, "Found %d Devices on Scan %d", devices.size(), i);
+        for (auto device : devices)
+        {
+            if (device.hasAddress(aDeviceAddress))
+            {
+                if (connect(retDevice))
+                {
+                    ESP_LOGI(LOG_TAG, "Connected!");
+                    ESP_LOGI(LOG_TAG, ESP_BD_ADDR_STR, ESP_BD_ADDR_HEX(retDevice->getAddress()));
+                    connected = true;
+                }
+            }
+        }
+        // vTaskDelay(secondsPerScan * 1000 / portTICK_PERIOD_MS);
+    }
+    if (!retDevice)
+    {
+        ESP_LOGE(LOG_TAG, "Error could not find device!");
+    }
+    return retDevice;
+}
