@@ -268,7 +268,7 @@ void print_uuid(esp_bt_uuid_t *uuid)
 #if CONFIG_BT_HID_HOST_ENABLED
 static void handle_bt_device_result(struct disc_res_param *disc_res)
 {
-    GAP_DBG_PRINTF("BT : " ESP_BD_ADDR_STR, ESP_BD_ADDR_HEX(disc_res->bda));
+    // GAP_DBG_PRINTF("BT : " ESP_BD_ADDR_STR, ESP_BD_ADDR_HEX(disc_res->bda));
     uint32_t codv = 0;
     esp_bt_cod_t *cod = (esp_bt_cod_t *)&codv;
     int8_t rssi = 0;
@@ -316,8 +316,8 @@ static void handle_bt_device_result(struct disc_res_param *disc_res)
             {
                 uuid.len = ESP_UUID_LEN_16;
                 uuid.uuid.uuid16 = data[0] + (data[1] << 8);
-                GAP_DBG_PRINTF(", ");
-                print_uuid(&uuid);
+                // GAP_DBG_PRINTF(", ");
+                // print_uuid(&uuid);
                 continue;
             }
 
@@ -330,8 +330,8 @@ static void handle_bt_device_result(struct disc_res_param *disc_res)
             {
                 uuid.len = len;
                 memcpy(&uuid.uuid.uuid32, data, sizeof(uint32_t));
-                GAP_DBG_PRINTF(", ");
-                print_uuid(&uuid);
+                // GAP_DBG_PRINTF(", ");
+                // print_uuid(&uuid);
                 continue;
             }
 
@@ -345,7 +345,7 @@ static void handle_bt_device_result(struct disc_res_param *disc_res)
                 uuid.len = len;
                 memcpy(uuid.uuid.uuid128, (uint8_t *)data, len);
                 GAP_DBG_PRINTF(", ");
-                print_uuid(&uuid);
+                // print_uuid(&uuid);
                 continue;
             }
 
@@ -370,7 +370,7 @@ static void handle_bt_device_result(struct disc_res_param *disc_res)
             }
         }
     }
-    GAP_DBG_PRINTF("\n");
+    // GAP_DBG_PRINTF("\n");
 
     if (cod->major == ESP_BT_COD_MAJOR_DEV_PERIPHERAL || (find_scan_result(disc_res->bda, bt_scan_results) != NULL))
     {
