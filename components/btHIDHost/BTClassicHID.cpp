@@ -1,10 +1,15 @@
 #include "BTClassicHID.hpp"
 #include "HIDDevice.hpp"
 
+// RTOS
+#include "freertos/FreeRTOS.h"
+#include "freertos/semphr.h"
+
 #include <algorithm>
 
 std::shared_ptr<BTClassicHID> BTClassicHID::mInstance = nullptr;
 std::array<std::shared_ptr<HIDDevice>, MAX_CONNECTED_DEVICES> BTClassicHID::mConnectedDevices{};
+SemaphoreHandle_t BTClassicHID::initCompleteEvent = xSemaphoreCreateBinary();
 
 std::shared_ptr<HIDDevice> BTClassicHID::getDevice(esp_hidh_event_t anEvent, esp_hidh_event_data_t *aParams)
 {
@@ -111,10 +116,23 @@ void BTClassicHID::init(void *params)
         .callback_arg = NULL,
     };
     ESP_ERROR_CHECK(esp_hidh_init(&config));
+    xSemaphoreGive(initCompleteEvent);
 }
 
 std::vector<HIDDevice> BTClassicHID::scan(uint32_t seconds)
 {
+
+    bool initComplete = xSemaphoreTake(initCompleteEvent, 30 / portTICK_PERIOD_MS) == pdTRUE;
+    if (initComplete)
+    {
+        xSemaphoreGive(initCompleteEvent);
+    }
+    else
+    {
+        ESP_LOGE(LOG_TAG, "Init Timed out returning Empty Vec");
+        return std::vector<HIDDevice>{};
+    }
+
     size_t numResults = 0;
     esp_hid_scan_result_t *results = nullptr;
     esp_hid_scan(seconds, &numResults, &results);

@@ -28,6 +28,7 @@ protected:
 
     static std::shared_ptr<BTClassicHID> mInstance;
     static std::array<std::shared_ptr<HIDDevice>, MAX_CONNECTED_DEVICES> mConnectedDevices;
+    static SemaphoreHandle_t initCompleteEvent;
 
 private:
     static constexpr char LOG_TAG[] = "BTClassicHID";
