@@ -12,10 +12,11 @@ public:
 
     void setJoystickHandler(std::function<void(uint8_t, uint8_t)> aJoyStickHandler) { mHandleJoystick = std::move(aJoyStickHandler); };
 
+
 protected:
     virtual void handleInputEvent(esp_hidh_event_data_t *anInputEvent);
 
-private:
+public:
     uint8_t mX = 128;
     uint8_t mY = 128;
     std::function<void(uint8_t, uint8_t)> mHandleJoystick;
