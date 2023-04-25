@@ -22,6 +22,7 @@ namespace
 Car::Car(std::shared_ptr<Mocute052> remote, std::unique_ptr<Motor> leftMotor, std::unique_ptr<Motor> rightMotor) : mLeftMotor(std::move(leftMotor)), mRightMotor(std::move(rightMotor))
 {
     remote->onJoyStick(std::bind(&Car::ControllerInputHandler, this, std::placeholders::_1, std::placeholders::_2));
+    remote->onTrigger(std::bind(&Car::enableTurbo,this),std::bind(&Car::disableTurbo,this));
 }
 
 void Car::ControllerInputHandler(uint8_t x, uint8_t y)
