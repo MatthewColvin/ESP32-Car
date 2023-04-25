@@ -19,7 +19,7 @@ namespace
     }
 }
 
-Car::Car(std::shared_ptr<Mocute052> remote, std::unique_ptr<Motor> leftMotor, std::unique_ptr<Motor> rightMotor) : mLeftMotor(std::move(leftMotor)), mRightMotor(std::move(rightMotor))
+Car::Car(std::shared_ptr<Mocute052> remote, std::unique_ptr<Motor> leftMotor, std::unique_ptr<Motor> rightMotor) : mRightMotor(std::move(rightMotor)),mLeftMotor(std::move(leftMotor))
 {
     remote->onJoyStick(std::bind(&Car::ControllerInputHandler, this, std::placeholders::_1, std::placeholders::_2));
     remote->onTrigger(std::bind(&Car::enableTurbo,this),std::bind(&Car::disableTurbo,this));
@@ -39,28 +39,29 @@ void Car::ControllerInputHandler(uint8_t x, uint8_t y)
     mRightMotorSpeed = (V+W)/2;
     mLeftMotorSpeed = (V-W)/2;
 
-    ConvertAndUpdateSpeed();
+    // If we are at (0,0) no update.
+    if(refX != 0 || refY != 0){
+        ConvertAndUpdateSpeed();
+    }
+    //ESP_LOGI(LOG_TAG, "refx:%d,refy:%d RightSpeed: %f, LeftSpeed: %f", refX, refY, mRightMotorSpeed, mLeftMotorSpeed);
 }
 
 void Car::ConvertAndUpdateSpeed(){
     float leftMotorConvertedSpeed = 0;
     float rightMotorConvertedSpeed = 0;
     // Convert speed from controller based units to motor based units unless user input is (0,0)
-    if(refX != 0 || refY != 0){
-        if(mLeftMotorSpeed > 0){
-            leftMotorConvertedSpeed = mapValues(mLeftMotorSpeed,0,Mocute052::MAX_XY,0,mMaxSpeed);
-        }
-        else{
-            leftMotorConvertedSpeed = mapValues(mLeftMotorSpeed,Mocute052::MIN_XY,0,-1 * mMaxSpeed,0);
-        }
-        if(rightMotorSpeed > 0){
-            rightMotorConvertedSpeed = mapValues(mRightMotorSpeed,0,Mocute052::MAX_XY,0,mMaxSpeed);
-        }else{
-            rightMotorConvertedSpeed = mapValues(mRightMotorSpeed,Mocute052::MIN_XY,0,-1 * mMaxSpeed,0);
-        }
+    if(mLeftMotorSpeed > 0){
+        leftMotorConvertedSpeed = mapValues(mLeftMotorSpeed,0,Mocute052::MAX_XY,0,mMaxSpeed);
+    }
+    else{
+        leftMotorConvertedSpeed = mapValues(mLeftMotorSpeed,Mocute052::MIN_XY,0,-1 * mMaxSpeed,0);
+    }
+    if(mRightMotorSpeed > 0){
+        rightMotorConvertedSpeed = mapValues(mRightMotorSpeed,0,Mocute052::MAX_XY,0,mMaxSpeed);
+    }else{
+        rightMotorConvertedSpeed = mapValues(mRightMotorSpeed,Mocute052::MIN_XY,0,-1 * mMaxSpeed,0);
     }
     setMotorSpeed(leftMotorConvertedSpeed, rightMotorConvertedSpeed);
-    ESP_LOGI(LOG_TAG, "refx:%d,refy:%d RightSpeed: %f, LeftSpeed: %f", refX, refY, rightMotorConvertedSpeed, leftMotorConvertedSpeed);
 }
 
 
