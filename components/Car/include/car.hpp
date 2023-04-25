@@ -11,6 +11,8 @@ public:
 
 private:
     void ControllerInputHandler(uint8_t x, uint8_t y);
+    void enableTurbo(){mMaxSpeed = Motor::MAX_SPEED;};
+    void disableTurbo(){mMaxSpeed = Motor::MAX_SPEED * 0.60;};
 
     std::unique_ptr<Motor> mLeftMotor;
     std::unique_ptr<Motor> mRightMotor;
