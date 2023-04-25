@@ -69,7 +69,7 @@ void Mocute052::handleInputEvent(esp_hidh_event_data_t *anInputEvent)
         }
 
         uint8_t ABbuttonByte = anInputEvent->input.data[5];
-        uint8_t TriggerByte = ABbuttonByte;
+        uint8_t TriggerByte = XYbuttonByte;
         uint8_t XYbuttonByte = anInputEvent->input.data[4];
 
         mIsAdown = handleButton(mIsAdown, buttonAMask, ABbuttonByte, mHandleAPress, mHandleARelease);

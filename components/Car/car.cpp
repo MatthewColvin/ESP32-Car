@@ -36,30 +36,33 @@ void Car::ControllerInputHandler(uint8_t x, uint8_t y)
     float V = (Mocute052::MAX_XY - std::abs(algX)) * (algY/Mocute052::MAX_XY) + algY;
     float W = (Mocute052::MAX_XY - std::abs(algY)) * (algX/Mocute052::MAX_XY) + algX;
 
-    float rightMotorSpeed = (V+W)/2;
-    float leftMotorSpeed = (V-W)/2;
+    mRightMotorSpeed = (V+W)/2;
+    mLeftMotorSpeed = (V-W)/2;
 
+    ConvertAndUpdateSpeed();
+}
 
+void Car::ConvertAndUpdateSpeed(){
     float leftMotorConvertedSpeed = 0;
     float rightMotorConvertedSpeed = 0;
     // Convert speed from controller based units to motor based units unless user input is (0,0)
     if(refX != 0 || refY != 0){
-        if(leftMotorSpeed > 0){
-            leftMotorConvertedSpeed = mapValues(leftMotorSpeed,0,Mocute052::MAX_XY,0,mMaxSpeed);
+        if(mLeftMotorSpeed > 0){
+            leftMotorConvertedSpeed = mapValues(mLeftMotorSpeed,0,Mocute052::MAX_XY,0,mMaxSpeed);
         }
         else{
-            leftMotorConvertedSpeed = mapValues(leftMotorSpeed,Mocute052::MIN_XY,0,-1 * mMaxSpeed,0);
+            leftMotorConvertedSpeed = mapValues(mLeftMotorSpeed,Mocute052::MIN_XY,0,-1 * mMaxSpeed,0);
         }
         if(rightMotorSpeed > 0){
-            rightMotorConvertedSpeed = mapValues(rightMotorSpeed,0,Mocute052::MAX_XY,0,mMaxSpeed);
+            rightMotorConvertedSpeed = mapValues(mRightMotorSpeed,0,Mocute052::MAX_XY,0,mMaxSpeed);
         }else{
-            rightMotorConvertedSpeed = mapValues(rightMotorSpeed,Mocute052::MIN_XY,0,-1 * mMaxSpeed,0);
+            rightMotorConvertedSpeed = mapValues(mRightMotorSpeed,Mocute052::MIN_XY,0,-1 * mMaxSpeed,0);
         }
     }
     setMotorSpeed(leftMotorConvertedSpeed, rightMotorConvertedSpeed);
-
     ESP_LOGI(LOG_TAG, "refx:%d,refy:%d RightSpeed: %f, LeftSpeed: %f", refX, refY, rightMotorConvertedSpeed, leftMotorConvertedSpeed);
 }
+
 
 void Car::setMotorSpeed(float aLeftMotorSpeed, float aRightMotorSpeed)
 {
