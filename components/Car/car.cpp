@@ -23,6 +23,22 @@ Car::Car(std::shared_ptr<Mocute052> remote, std::unique_ptr<Motor> leftMotor, st
 {
     remote->onJoyStick(std::bind(&Car::ControllerInputHandler, this, std::placeholders::_1, std::placeholders::_2));
     remote->onTrigger(std::bind(&Car::enableTurbo,this),std::bind(&Car::disableTurbo,this));
+    remote->onX(std::bind(&Car::speedUpCoast,this),nullptr);
+    remote->onB(std::bind(&Car::slowCoast,this),nullptr);
+}
+
+void Car::speedUpCoast(){
+    if(mCoastSpeed >= Motor::MAX_SPEED){
+        return;
+    }
+    mCoastSpeed += 1000;
+}
+
+void Car::slowCoast(){
+    if(mCoastSpeed <= 5000){
+        return;
+    }
+    mCoastSpeed -= 1000;
 }
 
 void Car::ControllerInputHandler(uint8_t x, uint8_t y)
@@ -39,27 +55,26 @@ void Car::ControllerInputHandler(uint8_t x, uint8_t y)
     mRightMotorSpeed = (V+W)/2;
     mLeftMotorSpeed = (V-W)/2;
 
-    // If we are at (0,0) no update.
-    if(refX != 0 || refY != 0){
-        ConvertAndUpdateSpeed();
-    }
+    ConvertAndUpdateSpeed();
     //ESP_LOGI(LOG_TAG, "refx:%d,refy:%d RightSpeed: %f, LeftSpeed: %f", refX, refY, mRightMotorSpeed, mLeftMotorSpeed);
 }
 
 void Car::ConvertAndUpdateSpeed(){
     float leftMotorConvertedSpeed = 0;
     float rightMotorConvertedSpeed = 0;
+    float currentFastestSpeed = mIsTurboEnabled ? mMaxSpeed : mCoastSpeed;
+
     // Convert speed from controller based units to motor based units unless user input is (0,0)
     if(mLeftMotorSpeed > 0){
-        leftMotorConvertedSpeed = mapValues(mLeftMotorSpeed,0,Mocute052::MAX_XY,0,mMaxSpeed);
+        leftMotorConvertedSpeed = mapValues(mLeftMotorSpeed,0,Mocute052::MAX_XY,0,currentFastestSpeed);
     }
     else{
-        leftMotorConvertedSpeed = mapValues(mLeftMotorSpeed,Mocute052::MIN_XY,0,-1 * mMaxSpeed,0);
+        leftMotorConvertedSpeed = mapValues(mLeftMotorSpeed,Mocute052::MIN_XY,0,-1 * currentFastestSpeed,0);
     }
     if(mRightMotorSpeed > 0){
-        rightMotorConvertedSpeed = mapValues(mRightMotorSpeed,0,Mocute052::MAX_XY,0,mMaxSpeed);
+        rightMotorConvertedSpeed = mapValues(mRightMotorSpeed,0,Mocute052::MAX_XY,0,currentFastestSpeed);
     }else{
-        rightMotorConvertedSpeed = mapValues(mRightMotorSpeed,Mocute052::MIN_XY,0,-1 * mMaxSpeed,0);
+        rightMotorConvertedSpeed = mapValues(mRightMotorSpeed,Mocute052::MIN_XY,0,-1 * currentFastestSpeed,0);
     }
     setMotorSpeed(leftMotorConvertedSpeed, rightMotorConvertedSpeed);
 }

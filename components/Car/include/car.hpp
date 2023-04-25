@@ -12,8 +12,10 @@ public:
 private:
     void ControllerInputHandler(uint8_t x, uint8_t y);
 
-    void enableTurbo(){mMaxSpeed = Motor::MAX_SPEED; ConvertAndUpdateSpeed();};
-    void disableTurbo(){mMaxSpeed = Motor::MAX_SPEED * 0.60; ConvertAndUpdateSpeed();};
+    void enableTurbo(){mIsTurboEnabled = true; ConvertAndUpdateSpeed();};
+    void disableTurbo(){mIsTurboEnabled = false; ConvertAndUpdateSpeed();};
+    bool mIsTurboEnabled = false;
+
 
     /**
      * @brief Set the speed for each motor in the ranges motors accept.
@@ -37,7 +39,10 @@ private:
     /**
      * @brief Max Speed of any motor stored in Motor ranges
      */
-    float mMaxSpeed = Motor::MAX_SPEED * 0.60;
+    float mMaxSpeed = Motor::MAX_SPEED;
+    float mCoastSpeed = Motor::MAX_SPEED * 0.50;
+    void slowCoast();
+    void speedUpCoast();
 
     std::unique_ptr<Motor> mRightMotor;
     std::unique_ptr<Motor> mLeftMotor;
