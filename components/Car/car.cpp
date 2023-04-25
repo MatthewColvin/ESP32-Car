@@ -22,10 +22,6 @@ namespace
 Car::Car(std::shared_ptr<Mocute052> remote, std::unique_ptr<Motor> leftMotor, std::unique_ptr<Motor> rightMotor) : mLeftMotor(std::move(leftMotor)), mRightMotor(std::move(rightMotor))
 {
     remote->setJoystickHandler(std::bind(&Car::ControllerInputHandler, this, std::placeholders::_1, std::placeholders::_2));
-    remote->mHandleAPress = std::bind(&Car::DecreaseFadingValue, this);
-    remote->mHandleBPress = std::bind(&Car::IncreaseFadingValue, this);
-    remote->mHandleXPress = std::bind(&Car::DecreaseSlopeValue, this);
-    remote->mHandleYPress = std::bind(&Car::IncreaseSlopeValue, this);
 }
 
 void Car::ControllerInputHandler(uint8_t x, uint8_t y)
@@ -36,11 +32,11 @@ void Car::ControllerInputHandler(uint8_t x, uint8_t y)
     float algX = -1 * refX;
     float algY = refY;
 
-    float V = (Mocute052::MAX_XY - std::abs(algX)) * (algY/Mocute052::MAX_XY) + algY * mSlopeValue;
+    float V = (Mocute052::MAX_XY - std::abs(algX)) * (algY/Mocute052::MAX_XY) + algY;
     float W = (Mocute052::MAX_XY - std::abs(algY)) * (algX/Mocute052::MAX_XY) + algX;
 
-    float rightMotorSpeed = (V+W)/2 * mFadingValue;
-    float leftMotorSpeed = (V-W)/2 * mFadingValue;
+    float rightMotorSpeed = (V+W)/2;
+    float leftMotorSpeed = (V-W)/2;
 
 
     float leftMotorConvertedSpeed = 0;
@@ -48,15 +44,15 @@ void Car::ControllerInputHandler(uint8_t x, uint8_t y)
     // Convert speed from controller based units to motor based units unless user input is (0,0)
     if(refX != 0 || refY != 0){
         if(leftMotorSpeed > 0){
-            leftMotorConvertedSpeed = mapValues(leftMotorSpeed,0,Mocute052::MAX_XY,mLeftMotorIdle,Motor::MAX_SPEED);
+            leftMotorConvertedSpeed = mapValues(leftMotorSpeed,0,Mocute052::MAX_XY,0,mMaxSpeed);
         }
         else{
-            leftMotorConvertedSpeed = mapValues(leftMotorSpeed,Mocute052::MIN_XY,0,Motor::MIN_SPEED,-1*mLeftMotorIdle);
+            leftMotorConvertedSpeed = mapValues(leftMotorSpeed,Mocute052::MIN_XY,0,-1 * mMaxSpeed,0);
         }
         if(rightMotorSpeed > 0){
-            rightMotorConvertedSpeed = mapValues(rightMotorSpeed,0,Mocute052::MAX_XY,mRightMotorIdle,Motor::MAX_SPEED);
+            rightMotorConvertedSpeed = mapValues(rightMotorSpeed,0,Mocute052::MAX_XY,0,mMaxSpeed);
         }else{
-            rightMotorConvertedSpeed = mapValues(rightMotorSpeed,Mocute052::MIN_XY,0,Motor::MIN_SPEED,-1*mRightMotorIdle);
+            rightMotorConvertedSpeed = mapValues(rightMotorSpeed,Mocute052::MIN_XY,0,-1 * mMaxSpeed,0);
         }
     }
     setMotorSpeed(leftMotorConvertedSpeed, rightMotorConvertedSpeed);
