@@ -36,4 +36,9 @@ public:
     bool mIsYdown = false;
     std::function<void()> mHandleYPress;
     std::function<void()> mHandleYRelease;
+
+    bool mIsTriggerdown = false;
+    std::function<void()> mHandleTriggerPress;
+    std::function<void()> mHandleTriggerRelease;
+
 };
