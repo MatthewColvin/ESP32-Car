@@ -43,7 +43,10 @@ void Car::mixerPollingImpl(void* _thisCar){
 }
 
 void Car::mixerPollingTask(){
-    IMotorMixingStrategy::motorSpeeds currentSpeeds = mMotorMixer->getMotorSpeeds();
-    setMotorSpeed(currentSpeeds.left,currentSpeeds.right);
+    while (true){
+        IMotorMixingStrategy::motorSpeeds currentSpeeds = mMotorMixer->getMotorSpeeds();
+        setMotorSpeed(currentSpeeds.left,currentSpeeds.right);
+        vTaskDelay(20/portTICK_PERIOD_MS);
+    }
 }
 
