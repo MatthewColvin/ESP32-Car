@@ -12,8 +12,11 @@ IMotorMixingStrategy::motorSpeeds TankMixWithTurbo::getMotorSpeeds()
 {
     IMotorMixingStrategy::motorSpeeds returnSpeeds;
 
-    float V = (Mocute052::MAX_XY - std::abs(mX)) * (mY/Mocute052::MAX_XY) + mY;
-    float W = (Mocute052::MAX_XY - std::abs(mY)) * (mX/Mocute052::MAX_XY) + mX;
+    float algX = -1 * mX;
+    float algY = mY;
+
+    float V = (Mocute052::MAX_XY - std::abs(algX)) * (algY/Mocute052::MAX_XY) + algY;
+    float W = (Mocute052::MAX_XY - std::abs(algY)) * (algX/Mocute052::MAX_XY) + algX;
 
     float leftSpeed = (V-W)/2;
     float rightSpeed = (V+W)/2;
