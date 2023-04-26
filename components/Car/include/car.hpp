@@ -1,6 +1,7 @@
 #pragma once
 
 #include "motor.hpp"
+#include "IMotorMixingStrategy.hpp"
 #include "mocute052.hpp"
 #include <memory>
 
@@ -10,12 +11,6 @@ public:
     Car(std::shared_ptr<Mocute052> remote, std::unique_ptr<Motor> leftMotor, std::unique_ptr<Motor> rightMotor);
 
 private:
-    void ControllerInputHandler(uint8_t x, uint8_t y);
-
-    void enableTurbo(){mIsTurboEnabled = true; ConvertAndUpdateSpeed();};
-    void disableTurbo(){mIsTurboEnabled = false; ConvertAndUpdateSpeed();};
-    bool mIsTurboEnabled = false;
-
 
     /**
      * @brief Set the speed for each motor in the ranges motors accept.
@@ -25,26 +20,25 @@ private:
      */
     void setMotorSpeed(float aLeftMotorSpeed, float aRightMotorSpeed);
 
-    /**
-     * @brief Convert mRightMotorSpeed and mLeftMotorSpeed from controller
-     *        ranges into a range that is suited for the motors.
-     */
-    void ConvertAndUpdateSpeed();
-
-    /**
-     * @brief Current Speed of motors stored in controller ranges
-     */
-    float mRightMotorSpeed = 0;
-    float mLeftMotorSpeed = 0;
-    /**
-     * @brief Max Speed of any motor stored in Motor ranges
-     */
-    float mMaxSpeed = Motor::MAX_SPEED;
-    float mCoastSpeed = Motor::MAX_SPEED * 0.50;
-    void slowCoast();
-    void speedUpCoast();
-
     std::unique_ptr<Motor> mRightMotor;
     std::unique_ptr<Motor> mLeftMotor;
+
+    /**
+     * @brief a motor mixer that takes input from the controller and
+     *        provides output for the motors to drive them.
+     */
+    std::unique_ptr<IMotorMixingStrategy> mMotorMixer;
+
+    /**
+     * @brief Wrapper so we can Start a free RTOS task on the
+     *        mixerPollingTask().
+     * @param _thisCar - Pointer to car pass through freeRTOS createTask API
+     */
+    static void mixerPollingImpl(void* _thisCar);
+    /**
+     * @brief Task to check the motor mixer and
+     *        update the car based on that.
+     */
+    void mixerPollingTask();
 
 };
