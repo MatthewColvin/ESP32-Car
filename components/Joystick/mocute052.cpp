@@ -6,6 +6,7 @@
 #define buttonBMask 0x02
 #define buttonXMask 0x40
 #define buttonYMask 0x80
+#define triggerMask 0x10
 /**
  * @brief
  *
@@ -69,13 +70,15 @@ void Mocute052::handleInputEvent(esp_hidh_event_data_t *anInputEvent)
 
         uint8_t ABbuttonByte = anInputEvent->input.data[5];
         uint8_t XYbuttonByte = anInputEvent->input.data[4];
+        uint8_t TriggerByte = XYbuttonByte;
 
         mIsAdown = handleButton(mIsAdown, buttonAMask, ABbuttonByte, mHandleAPress, mHandleARelease);
         mIsBdown = handleButton(mIsBdown, buttonBMask, ABbuttonByte, mHandleBPress, mHandleBRelease);
         mIsXdown = handleButton(mIsXdown, buttonXMask, XYbuttonByte, mHandleXPress, mHandleXRelease);
         mIsYdown = handleButton(mIsYdown, buttonYMask, XYbuttonByte, mHandleYPress, mHandleYRelease);
+        mIsTriggerdown = handleButton(mIsTriggerdown, triggerMask, TriggerByte, mHandleTriggerPress, mHandleTriggerRelease);
 
-        // ESP_LOGI(LOG_TAG, "X:%d Y:%d", x, y);
-        // ESP_LOG_BUFFER_HEX(LOG_TAG, anInputEvent->input.data, anInputEvent->input.length);
+        //ESP_LOGI(LOG_TAG, "X:%d Y:%d", x, y);
+        //ESP_LOG_BUFFER_HEX(LOG_TAG, anInputEvent->input.data, anInputEvent->input.length);
     }
 }
