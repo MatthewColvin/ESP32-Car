@@ -10,8 +10,13 @@ class Car
 public:
     Car(std::shared_ptr<Mocute052> remote, std::unique_ptr<Motor> leftMotor, std::unique_ptr<Motor> rightMotor);
 
-private:
+    float getCruiseSpeed(){return mMotorMixer->getCruiseSpeed()};
+    void setCruiseSpeed(float aCruiseSpeed){return mMotorMixer->setCruiseSpeed(aCruiseSpeed)};
 
+    void enableTurbo(){mMotorMixer->enableTurbo()};
+    void disableTurbo(){mMotorMixer->disableTurbo()};
+
+private:
     /**
      * @brief Set the speed for each motor in the ranges motors accept.
      *
@@ -34,11 +39,10 @@ private:
      *        mixerPollingTask().
      * @param _thisCar - Pointer to car pass through freeRTOS createTask API
      */
-    static void mixerPollingImpl(void* _thisCar);
+    static void mixerPollingImpl(void *_thisCar);
     /**
      * @brief Task to check the motor mixer and
      *        update the car based on that.
      */
     void mixerPollingTask();
-
 };

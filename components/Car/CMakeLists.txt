@@ -1,4 +1,4 @@
-idf_component_register(SRCS "motor.cpp" "car.cpp" "./motorMixing/TankMixWithTurbo.cpp"
+idf_component_register(SRCS "motor.cpp" "car.cpp" "./motorMixing/TankMix.cpp" "./motorMixing/IMotorMixingStrategy.cpp"
                        INCLUDE_DIRS "./include" "./motorMixing/include"
                        REQUIRES esp_common driver Joystick)
 

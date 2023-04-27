@@ -1,5 +1,5 @@
 #include "car.hpp"
-#include "TankMixWithTurbo.hpp"
+#include "TankMix.hpp"
 
 #include "esp_log.h"
 
@@ -9,10 +9,11 @@
 
 using namespace std;
 
-Car::Car(std::shared_ptr<Mocute052> remote, std::unique_ptr<Motor> leftMotor, std::unique_ptr<Motor> rightMotor) : mRightMotor(std::move(rightMotor)),mLeftMotor(std::move(leftMotor))
+Car::Car(std::shared_ptr<Mocute052> remote, std::unique_ptr<Motor> leftMotor, std::unique_ptr<Motor> rightMotor) : mRightMotor(std::move(rightMotor)),
+                                                                                                                   mLeftMotor(std::move(leftMotor)),
+                                                                                                                   mMotorMixer(std::make_unique<TankMix>(remote))
 {
-    mMotorMixer = make_unique<TankMixWithTurbo>(remote);
-    xTaskCreate(this->mixerPollingImpl,"CarMixingPoll",2048,this,5,NULL);
+    xTaskCreate(this->mixerPollingImpl, "CarMixingPoll", 2048, this, 5, NULL);
 }
 
 void Car::setMotorSpeed(float aLeftMotorSpeed, float aRightMotorSpeed)
@@ -38,15 +39,17 @@ void Car::setMotorSpeed(float aLeftMotorSpeed, float aRightMotorSpeed)
     mRightMotor->setSpeed(std::floor(std::abs(aRightMotorSpeed)));
 }
 
-void Car::mixerPollingImpl(void* _thisCar){
-    reinterpret_cast<Car*>(_thisCar)->mixerPollingTask();
+void Car::mixerPollingImpl(void *_thisCar)
+{
+    reinterpret_cast<Car *>(_thisCar)->mixerPollingTask();
 }
 
-void Car::mixerPollingTask(){
-    while (true){
+void Car::mixerPollingTask()
+{
+    while (true)
+    {
         IMotorMixingStrategy::motorSpeeds currentSpeeds = mMotorMixer->getMotorSpeeds();
-        setMotorSpeed(currentSpeeds.left,currentSpeeds.right);
-        vTaskDelay(20/portTICK_PERIOD_MS);
+        setMotorSpeed(currentSpeeds.left, currentSpeeds.right);
+        vTaskDelay(50 / portTICK_PERIOD_MS);
     }
 }
-
