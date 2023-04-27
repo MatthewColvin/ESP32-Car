@@ -10,11 +10,11 @@ class Car
 public:
     Car(std::shared_ptr<Mocute052> remote, std::unique_ptr<Motor> leftMotor, std::unique_ptr<Motor> rightMotor);
 
-    float getCruiseSpeed(){return mMotorMixer->getCruiseSpeed()};
-    void setCruiseSpeed(float aCruiseSpeed){return mMotorMixer->setCruiseSpeed(aCruiseSpeed)};
+    float getCruiseSpeed() { return mMotorMixer->getCruiseSpeed(); };
+    void setCruiseSpeed(float aCruiseSpeed) { return mMotorMixer->setCruiseSpeed(aCruiseSpeed); };
 
-    void enableTurbo(){mMotorMixer->enableTurbo()};
-    void disableTurbo(){mMotorMixer->disableTurbo()};
+    void enableTurbo() { mMotorMixer->enableTurbo(); };
+    void disableTurbo() { mMotorMixer->disableTurbo(); };
 
 private:
     /**
