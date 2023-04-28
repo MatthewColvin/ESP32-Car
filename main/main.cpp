@@ -13,6 +13,32 @@
 
 #include <memory>
 
+#define RightMotorLeftPin  15
+#define RightMotorRightPin 2
+#define LeftMotorRightPin 16
+#define LeftMotorLeftPin 17
+
+Car* car;
+
+void onAPress(){};
+void onARelease(){};
+void onBPress(){ car->setCruiseSpeed(car->getCruiseSpeed()-1000);};
+void onBRelease(){};
+void onXPress(){car->setCruiseSpeed(car->getCruiseSpeed()+1000);};
+void onXRelease(){};
+void onYPress(){};
+void onYRelease(){};
+void onTriggerPress(){car->enableTurbo();};
+void onTriggerRelease(){car->disableTurbo();};
+
+void registerJoystickButtonHandlers(std::shared_ptr<Mocute052> aJoystick){
+    aJoystick->onA(onAPress,onARelease);
+    aJoystick->onB(onBPress,onBRelease);
+    aJoystick->onX(onXPress,onXRelease);
+    aJoystick->onY(onYPress,onYRelease);
+    aJoystick->onTrigger(onTriggerPress,onTriggerRelease);
+}
+
 extern "C" void app_main(void)
 {
     nvs_flash_init();
@@ -20,10 +46,10 @@ extern "C" void app_main(void)
     esp_bd_addr_t joystickAddress{0xe0, 0xf8, 0x48, 0x05, 0x29, 0x50};
     auto joystick = bt->connect<Mocute052>(joystickAddress);
 
-    auto right = std::make_unique<Motor>(15, 2);
-    auto left = std::make_unique<Motor>(16, 17);
-    auto car = Car(joystick, std::move(left), std::move(right));
+    Motor* right = new Motor(RightMotorLeftPin, RightMotorRightPin);
+    Motor* left = new Motor(LeftMotorLeftPin, LeftMotorLeftPin);
+    car = new Car(joystick, left, right);
 
-    vTaskDelay(portMAX_DELAY); // Delay main task to keep car alive
-    // vTaskDelete(NULL); // Delete Main Task
+    registerJoystickButtonHandlers(joystick);
+    vTaskDelete(NULL); // Delete Main Task
 }
