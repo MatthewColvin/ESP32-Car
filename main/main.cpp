@@ -46,8 +46,8 @@ extern "C" void app_main(void)
     esp_bd_addr_t joystickAddress{0xe0, 0xf8, 0x48, 0x05, 0x29, 0x50};
     auto joystick = bt->connect<Mocute052>(joystickAddress);
 
+    Motor* left = new Motor(LeftMotorLeftPin, LeftMotorRightPin);
     Motor* right = new Motor(RightMotorLeftPin, RightMotorRightPin);
-    Motor* left = new Motor(LeftMotorLeftPin, LeftMotorLeftPin);
     car = new Car(joystick, left, right);
 
     registerJoystickButtonHandlers(joystick);
