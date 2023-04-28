@@ -15,8 +15,8 @@
 
 #define RightMotorLeftPin  15
 #define RightMotorRightPin 2
-#define LeftMotorRightPin 16
-#define LeftMotorLeftPin 17
+#define LeftMotorLeftPin 16
+#define LeftMotorRightPin 17
 
 Car* car;
 
