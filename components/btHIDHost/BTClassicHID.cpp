@@ -9,7 +9,6 @@
 
 std::shared_ptr<BTClassicHID> BTClassicHID::mInstance = nullptr;
 std::array<std::shared_ptr<HIDDevice>, MAX_CONNECTED_DEVICES> BTClassicHID::mConnectedDevices{};
-SemaphoreHandle_t BTClassicHID::initCompleteEvent = xSemaphoreCreateBinary();
 
 std::shared_ptr<HIDDevice> BTClassicHID::getDevice(esp_hidh_event_t anEvent, esp_hidh_event_data_t *aParams)
 {
@@ -104,35 +103,20 @@ std::shared_ptr<BTClassicHID> BTClassicHID::getInstance()
 
 BTClassicHID::BTClassicHID()
 {
-    xTaskCreate(&BTClassicHID::init, "hid_task", 6 * 1024, NULL, 2, NULL);
-}
-
-void BTClassicHID::init(void *params)
-{
     ESP_ERROR_CHECK(esp_hid_gap_init(HID_HOST_MODE));
     esp_hidh_config_t config = {
         .callback = BTClassicHID::hidh_callback,
         .event_stack_size = 4096,
         .callback_arg = NULL,
     };
-    ESP_ERROR_CHECK(esp_hidh_init(&config));
-    xSemaphoreGive(initCompleteEvent);
+#if CONFIG_BT_BLE_ENABLED
+    ESP_ERROR_CHECK(esp_ble_gattc_register_callback(esp_hidh_gattc_event_handler));
+#endif /* CONFIG_BT_BLE_ENABLED */
+    vTaskDelay(2000 / portTICK_PERIOD_MS);
 }
 
 std::vector<HIDDevice> BTClassicHID::scan(uint32_t seconds)
 {
-
-    bool initComplete = xSemaphoreTake(initCompleteEvent, 30 / portTICK_PERIOD_MS) == pdTRUE;
-    if (initComplete)
-    {
-        xSemaphoreGive(initCompleteEvent);
-    }
-    else
-    {
-        ESP_LOGE(LOG_TAG, "Init Timed out returning Empty Vec");
-        return std::vector<HIDDevice>{};
-    }
-
     size_t numResults = 0;
     esp_hid_scan_result_t *results = nullptr;
     esp_hid_scan(seconds, &numResults, &results);

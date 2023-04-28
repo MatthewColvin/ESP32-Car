@@ -33,7 +33,6 @@ protected:
 private:
     static constexpr char LOG_TAG[] = "BTClassicHID";
 
-    static void init(void *params);
     static void hidh_callback(void *handler_args, esp_event_base_t base, int32_t id, void *event_data);
     static std::shared_ptr<HIDDevice> getDevice(esp_hidh_event_t anEvent, esp_hidh_event_data_t *aParam);
 };
@@ -56,6 +55,7 @@ std::shared_ptr<deviceType> BTClassicHID::connect(esp_bd_addr_t aDeviceAddress, 
         {
             if (device.hasAddress(aDeviceAddress))
             {
+                retDevice = std::make_shared<deviceType>(device);
                 if (connect(retDevice))
                 {
                     ESP_LOGI(LOG_TAG, "Connected!");
