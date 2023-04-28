@@ -112,7 +112,7 @@ BTClassicHID::BTClassicHID()
 #if CONFIG_BT_BLE_ENABLED
     ESP_ERROR_CHECK(esp_ble_gattc_register_callback(esp_hidh_gattc_event_handler));
 #endif /* CONFIG_BT_BLE_ENABLED */
-    vTaskDelay(2000 / portTICK_PERIOD_MS);
+    ESP_ERROR_CHECK(esp_hidh_init(&config));
 }
 
 std::vector<HIDDevice> BTClassicHID::scan(uint32_t seconds)

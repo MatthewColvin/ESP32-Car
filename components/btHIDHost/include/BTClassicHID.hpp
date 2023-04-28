@@ -64,7 +64,6 @@ std::shared_ptr<deviceType> BTClassicHID::connect(esp_bd_addr_t aDeviceAddress, 
                 }
             }
         }
-        // vTaskDelay(secondsPerScan * 1000 / portTICK_PERIOD_MS);
     }
     if (!retDevice)
     {
