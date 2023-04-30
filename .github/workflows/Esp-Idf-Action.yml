@@ -11,6 +11,8 @@ jobs:
       with:
         packages: doxygen
         version: 1.0
+    - name: Show doxygen
+      run: "which doxygen"
     - name: Checkout repo
       uses: actions/checkout@v2
       with:
