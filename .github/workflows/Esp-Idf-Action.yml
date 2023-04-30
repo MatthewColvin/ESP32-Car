@@ -1,0 +1,2 @@
+- name: Espressif IoT Development Framework (ESP-IDF)
+  uses: espressif/esp-idf-ci-action@v1.0.0
