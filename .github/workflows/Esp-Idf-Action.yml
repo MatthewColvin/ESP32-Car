@@ -4,9 +4,13 @@ jobs:
   build:
 
     runs-on: ubuntu-latest
-
     steps:
-    - name: Install Doxygen
+
+    - name: Install Dependencies
+      uses: awalsh128/cache-apt-pkgs-action@latest
+      with:
+        packages: doxygen
+        version: 1.0
       run: "sudo apt-get install doxygen"
     - name: Checkout repo
       uses: actions/checkout@v2
