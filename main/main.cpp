@@ -13,42 +13,43 @@
 
 #include <memory>
 
-#define LOG_TAG "Main"
+#define RightMotorLeftPin  15
+#define RightMotorRightPin 2
+#define LeftMotorLeftPin 16
+#define LeftMotorRightPin 17
+
+Car* car;
+
+void onAPress(){};
+void onARelease(){};
+void onBPress(){ car->setCruiseSpeed(car->getCruiseSpeed()-1000);};
+void onBRelease(){};
+void onXPress(){car->setCruiseSpeed(car->getCruiseSpeed()+1000);};
+void onXRelease(){};
+void onYPress(){};
+void onYRelease(){};
+void onTriggerPress(){car->enableTurbo();};
+void onTriggerRelease(){car->disableTurbo();};
+
+void registerJoystickButtonHandlers(std::shared_ptr<Mocute052> aJoystick){
+    aJoystick->onA(onAPress,onARelease);
+    aJoystick->onB(onBPress,onBRelease);
+    aJoystick->onX(onXPress,onXRelease);
+    aJoystick->onY(onYPress,onYRelease);
+    aJoystick->onTrigger(onTriggerPress,onTriggerRelease);
+}
 
 extern "C" void app_main(void)
 {
     nvs_flash_init();
     auto bt = BTClassicHID::getInstance();
-    bool joystickConnected = false;
-    std::shared_ptr<Mocute052> classicJoystick = nullptr;
-    while (!joystickConnected)
-    {
-        int btScanSeconds = 10;
-        auto devices = bt->scan(btScanSeconds);
-        esp_bd_addr_t joystickAddress{0xe0, 0xf8, 0x48, 0x05, 0x29, 0x50};
+    esp_bd_addr_t joystickAddress{0xe0, 0xf8, 0x48, 0x05, 0x29, 0x50};
+    auto joystick = bt->connect<Mocute052>(joystickAddress);
 
-        ESP_LOGI(LOG_TAG, "found %d devices", devices.size());
-        for (auto device : devices)
-        {
-            if (device.hasAddress(joystickAddress))
-            {
-                classicJoystick = std::make_shared<Mocute052>(device);
-                if (bt->connect(classicJoystick))
-                {
-                    ESP_LOGI(LOG_TAG, "Connected!");
-                    ESP_LOGI(LOG_TAG, ESP_BD_ADDR_STR, ESP_BD_ADDR_HEX(classicJoystick->getAddress()));
-                    joystickConnected = true;
-                }
+    Motor* left = new Motor(LeftMotorLeftPin, LeftMotorRightPin);
+    Motor* right = new Motor(RightMotorLeftPin, RightMotorRightPin);
+    car = new Car(joystick, left, right);
 
-                vTaskDelay(5000 / portTICK_PERIOD_MS);
-            }
-        }
-    }
-
-    auto right = std::make_unique<Motor>(15, 2);
-    auto left = std::make_unique<Motor>(16, 17);
-    auto car = Car(classicJoystick, std::move(left), std::move(right));
-
-    vTaskDelay(portMAX_DELAY); // Delay main task to keep car alive
-    // vTaskDelete(NULL); // Delete Main Task
+    registerJoystickButtonHandlers(joystick);
+    vTaskDelete(NULL); // Delete Main Task
 }

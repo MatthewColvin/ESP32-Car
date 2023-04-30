@@ -1,9 +1,11 @@
 #include "BTClassicHID.hpp"
 #include "HIDDevice.hpp"
 
-#include <algorithm>
+// RTOS
+#include "freertos/FreeRTOS.h"
+#include "freertos/semphr.h"
 
-#define LOG_TAG "BTClassicHID"
+#include <algorithm>
 
 std::shared_ptr<BTClassicHID> BTClassicHID::mInstance = nullptr;
 std::array<std::shared_ptr<HIDDevice>, MAX_CONNECTED_DEVICES> BTClassicHID::mConnectedDevices{};
@@ -101,17 +103,15 @@ std::shared_ptr<BTClassicHID> BTClassicHID::getInstance()
 
 BTClassicHID::BTClassicHID()
 {
-    xTaskCreate(&BTClassicHID::init, "hid_task", 6 * 1024, NULL, 2, NULL);
-}
-
-void BTClassicHID::init(void *params)
-{
     ESP_ERROR_CHECK(esp_hid_gap_init(HID_HOST_MODE));
     esp_hidh_config_t config = {
         .callback = BTClassicHID::hidh_callback,
         .event_stack_size = 4096,
         .callback_arg = NULL,
     };
+#if CONFIG_BT_BLE_ENABLED
+    ESP_ERROR_CHECK(esp_ble_gattc_register_callback(esp_hidh_gattc_event_handler));
+#endif /* CONFIG_BT_BLE_ENABLED */
     ESP_ERROR_CHECK(esp_hidh_init(&config));
 }
 

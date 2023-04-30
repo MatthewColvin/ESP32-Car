@@ -9,9 +9,9 @@
 
 using namespace std;
 
-Car::Car(std::shared_ptr<Mocute052> remote, std::unique_ptr<Motor> leftMotor, std::unique_ptr<Motor> rightMotor) : mRightMotor(std::move(rightMotor)),
-                                                                                                                   mLeftMotor(std::move(leftMotor)),
-                                                                                                                   mMotorMixer(std::make_unique<TankMix>(remote))
+Car::Car(std::shared_ptr<Mocute052> remote, Motor* leftMotor, Motor* rightMotor) : mRightMotor(rightMotor),
+                                                                                   mLeftMotor(leftMotor),
+                                                                                   mMotorMixer(std::make_unique<TankMix>(remote))
 {
     xTaskCreate(this->mixerPollingImpl, "CarMixingPoll", 2048, this, 5, NULL);
 }
