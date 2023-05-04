@@ -29,8 +29,8 @@ void Transceiver::setupTxChannel(int txPin)
     tx_carrier_cfg.flags.polarity_active_low = false;
     ESP_ERROR_CHECK(rmt_apply_carrier(mTxCh, &tx_carrier_cfg));
 
-    mRxCallbacks.on_recv_done = this->onReceiveImpl;
-    ESP_ERROR_CHECK(rmt_rx_register_event_callbacks(mRxCh, &mRxCallbacks, this));
+    mTxCallbacks.on_trans_done = this->onSendDoneImpl;
+    ESP_ERROR_CHECK(rmt_tx_register_event_callbacks(mTxCh, &mTxCallbacks, this));
 }
 
 void Transceiver::setupRxChannel(int rxPin)
@@ -47,6 +47,9 @@ void Transceiver::setupRxChannel(int rxPin)
     rx_carrier_cfg.frequency_hz = 25000;
     rx_carrier_cfg.flags.polarity_active_low = false;
     ESP_ERROR_CHECK(rmt_apply_carrier(mRxCh, &rx_carrier_cfg));
+
+    mRxCallbacks.on_recv_done = this->onReceiveImpl;
+    ESP_ERROR_CHECK(rmt_rx_register_event_callbacks(mRxCh, &mRxCallbacks, this));
 }
 
 bool Transceiver::onReceiveImpl(rmt_channel_handle_t rx_chan, const rmt_rx_done_event_data_t *edata, void *user_ctx)
@@ -60,6 +63,17 @@ bool Transceiver::onReceive(const rmt_rx_done_event_data_t *edata)
     {
         ESP_LOGI(LOG_TAG, "Received: %d", edata->received_symbols[i].val);
     }
+    return false;
+}
+
+bool Transceiver::onSendDoneImpl(rmt_channel_handle_t rx_chan, const rmt_tx_done_event_data_t *edata, void *user_ctx)
+{
+    return static_cast<Transceiver *>(user_ctx)->onSendDone(edata);
+}
+
+bool Transceiver::onSendDone(const rmt_tx_done_event_data_t *edata)
+{
+    ESP_LOGI(LOG_TAG, "Sent: %d symbols", edata->num_symbols);
     return false;
 }
 
