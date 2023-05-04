@@ -23,4 +23,6 @@ private:
 
     rmt_channel_handle_t mRxCh = nullptr;
     rmt_channel_handle_t mTxCh = nullptr;
+
+    uint8_t mFakePayload = 0;
 };

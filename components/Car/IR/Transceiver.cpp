@@ -59,6 +59,7 @@ bool Transceiver::onReceiveImpl(rmt_channel_handle_t rx_chan, const rmt_rx_done_
 
 bool Transceiver::onReceive(const rmt_rx_done_event_data_t *edata)
 {
+    ESP_LOGI(LOG_TAG, "Received: %d Symbols", edata->num_symbols);
     for (int i = 0; i < edata->num_symbols; i++)
     {
         ESP_LOGI(LOG_TAG, "Received: %d", edata->received_symbols[i].val);
@@ -79,4 +80,13 @@ bool Transceiver::onSendDone(const rmt_tx_done_event_data_t *edata)
 
 void Transceiver::send()
 {
+    rmt_copy_encoder_config_t encoderConfig;
+    rmt_encoder_handle_t cpyEncoder;
+    rmt_new_copy_encoder(&encoderConfig, &cpyEncoder);
+
+    rmt_transmit_config_t aTransmitConfig;
+    aTransmitConfig.loop_count = 0;
+
+    rmt_transmit(mTxCh, cpyEncoder, &mFakePayload, 1, &aTransmitConfig);
+    mFakePayload++;
 }
