@@ -1,5 +1,6 @@
 #include "car.hpp"
 #include "TankMix.hpp"
+#include "NoZeroTurnMix.hpp"
 
 #include "esp_log.h"
 
@@ -9,25 +10,11 @@
 
 using namespace std;
 
-/**
-@startuml
-!$a  = 42
-!$ab = "foo1"
-!$cd = "foo2"
-!$ef = $ab + $cd
-!$foo = { "name": "John", "age" : 30 }
-
-Alice -> Bob : $a
-Alice -> Bob : $ab
-Alice -> Bob : $cd
-Alice -> Bob : $ef
-Alice -> Bob : Do you know **$foo.name** ?
-@enduml
- */
-
-Car::Car(std::shared_ptr<Mocute052> remote, Motor *leftMotor, Motor *rightMotor) : mRightMotor(rightMotor),
+Car::Car(std::shared_ptr<Mocute052> remote, Motor *leftMotor, Motor *rightMotor) : mController(remote),
+                                                                                   mRightMotor(rightMotor),
                                                                                    mLeftMotor(leftMotor),
-                                                                                   mMotorMixer(std::make_unique<TankMix>(remote))
+                                                                                   mMotorMixer(std::make_unique<TankMix>(mController)),
+                                                                                   mHandling(Car::Handling::Tank)
 {
     xTaskCreate(this->mixerPollingImpl, "CarMixingPoll", 2048, this, 5, NULL);
 }
@@ -67,5 +54,19 @@ void Car::mixerPollingTask()
         IMotorMixingStrategy::motorSpeeds currentSpeeds = mMotorMixer->getMotorSpeeds();
         setMotorSpeed(currentSpeeds.left, currentSpeeds.right);
         vTaskDelay(50 / portTICK_PERIOD_MS);
+    }
+}
+
+void Car::setHandling(Car::Handling aHandling)
+{
+    mHandling = aHandling;
+    switch (mHandling)
+    {
+    case Car::Handling::Tank:
+        mMotorMixer = std::make_unique<TankMix>(mController);
+        break;
+    case Car::Handling::Car:
+        mMotorMixer = std::make_unique<NoZeroTurnMix>(mController);
+        break;
     }
 }

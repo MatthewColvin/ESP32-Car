@@ -94,6 +94,8 @@ private:
      * @param aY - Y value between -128 and 127
      */
     void controllerInputHandler(uint8_t aX, uint8_t aY);
+
+protected:
     /**
      * @brief Map value from range (aMin-aMax) into (aTargetMin-aTargetMax)
      */

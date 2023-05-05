@@ -6,7 +6,6 @@
 IMotorMixingStrategy::IMotorMixingStrategy(std::shared_ptr<Mocute052> aController)
 {
     aController->onJoyStick(std::bind(&IMotorMixingStrategy::controllerInputHandler, this, std::placeholders::_1, std::placeholders::_2));
-    aController->onTrigger(std::bind(&IMotorMixingStrategy::enableTurbo, this), std::bind(&IMotorMixingStrategy::disableTurbo, this));
 };
 
 void IMotorMixingStrategy::setCruiseSpeed(float aCruiseSpeed)

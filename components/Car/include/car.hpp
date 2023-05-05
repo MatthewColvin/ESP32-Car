@@ -32,7 +32,16 @@ public:
     /// @brief Force car to use cruising speed as the fastest speed.
     void disableTurbo() { mMotorMixer->disableTurbo(); };
 
+    enum class Handling{
+        Tank,
+        Car
+    };
+    void setHandling(Car::Handling aHandling);
+    Car::Handling getHandling(){return mHandling;};
+
 private:
+    std::shared_ptr<Mocute052> mController;
+
     /**
      * @brief Set the speed for each motor in the ranges motors accept.
      *
@@ -51,6 +60,7 @@ private:
      *        provides output for the motors to drive them.
      */
     std::unique_ptr<IMotorMixingStrategy> mMotorMixer;
+    Car::Handling mHandling;
 
     /**
      * @brief Wrapper so we can Start a free RTOS task on the

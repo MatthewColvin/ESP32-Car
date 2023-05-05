@@ -63,6 +63,18 @@ void onYRelease(){};
 void onTriggerPress() { car->enableTurbo(); };
 void onTriggerRelease() { car->disableTurbo(); };
 
+void changeCarHandling()
+{
+    if (car->getHandling() == Car::Handling::Tank)
+    {
+        car->setHandling(Car::Handling::Car);
+    }
+    else
+    {
+        car->setHandling(Car::Handling::Tank);
+    }
+}
+
 void onReceiveIRData(uint16_t address, uint16_t data, bool isRepeat)
 {
     const auto powerButton = 0xB946;
