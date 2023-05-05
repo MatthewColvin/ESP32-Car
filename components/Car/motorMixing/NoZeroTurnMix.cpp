@@ -63,14 +63,9 @@ IMotorMixingStrategy::speeds NoZeroTurnMix::mixAndGetSpeeds()
         returnSpeeds.right = mappedOuterSpeed;
     }
 
-    if (mY > 0){ // Forward
-
-    }else if (mY < 0) {// backwards
+    if (mY < 0) {// backwards
         returnSpeeds.left = returnSpeeds.left * -1;
         returnSpeeds.right = returnSpeeds.right * -1;
-    }else{
-        returnSpeeds.left = 0;
-        returnSpeeds.right = 0;
     }
 
     //ESP_LOGI("NoZeroTurn","IN(x:%f y:%f)  Out(left:%f right:%f)", mX,mY,returnSpeeds.left,returnSpeeds.right);
