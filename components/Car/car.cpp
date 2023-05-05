@@ -40,6 +40,7 @@ void Car::setMotorSpeed(float aLeftMotorSpeed, float aRightMotorSpeed)
         mRightMotor->reverse();
     }
     mRightMotor->setSpeed(std::floor(std::abs(aRightMotorSpeed)));
+    //ESP_LOGI(LOG_TAG,"Left:%f right:%f", aLeftMotorSpeed, aRightMotorSpeed);
 }
 
 void Car::mixerPollingImpl(void *_thisCar)

@@ -43,8 +43,8 @@ IMotorMixingStrategy::speeds NoZeroTurnMix::mixAndGetSpeeds()
 
     // All speeds generated based on dist from origin.
     float outerSpeed = mappedDistFromOrigin(mX,mY);
-    float distanceBetweenTracks = 10; // Guessing 10 cm between tracks.
-    float turnRadius = abs(slopeWithOrigin(mX,mY)) * 60;
+    float distanceBetweenTracks = 14; // Guessing 10 cm between tracks.
+    float turnRadius = abs(slopeWithOrigin(mX,mY)) * 60; // slope of 1 make 120cm circle
     float innerSpeed = turnRadius < 0 ? 0 : outerSpeed / ((turnRadius + distanceBetweenTracks)/ turnRadius);
 
     constexpr float maxDistFromOrigin = Mocute052::MAX_XY * sqrt(2);
@@ -52,23 +52,27 @@ IMotorMixingStrategy::speeds NoZeroTurnMix::mixAndGetSpeeds()
     float mappedInnerSpeed = mapValues(innerSpeed,0,maxDistFromOrigin,0,Mocute052::MAX_XY);
     float mappedOuterSpeed = mapValues(outerSpeed,0,maxDistFromOrigin,0,Mocute052::MAX_XY);
 
-    if (mX > 0){ // Forward
-        if (mY > 0){// Right turn
-            returnSpeeds.right = mappedInnerSpeed;
-            returnSpeeds.left = mappedOuterSpeed;
-        }else{// Left turn
-            returnSpeeds.left = mappedInnerSpeed;
-            returnSpeeds.right = mappedOuterSpeed;
-        }
-    }else{// backwards
-        if(mY > 0){ // back left?
-            returnSpeeds.left = mappedInnerSpeed * -1;
-            returnSpeeds.right = mappedOuterSpeed * -1;
-        } else{// back right?
-            returnSpeeds.right = mappedInnerSpeed * -1;
-            returnSpeeds.left = mappedOuterSpeed * -1;
-        }
+    if (mX > 0){// Right turn
+        returnSpeeds.right = mappedInnerSpeed;
+        returnSpeeds.left = mappedOuterSpeed;
+    }else if (mX < 0){// Left turn
+        returnSpeeds.left = mappedInnerSpeed;
+        returnSpeeds.right = mappedOuterSpeed;
+    }else {
+        returnSpeeds.left = mappedOuterSpeed;
+        returnSpeeds.right = mappedOuterSpeed;
     }
 
+    if (mY > 0){ // Forward
+
+    }else if (mY < 0) {// backwards
+        returnSpeeds.left = returnSpeeds.left * -1;
+        returnSpeeds.right = returnSpeeds.right * -1;
+    }else{
+        returnSpeeds.left = 0;
+        returnSpeeds.right = 0;
+    }
+
+    //ESP_LOGI("NoZeroTurn","IN(x:%f y:%f)  Out(left:%f right:%f)", mX,mY,returnSpeeds.left,returnSpeeds.right);
     return returnSpeeds;
 }
