@@ -2,12 +2,22 @@
 #include "driver/rmt_types.h"
 #include "driver/rmt_rx.h"
 #include "driver/rmt_tx.h"
+#include "freertos/FreeRTOS.h"
+#include "freertos/queue.h"
+
+#include <vector>
 
 class Transceiver
 {
 public:
     Transceiver(int recievePin, int sendPin);
     void send();
+    void receive();
+
+    void enableRx();
+    void disableRx();
+    void enableTx();
+    void disableTx();
 
 private:
     void setupRxChannel(int rxPin);
@@ -23,6 +33,13 @@ private:
 
     rmt_channel_handle_t mRxCh = nullptr;
     rmt_channel_handle_t mTxCh = nullptr;
+
+    QueueHandle_t mRxQueue = xQueueCreate(50, sizeof(rmt_symbol_word_t));
+    bool readyForSymbol = false;
+    std::vector<rmt_symbol_word_t> mReceivedSymbols;
+    TaskHandle_t mQueueProcessor;
+    static void proccessRxQueueImpl(void *aThis);
+    void proccessRxQueue();
 
     uint8_t mFakePayload = 0;
 };

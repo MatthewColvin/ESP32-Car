@@ -18,8 +18,8 @@
 #define RightMotorRightPin 2
 #define LeftMotorLeftPin 16
 #define LeftMotorRightPin 17
-#define IRLED
-#define IRDETECT
+#define IRLED 4
+#define IRDETECT 13
 
 Car *car;
 Transceiver *ir;
@@ -48,9 +48,12 @@ extern "C" void app_main(void)
 {
     nvs_flash_init();
     ir = new Transceiver(IRDETECT, IRLED);
+    ir->enableRx();
+    ir->enableTx();
     while (true)
     {
-        ir->send();
+        // ir->send();
+        ir->receive();
         vTaskDelay(1000 / portTICK_PERIOD_MS);
     }
 
