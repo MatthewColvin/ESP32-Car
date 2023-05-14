@@ -44,16 +44,34 @@ void registerJoystickButtonHandlers(std::shared_ptr<Mocute052> aJoystick)
     aJoystick->onTrigger(onTriggerPress, onTriggerRelease);
 }
 
+constexpr bool isRx = false;
+
 extern "C" void app_main(void)
 {
     nvs_flash_init();
-    ir = new Transceiver(IRDETECT, IRLED);
-    ir->enableRx();
-    ir->enableTx();
+    // ir = new Transceiver(IRDETECT, IRLED);
+    // if (isRx)
+    // {
+    //     ir->enableRx();
+    // }
+    // else
+    // {
+    //     // ir->enableTx();
+    // }
+
+    vTaskDelay(5000 / portTICK_PERIOD_MS);
     while (true)
     {
-        // ir->send();
-        ir->receive();
+        if (isRx)
+        {
+            // ir->receive();
+            ESP_LOGI("MAIN", "REC");
+        }
+        else
+        {
+            // ir->send();
+            ESP_LOGI("MAIN", "SEND");
+        }
         vTaskDelay(1000 / portTICK_PERIOD_MS);
     }
 

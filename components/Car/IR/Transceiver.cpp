@@ -124,8 +124,8 @@ void Transceiver::disableTx() { rmt_disable(mTxCh); };
 void Transceiver::receive()
 {
     rmt_receive_config_t aReceiveCfg;
-    aReceiveCfg.signal_range_max_ns = 200;
-    aReceiveCfg.signal_range_min_ns = 20;
+    aReceiveCfg.signal_range_max_ns = 20000;
+    aReceiveCfg.signal_range_min_ns = 2000;
 
     static constexpr auto numSymbolsToReceive = 10;
     rmt_symbol_word_t buffer[numSymbolsToReceive];
@@ -146,6 +146,6 @@ void Transceiver::send()
     aTransmitConfig.loop_count = 0;
 
     mFakePayload++;
-    ESP_ERROR_CHECK(rmt_transmit(mTxCh, cpyEncoder, &mFakePayload, 1, &aTransmitConfig));
+    // ESP_ERROR_CHECK(rmt_transmit(mTxCh, cpyEncoder, &mFakePayload, 1, &aTransmitConfig));
     ESP_LOGI(LOG_TAG, "Sent %d", mFakePayload);
 }
