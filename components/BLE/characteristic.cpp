@@ -4,6 +4,7 @@
 #include "esp_log.h"
 // RTOS
 // STD
+#include <algorithm>
 
 #define LOG_TAG "Characteristic"
 

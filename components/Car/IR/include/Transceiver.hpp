@@ -4,13 +4,14 @@
 #include "driver/rmt_tx.h"
 #include "freertos/FreeRTOS.h"
 #include "freertos/queue.h"
+#include "ir_nec_encoder.h"
 
 #include <vector>
 
 class Transceiver
 {
 public:
-    Transceiver(int recievePin, int sendPin);
+    Transceiver(gpio_num_t recievePin, gpio_num_t sendPin, const uint packetSize);
     void send();
     void receive();
 
@@ -20,8 +21,8 @@ public:
     void disableTx();
 
 private:
-    void setupRxChannel(int rxPin);
-    void setupTxChannel(int txPin);
+    void setupRxChannel(gpio_num_t rxPin);
+    void setupTxChannel(gpio_num_t txPin);
 
     static bool onReceiveImpl(rmt_channel_handle_t rx_chan, const rmt_rx_done_event_data_t *edata, void *user_ctx);
     bool onReceive(const rmt_rx_done_event_data_t *edata);
@@ -34,12 +35,15 @@ private:
     rmt_channel_handle_t mRxCh = nullptr;
     rmt_channel_handle_t mTxCh = nullptr;
 
-    QueueHandle_t mRxQueue = xQueueCreate(50, sizeof(rmt_symbol_word_t));
+    QueueHandle_t mRxQueue = xQueueCreate(5, sizeof(rmt_rx_done_event_data_t));
     bool readyForSymbol = false;
     std::vector<rmt_symbol_word_t> mReceivedSymbols;
+
     TaskHandle_t mQueueProcessor;
-    static void proccessRxQueueImpl(void *aThis);
-    void proccessRxQueue();
+    rmt_rx_done_event_data_t mEventBeingProc;
+    static void receiveTaskImpl(void *aThis);
+    void receiveTask();
 
     uint8_t mFakePayload = 0;
+    const uint mPacketSize = 0;
 };

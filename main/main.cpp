@@ -18,8 +18,8 @@
 #define RightMotorRightPin 2
 #define LeftMotorLeftPin 16
 #define LeftMotorRightPin 17
-#define IRLED 4
-#define IRDETECT 13
+#define IRLED GPIO_NUM_4
+#define IRDETECT GPIO_NUM_13
 
 Car *car;
 Transceiver *ir;
@@ -44,32 +44,32 @@ void registerJoystickButtonHandlers(std::shared_ptr<Mocute052> aJoystick)
     aJoystick->onTrigger(onTriggerPress, onTriggerRelease);
 }
 
-constexpr bool isRx = false;
+constexpr bool isRx = true;
 
 extern "C" void app_main(void)
 {
     nvs_flash_init();
-    // ir = new Transceiver(IRDETECT, IRLED);
-    // if (isRx)
-    // {
-    //     ir->enableRx();
-    // }
-    // else
-    // {
-    //     // ir->enableTx();
-    // }
+    ir = new Transceiver(IRDETECT, IRLED, 64);
+    if (isRx)
+    {
+        ir->enableRx();
+    }
+    else
+    {
+        ir->enableTx();
+    }
 
     vTaskDelay(5000 / portTICK_PERIOD_MS);
     while (true)
     {
         if (isRx)
         {
-            // ir->receive();
+            ir->receive();
             ESP_LOGI("MAIN", "REC");
         }
         else
         {
-            // ir->send();
+            ir->send();
             ESP_LOGI("MAIN", "SEND");
         }
         vTaskDelay(1000 / portTICK_PERIOD_MS);
