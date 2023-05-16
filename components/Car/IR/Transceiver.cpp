@@ -231,6 +231,12 @@ void Transceiver::receiveTaskImpl(void *aThis)
 
 void Transceiver::receiveTask()
 {
+    rmt_receive_config_t receiveCfg;
+    receiveCfg.signal_range_min_ns = 1250;     // the shortest duration for NEC signal is 560us, 1250ns < 560us, valid signal won't be treated as noise
+    receiveCfg.signal_range_max_ns = 12000000; // the longest duration for NEC signal is 9000us, 12000000ns > 9000us, the receive won't stop early
+    rmt_symbol_word_t buffer[mPacketSize];
+    ESP_ERROR_CHECK(rmt_receive(mRxCh, &buffer, sizeof(buffer), &receiveCfg));
+
     while (true)
     {
         static constexpr auto msToWaitforVal = 1000;
@@ -238,22 +244,23 @@ void Transceiver::receiveTask()
         if (xQueueReceive(mRxQueue, &mEventBeingProc, msToWaitforVal / portTICK_PERIOD_MS))
         {
             example_parse_nec_frame(mEventBeingProc.received_symbols, mEventBeingProc.num_symbols);
-        }
 
-        ESP_LOGI(LOG_TAG, "ValueReceived: %d", mEventBeingProc.num_symbols);
+            ESP_ERROR_CHECK(rmt_receive(mRxCh, &buffer, sizeof(buffer), &receiveCfg));
+            ESP_LOGI(LOG_TAG, "Symbols Received: %d", mEventBeingProc.num_symbols);
+        }
     }
 }
 
 void Transceiver::enableRx()
 {
     rmt_enable(mRxCh);
-    xTaskCreate(this->receiveTaskImpl, RX_QUEUE_TASK_NAME, 4096, this, 4, &mQueueProcessor);
+    xTaskCreate(this->receiveTaskImpl, RX_QUEUE_TASK_NAME, 4096, this, 4, &mReceiveProccess);
 };
 
 void Transceiver::disableRx()
 {
     rmt_disable(mRxCh);
-    vTaskDelete(mQueueProcessor);
+    vTaskDelete(mReceiveProccess);
 };
 
 void Transceiver::enableTx() { rmt_enable(mTxCh); };
@@ -262,28 +269,36 @@ void Transceiver::disableTx() { rmt_disable(mTxCh); };
 
 void Transceiver::receive()
 {
-    rmt_receive_config_t aReceiveCfg;
-    aReceiveCfg.signal_range_min_ns = 1250;     // the shortest duration for NEC signal is 560us, 1250ns < 560us, valid signal won't be treated as noise
-    aReceiveCfg.signal_range_max_ns = 12000000; // the longest duration for NEC signal is 9000us, 12000000ns > 9000us, the receive won't stop early
+    // rmt_receive_config_t aReceiveCfg;
+    // aReceiveCfg.signal_range_min_ns = 1250;     // the shortest duration for NEC signal is 560us, 1250ns < 560us, valid signal won't be treated as noise
+    // aReceiveCfg.signal_range_max_ns = 12000000; // the longest duration for NEC signal is 9000us, 12000000ns > 9000us, the receive won't stop early
 
-    rmt_symbol_word_t buffer[mPacketSize];
-    ESP_ERROR_CHECK(rmt_receive(mRxCh, &buffer, sizeof(buffer), &aReceiveCfg));
-    for (int i = 0; i < mPacketSize; i++)
-    {
-        ESP_LOGI(LOG_TAG, "Symbol %d: %lu", i, buffer[i].val);
-    }
+    // rmt_symbol_word_t buffer[mPacketSize];
+    // ESP_ERROR_CHECK(rmt_receive(mRxCh, &buffer, sizeof(buffer), &aReceiveCfg));
+    // for (int i = 0; i < mPacketSize; i++)
+    // {
+    //     ESP_LOGI(LOG_TAG, "Symbol %d: %lu", i, buffer[i].val);
+    // }
 }
 
 void Transceiver::send()
 {
-    rmt_copy_encoder_config_t encoderConfig;
-    rmt_encoder_handle_t cpyEncoder;
-    rmt_new_copy_encoder(&encoderConfig, &cpyEncoder);
+
+    ir_nec_encoder_config_t nec_encoder_cfg = {
+        .resolution = EXAMPLE_IR_RESOLUTION_HZ,
+    };
+    rmt_encoder_handle_t nec_encoder = NULL;
+    ESP_ERROR_CHECK(rmt_new_ir_nec_encoder(&nec_encoder_cfg, &nec_encoder));
 
     rmt_transmit_config_t aTransmitConfig;
     aTransmitConfig.loop_count = 0;
 
+    const ir_nec_scan_code_t scan_code = {
+        .address = 0x0440,
+        .command = mFakePayload,
+    };
+
     mFakePayload++;
-    ESP_ERROR_CHECK(rmt_transmit(mTxCh, cpyEncoder, &mFakePayload, 1, &aTransmitConfig));
+    ESP_ERROR_CHECK(rmt_transmit(mTxCh, nec_encoder, &scan_code, sizeof(scan_code), &aTransmitConfig));
     ESP_LOGI(LOG_TAG, "Sent %d", mFakePayload);
 }

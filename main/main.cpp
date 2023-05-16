@@ -62,12 +62,7 @@ extern "C" void app_main(void)
     vTaskDelay(5000 / portTICK_PERIOD_MS);
     while (true)
     {
-        if (isRx)
-        {
-            ir->receive();
-            ESP_LOGI("MAIN", "REC");
-        }
-        else
+        if (!isRx)
         {
             ir->send();
             ESP_LOGI("MAIN", "SEND");

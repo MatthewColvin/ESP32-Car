@@ -39,11 +39,11 @@ private:
     bool readyForSymbol = false;
     std::vector<rmt_symbol_word_t> mReceivedSymbols;
 
-    TaskHandle_t mQueueProcessor;
+    TaskHandle_t mReceiveProccess;
     rmt_rx_done_event_data_t mEventBeingProc;
     static void receiveTaskImpl(void *aThis);
     void receiveTask();
 
-    uint8_t mFakePayload = 0;
+    uint16_t mFakePayload = 0;
     const uint mPacketSize = 0;
 };
