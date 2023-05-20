@@ -95,5 +95,8 @@
         "numbers": "cpp",
         "semaphore": "cpp"
     },
-    "idf.port": "/dev/ttyUSB0"
+    "idf.port": "/dev/cu.SLAB_USBtoUART",
+    "cmake.configureOnOpen": false,
+    "idf.monitorBaudRate": "115200",
+    "idf.flashBaudRate": "115200"
 }
