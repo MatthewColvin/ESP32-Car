@@ -7,7 +7,6 @@
 #include "ir_nec_encoder.h"
 
 #include <vector>
-
 class Transceiver
 {
 public:
@@ -20,6 +19,7 @@ public:
     void enableTx();
     void disableTx();
 
+    static void example_parse_nec_frame(rmt_symbol_word_t *rmt_nec_symbols, size_t symbol_num);
 private:
     void setupRxChannel(gpio_num_t rxPin);
     void setupTxChannel(gpio_num_t txPin);
