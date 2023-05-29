@@ -196,7 +196,7 @@ void Transceiver::setupRxChannel(gpio_num_t rxPin)
     // rx_carrier_cfg.frequency_hz = 25000;
     // rx_carrier_cfg.flags.polarity_active_low = false;
     // ESP_ERROR_CHECK(rmt_apply_carrier(mRxCh, &rx_carrier_cfg));
-    
+
     mRxCallbacks.on_recv_done = this->onReceiveImpl;
     ESP_ERROR_CHECK(rmt_rx_register_event_callbacks(mRxCh, &mRxCallbacks, this));
 }

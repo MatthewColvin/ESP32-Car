@@ -7,6 +7,7 @@
 #include "ir_nec_encoder.h"
 
 #include <vector>
+#include <functional>
 class Transceiver
 {
 public:
@@ -19,8 +20,11 @@ public:
     void enableTx();
     void disableTx();
 
-    static void example_parse_nec_frame(rmt_symbol_word_t *rmt_nec_symbols, size_t symbol_num);
+    void mSetReceiveHandler(std::function<void(uint16_t,uint16_t)> aReceiveHandler){mDataReceivedHandler = aReceiveHandler;};
+
 private:
+    void example_parse_nec_frame(rmt_symbol_word_t *rmt_nec_symbols, size_t symbol_num);
+    
     void setupRxChannel(gpio_num_t rxPin);
     void setupTxChannel(gpio_num_t txPin);
 
@@ -38,6 +42,7 @@ private:
     QueueHandle_t mRxQueue = xQueueCreate(5, sizeof(rmt_rx_done_event_data_t));
     bool readyForSymbol = false;
     std::vector<rmt_symbol_word_t> mReceivedSymbols;
+    std::function<void(uint16_t,uint16_t)> mDataReceivedHandler;
 
     TaskHandle_t mReceiveProccess;
     rmt_rx_done_event_data_t mEventBeingProc;
