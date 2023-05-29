@@ -54,7 +54,7 @@ constexpr bool isRx = true;
 extern "C" void app_main(void)
 {
     nvs_flash_init();
-    ir = new Transceiver(IRDETECT, IRLED, 64);
+    ir = new Transceiver(IRDETECT, IRLED);
     ir->mSetReceiveHandler(onReceiveIRData);
     if (isRx)
     {

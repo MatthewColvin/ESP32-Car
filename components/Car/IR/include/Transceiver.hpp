@@ -5,6 +5,7 @@
 #include "freertos/FreeRTOS.h"
 #include "freertos/queue.h"
 #include "ir_nec_encoder.h"
+#include "IrNECParser.hpp"
 
 #include <vector>
 #include <functional>
@@ -13,7 +14,7 @@ class Transceiver
 public:
     typedef std::function<void(uint16_t, uint16_t, bool)> RxHandlerTy;
 
-    Transceiver(gpio_num_t recievePin, gpio_num_t sendPin, const uint packetSize);
+    Transceiver(gpio_num_t recievePin, gpio_num_t sendPin);
     void send();
     void receive();
 
@@ -25,8 +26,6 @@ public:
     void mSetReceiveHandler(RxHandlerTy aReceiveHandler) { mDataReceivedHandler = aReceiveHandler; };
 
 private:
-    void example_parse_nec_frame(rmt_symbol_word_t *rmt_nec_symbols, size_t symbol_num);
-
     void setupRxChannel(gpio_num_t rxPin);
     void setupTxChannel(gpio_num_t txPin);
 
@@ -44,6 +43,7 @@ private:
     QueueHandle_t mRxQueue = xQueueCreate(5, sizeof(rmt_rx_done_event_data_t));
     bool readyForSymbol = false;
     std::vector<rmt_symbol_word_t> mReceivedSymbols;
+    IrNECParser mNecParser;
     RxHandlerTy mDataReceivedHandler = nullptr;
 
     TaskHandle_t mReceiveProccess;
@@ -52,5 +52,5 @@ private:
     void receiveTask();
 
     uint16_t mFakePayload = 0;
-    const uint mPacketSize = 0;
+    const uint mPacketSize = 64;
 };
