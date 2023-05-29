@@ -35,6 +35,11 @@ void onYRelease(){};
 void onTriggerPress() { car->enableTurbo(); };
 void onTriggerRelease() { car->disableTurbo(); };
 
+void onReceiveIRData(uint16_t address, uint16_t data, bool isRepeat)
+{
+    ESP_LOGI("MAIN", "Address=%04X, Command=%04X\r\n\r\n", address, data);
+}
+
 void registerJoystickButtonHandlers(std::shared_ptr<Mocute052> aJoystick)
 {
     aJoystick->onA(onAPress, onARelease);
@@ -50,6 +55,7 @@ extern "C" void app_main(void)
 {
     nvs_flash_init();
     ir = new Transceiver(IRDETECT, IRLED, 64);
+    ir->mSetReceiveHandler(onReceiveIRData);
     if (isRx)
     {
         ir->enableRx();

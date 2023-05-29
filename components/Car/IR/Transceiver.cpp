@@ -123,30 +123,29 @@ static bool nec_parse_frame_repeat(rmt_symbol_word_t *rmt_nec_symbols)
  */
 void Transceiver::example_parse_nec_frame(rmt_symbol_word_t *rmt_nec_symbols, size_t symbol_num)
 {
-    //printf("NEC frame start---\r\n");
-    for (size_t i = 0; i < symbol_num; i++)
-    {
-        // printf("{%d:%d},{%d:%d}\r\n", rmt_nec_symbols[i].level0, rmt_nec_symbols[i].duration0,
-        //        rmt_nec_symbols[i].level1, rmt_nec_symbols[i].duration1);
-    }
-    //printf("---NEC frame end: ");
-    // decode RMT symbols
+    // printf("NEC frame start---\r\n");
+    // for (size_t i = 0; i < symbol_num; i++)
+    // {
+    //     printf("{%d:%d},{%d:%d}\r\n", rmt_nec_symbols[i].level0, rmt_nec_symbols[i].duration0,
+    //            rmt_nec_symbols[i].level1, rmt_nec_symbols[i].duration1);
+    // }
+    // printf("---NEC frame end: ");
     switch (symbol_num)
     {
     case 34: // NEC normal frame
-        if (nec_parse_frame(rmt_nec_symbols))
+        if (mDataReceivedHandler && nec_parse_frame(rmt_nec_symbols))
         {
-            printf("Address=%04X, Command=%04X\r\n\r\n", s_nec_code_address, s_nec_code_command);
+            mDataReceivedHandler(s_nec_code_address, s_nec_code_command, false);
         }
         break;
     case 2: // NEC repeat frame
-        if (nec_parse_frame_repeat(rmt_nec_symbols))
+        if (mDataReceivedHandler && nec_parse_frame_repeat(rmt_nec_symbols))
         {
-            printf("Address=%04X, Command=%04X, repeat\r\n\r\n", s_nec_code_address, s_nec_code_command);
+            mDataReceivedHandler(s_nec_code_address, s_nec_code_command, true);
         }
         break;
     default:
-        //printf("Unknown NEC frame\r\n\r\n");
+        // printf("Unknown NEC frame\r\n\r\n");
         break;
     }
 }
@@ -183,19 +182,15 @@ void Transceiver::setupTxChannel(gpio_num_t txPin)
 
 void Transceiver::setupRxChannel(gpio_num_t rxPin)
 {
-    ESP_LOGI(LOG_TAG,"Create RX Config");
     rmt_rx_channel_config_t rxConfig;
     rxConfig.clk_src = RMT_CLK_SRC_DEFAULT;
     rxConfig.mem_block_symbols = mPacketSize;
     rxConfig.resolution_hz = EXAMPLE_IR_RESOLUTION_HZ;
     rxConfig.gpio_num = rxPin;
+    rxConfig.flags.with_dma = false;
+    rxConfig.flags.io_loop_back = false;
+    rxConfig.flags.invert_in = false;
     ESP_ERROR_CHECK(rmt_new_rx_channel(&rxConfig, &mRxCh));
-
-    // rmt_carrier_config_t rx_carrier_cfg;
-    // rx_carrier_cfg.duty_cycle = .33;
-    // rx_carrier_cfg.frequency_hz = 25000;
-    // rx_carrier_cfg.flags.polarity_active_low = false;
-    // ESP_ERROR_CHECK(rmt_apply_carrier(mRxCh, &rx_carrier_cfg));
 
     mRxCallbacks.on_recv_done = this->onReceiveImpl;
     ESP_ERROR_CHECK(rmt_rx_register_event_callbacks(mRxCh, &mRxCallbacks, this));
@@ -243,10 +238,10 @@ void Transceiver::receiveTask()
         if (xQueueReceive(mRxQueue, &mEventBeingProc, msToWaitforVal / portTICK_PERIOD_MS))
         {
             example_parse_nec_frame(mEventBeingProc.received_symbols, mEventBeingProc.num_symbols);
-
             ESP_ERROR_CHECK(rmt_receive(mRxCh, &buffer, sizeof(buffer), &receiveCfg));
-            ESP_LOGI(LOG_TAG, "Symbols Received: %d", mEventBeingProc.num_symbols);
-        }else{
+        }
+        else
+        {
             ESP_LOGI(LOG_TAG, "No Symbols Received");
             ESP_ERROR_CHECK(rmt_receive(mRxCh, &buffer, sizeof(buffer), &receiveCfg));
         }
@@ -256,7 +251,7 @@ void Transceiver::receiveTask()
 void Transceiver::enableRx()
 {
     rmt_enable(mRxCh);
-    xTaskCreate(this->receiveTaskImpl, RX_QUEUE_TASK_NAME, 4096, this, configMAX_PRIORITIES-1, &mReceiveProccess);
+    xTaskCreate(this->receiveTaskImpl, RX_QUEUE_TASK_NAME, 4096, this, configMAX_PRIORITIES - 1, &mReceiveProccess);
 };
 
 void Transceiver::disableRx()
