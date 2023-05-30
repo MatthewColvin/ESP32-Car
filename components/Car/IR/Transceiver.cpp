@@ -6,12 +6,10 @@
 
 #include "freertos/queue.h"
 
-#define EXAMPLE_IR_RESOLUTION_HZ 1000000 // 1MHz resolution, 1 tick = 1us
-
 #define LOG_TAG "Transceiver"
 #define RX_QUEUE_TASK_NAME "RX_Processor"
 
-Transceiver::Transceiver(gpio_num_t receivePin, gpio_num_t sendPin)
+Transceiver::Transceiver(int receivePin, int sendPin)
 {
 
     mReceivedSymbols.resize(mPacketSize);
@@ -19,12 +17,12 @@ Transceiver::Transceiver(gpio_num_t receivePin, gpio_num_t sendPin)
     setupTxChannel(sendPin);
 }
 
-void Transceiver::setupTxChannel(gpio_num_t txPin)
+void Transceiver::setupTxChannel(int txPin)
 {
     rmt_tx_channel_config_t txConfig;
     txConfig.clk_src = RMT_CLK_SRC_DEFAULT;
     txConfig.mem_block_symbols = mPacketSize;
-    txConfig.resolution_hz = EXAMPLE_IR_RESOLUTION_HZ;
+    txConfig.resolution_hz = Transceiver::IR_RESOLUTION_HZ;
     txConfig.trans_queue_depth = 4;
     txConfig.gpio_num = txPin;
     txConfig.flags.invert_out = false;
@@ -41,12 +39,12 @@ void Transceiver::setupTxChannel(gpio_num_t txPin)
     ESP_ERROR_CHECK(rmt_tx_register_event_callbacks(mTxCh, &mTxCallbacks, this));
 }
 
-void Transceiver::setupRxChannel(gpio_num_t rxPin)
+void Transceiver::setupRxChannel(int rxPin)
 {
     rmt_rx_channel_config_t rxConfig;
     rxConfig.clk_src = RMT_CLK_SRC_DEFAULT;
     rxConfig.mem_block_symbols = mPacketSize;
-    rxConfig.resolution_hz = EXAMPLE_IR_RESOLUTION_HZ;
+    rxConfig.resolution_hz = Transceiver::IR_RESOLUTION_HZ;
     rxConfig.gpio_num = rxPin;
     rxConfig.flags.with_dma = false;
     rxConfig.flags.io_loop_back = false;
@@ -98,12 +96,13 @@ void Transceiver::receiveTask()
 
         if (xQueueReceive(mRxQueue, &mEventBeingProc, msToWaitforVal / portTICK_PERIOD_MS))
         {
-            mNecParser.Parse();
-            // if (result.has_value())
-            // {
-            //     auto [addr, data, isRepeat] = result.value();
-            // }
-            // example_parse_nec_frame(mEventBeingProc.received_symbols, mEventBeingProc.num_symbols);
+            auto result = mNecParser.Parse(mEventBeingProc);
+            if (result.has_value())
+            {
+                auto [addr, data, isRepeat] = result.value();
+                mDataReceivedHandler(addr, data, isRepeat);
+            }
+
             ESP_ERROR_CHECK(rmt_receive(mRxCh, &buffer, sizeof(buffer), &receiveCfg));
         }
         else
@@ -134,7 +133,7 @@ void Transceiver::send()
 {
 
     ir_nec_encoder_config_t nec_encoder_cfg = {
-        .resolution = EXAMPLE_IR_RESOLUTION_HZ,
+        .resolution = Transceiver::IR_RESOLUTION_HZ,
     };
     rmt_encoder_handle_t nec_encoder = NULL;
     ESP_ERROR_CHECK(rmt_new_ir_nec_encoder(&nec_encoder_cfg, &nec_encoder));

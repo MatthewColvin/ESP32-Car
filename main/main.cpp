@@ -18,8 +18,8 @@
 #define RightMotorRightPin 2
 #define LeftMotorLeftPin 16
 #define LeftMotorRightPin 17
-#define IRLED GPIO_NUM_4
-#define IRDETECT GPIO_NUM_13
+#define IRLED 4
+#define IRDETECT 13
 
 Car *car;
 Transceiver *ir;

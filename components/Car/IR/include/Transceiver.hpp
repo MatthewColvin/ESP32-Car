@@ -14,20 +14,21 @@ class Transceiver
 public:
     typedef std::function<void(uint16_t, uint16_t, bool)> RxHandlerTy;
 
-    Transceiver(gpio_num_t recievePin, gpio_num_t sendPin);
+    Transceiver(int recievePin, int sendPin);
     void send();
-    void receive();
+    inline void mSetReceiveHandler(RxHandlerTy aReceiveHandler) { mDataReceivedHandler = aReceiveHandler; };
 
     void enableRx();
     void disableRx();
     void enableTx();
     void disableTx();
 
-    void mSetReceiveHandler(RxHandlerTy aReceiveHandler) { mDataReceivedHandler = aReceiveHandler; };
-
 private:
-    void setupRxChannel(gpio_num_t rxPin);
-    void setupTxChannel(gpio_num_t txPin);
+    static constexpr auto IR_RESOLUTION_HZ = 1000000; // 1MHz resolution, 1 tick = 1us;
+
+    void
+    setupRxChannel(int rxPin);
+    void setupTxChannel(int txPin);
 
     static bool onReceiveImpl(rmt_channel_handle_t rx_chan, const rmt_rx_done_event_data_t *edata, void *user_ctx);
     bool onReceive(const rmt_rx_done_event_data_t *edata);

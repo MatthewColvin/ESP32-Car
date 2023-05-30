@@ -20,10 +20,20 @@ public:
         uint16_t data = 0;
         bool isRepeat = false;
     };
-    void Parse(rmt_rx_done_event_data_t aDoneEvent);
-    void Parse();
+
+    /**
+     * @brief Use Parser to parse Remote Symbols and return some data
+     *        if it is a valid NEC transmission
+     *
+     * @param aDoneEvent - Event From RMT library after calling rmt_receive()
+     * @return std::optional<IrNECParser::Data>
+     *         std::nullopt - Parse was unsuccessful
+     *         IrNECParser::Data packed with address and data.
+     */
+    std::optional<IrNECParser::Data> Parse(rmt_rx_done_event_data_t aDoneEvent);
 
 private:
+    static constexpr auto IR_NEC_DECODE_MARGIN = 200; // Tolerance for parsing RMT symbols into bit stream
     /**
      * @brief NEC timing spec
      */
@@ -35,14 +45,15 @@ private:
     static constexpr auto NEC_PAYLOAD_ONE_DURATION_1 = 1690;
     static constexpr auto NEC_REPEAT_CODE_DURATION_0 = 9000;
     static constexpr auto NEC_REPEAT_CODE_DURATION_1 = 2250;
-
+    // Functions from EspIDF example to parse NEC codes
     bool nec_check_in_range(uint32_t signal_duration, uint32_t spec_duration);
     bool nec_parse_logic0(rmt_symbol_word_t *rmt_nec_symbols);
     bool nec_parse_logic1(rmt_symbol_word_t *rmt_nec_symbols);
     bool nec_parse_frame(rmt_symbol_word_t *rmt_nec_symbols);
     bool nec_parse_frame_repeat(rmt_symbol_word_t *rmt_nec_symbols);
     bool example_parse_nec_frame(rmt_symbol_word_t *rmt_nec_symbols, size_t symbol_num);
-    uint16_t s_nec_code_address;
-    uint16_t s_nec_code_command;
-    bool mCommandIsRepeat = false;
+
+    uint16_t mNecCodeAddress;
+    uint16_t mNecCodeCommand;
+    bool mIsRepeat = false;
 };

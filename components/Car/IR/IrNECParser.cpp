@@ -1,19 +1,13 @@
 #include "IrNECParser.hpp"
-#define EXAMPLE_IR_RESOLUTION_HZ 1000000 // 1MHz resolution, 1 tick = 1us
-#define EXAMPLE_IR_NEC_DECODE_MARGIN 200 // Tolerance for parsing RMT symbols into bit stream
-
-void IrNECParser::Parse()
-{
-}
 
 std::optional<IrNECParser::Data> IrNECParser::Parse(rmt_rx_done_event_data_t aDoneEvent)
 {
     if (example_parse_nec_frame(aDoneEvent.received_symbols, aDoneEvent.num_symbols))
     {
-        auto result = IrNECParser::Data(s_nec_code_address, s_nec_code_command, mCommandIsRepeat);
-        // return std::make_optional(result);
+        auto result = IrNECParser::Data(mNecCodeAddress, mNecCodeCommand, mIsRepeat);
+        return std::make_optional(result);
     }
-    // return std::nullopt;
+    return std::nullopt;
 }
 
 /**
@@ -22,8 +16,8 @@ std::optional<IrNECParser::Data> IrNECParser::Parse(rmt_rx_done_event_data_t aDo
 
 bool IrNECParser::nec_check_in_range(uint32_t signal_duration, uint32_t spec_duration)
 {
-    return (signal_duration < (spec_duration + EXAMPLE_IR_NEC_DECODE_MARGIN)) &&
-           (signal_duration > (spec_duration - EXAMPLE_IR_NEC_DECODE_MARGIN));
+    return (signal_duration < (spec_duration + IrNECParser::IR_NEC_DECODE_MARGIN)) &&
+           (signal_duration > (spec_duration - IrNECParser::IR_NEC_DECODE_MARGIN));
 }
 
 /**
@@ -31,8 +25,8 @@ bool IrNECParser::nec_check_in_range(uint32_t signal_duration, uint32_t spec_dur
  */
 bool IrNECParser::nec_parse_logic0(rmt_symbol_word_t *rmt_nec_symbols)
 {
-    return nec_check_in_range(rmt_nec_symbols->duration0, Transceiver::NEC_PAYLOAD_ZERO_DURATION_0) &&
-           nec_check_in_range(rmt_nec_symbols->duration1, Transceiver::NEC_PAYLOAD_ZERO_DURATION_1);
+    return nec_check_in_range(rmt_nec_symbols->duration0, IrNECParser::NEC_PAYLOAD_ZERO_DURATION_0) &&
+           nec_check_in_range(rmt_nec_symbols->duration1, IrNECParser::NEC_PAYLOAD_ZERO_DURATION_1);
 }
 
 /**
@@ -40,8 +34,8 @@ bool IrNECParser::nec_parse_logic0(rmt_symbol_word_t *rmt_nec_symbols)
  */
 bool IrNECParser::nec_parse_logic1(rmt_symbol_word_t *rmt_nec_symbols)
 {
-    return nec_check_in_range(rmt_nec_symbols->duration0, Transceiver::NEC_PAYLOAD_ONE_DURATION_0) &&
-           nec_check_in_range(rmt_nec_symbols->duration1, Transceiver::NEC_PAYLOAD_ONE_DURATION_1);
+    return nec_check_in_range(rmt_nec_symbols->duration0, IrNECParser::NEC_PAYLOAD_ONE_DURATION_0) &&
+           nec_check_in_range(rmt_nec_symbols->duration1, IrNECParser::NEC_PAYLOAD_ONE_DURATION_1);
 }
 
 /**
@@ -52,8 +46,8 @@ bool IrNECParser::nec_parse_frame(rmt_symbol_word_t *rmt_nec_symbols)
     rmt_symbol_word_t *cur = rmt_nec_symbols;
     uint16_t address = 0;
     uint16_t command = 0;
-    bool valid_leading_code = nec_check_in_range(cur->duration0, Transceiver::NEC_LEADING_CODE_DURATION_0) &&
-                              nec_check_in_range(cur->duration1, Transceiver::NEC_LEADING_CODE_DURATION_1);
+    bool valid_leading_code = nec_check_in_range(cur->duration0, IrNECParser::NEC_LEADING_CODE_DURATION_0) &&
+                              nec_check_in_range(cur->duration1, IrNECParser::NEC_LEADING_CODE_DURATION_1);
     if (!valid_leading_code)
     {
         return false;
@@ -92,8 +86,8 @@ bool IrNECParser::nec_parse_frame(rmt_symbol_word_t *rmt_nec_symbols)
         cur++;
     }
     // save address and command
-    s_nec_code_address = address;
-    s_nec_code_command = command;
+    mNecCodeAddress = address;
+    mNecCodeCommand = command;
     return true;
 }
 
@@ -102,8 +96,8 @@ bool IrNECParser::nec_parse_frame(rmt_symbol_word_t *rmt_nec_symbols)
  */
 bool IrNECParser::nec_parse_frame_repeat(rmt_symbol_word_t *rmt_nec_symbols)
 {
-    return nec_check_in_range(rmt_nec_symbols->duration0, Transceiver::NEC_REPEAT_CODE_DURATION_0) &&
-           nec_check_in_range(rmt_nec_symbols->duration1, Transceiver::NEC_REPEAT_CODE_DURATION_1);
+    return nec_check_in_range(rmt_nec_symbols->duration0, IrNECParser::NEC_REPEAT_CODE_DURATION_0) &&
+           nec_check_in_range(rmt_nec_symbols->duration1, IrNECParser::NEC_REPEAT_CODE_DURATION_1);
 }
 
 /**
@@ -128,6 +122,7 @@ bool IrNECParser::example_parse_nec_frame(rmt_symbol_word_t *rmt_nec_symbols, si
         break;
     default:
         // printf("Unknown NEC frame\r\n\r\n");
+        return false;
         break;
     }
 }
