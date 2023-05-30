@@ -11,8 +11,6 @@
 
 Transceiver::Transceiver(int receivePin, int sendPin)
 {
-
-    mReceivedSymbols.resize(mPacketSize);
     setupRxChannel(receivePin);
     setupTxChannel(sendPin);
 }
