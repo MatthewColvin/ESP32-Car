@@ -3,6 +3,7 @@
 #include "BTClassicHID.hpp"
 #include "car.hpp"
 #include "Transceiver.hpp"
+#include "buzzer.hpp"
 
 #include "esp_bt.h"
 #include "esp_bt_device.h"
@@ -23,10 +24,10 @@
 
 Car *car = nullptr;
 Transceiver *ir = nullptr;
-float oldCruiseSpeed = 0;
+buzzer *horn = new buzzer(GPIO_NUM_23);
 
-void onAPress(){};
-void onARelease(){};
+void onAPress(){horn->on();};
+void onARelease(){horn->off();};
 void onBPress() { car->setCruiseSpeed(car->getCruiseSpeed() - 1000); };
 void onBRelease(){};
 void onXPress() { car->setCruiseSpeed(car->getCruiseSpeed() + 1000); };
