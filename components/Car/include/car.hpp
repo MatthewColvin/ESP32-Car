@@ -8,7 +8,7 @@
 class Car
 {
 public:
-    Car(std::shared_ptr<Mocute052> remote, Motor* leftMotor, Motor* rightMotor);
+    Car(std::shared_ptr<Mocute052> remote, Motor *leftMotor, Motor *rightMotor);
 
     float getCruiseSpeed() { return mMotorMixer->getCruiseSpeed(); };
     void setCruiseSpeed(float aCruiseSpeed) { return mMotorMixer->setCruiseSpeed(aCruiseSpeed); };

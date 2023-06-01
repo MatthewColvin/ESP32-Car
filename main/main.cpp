@@ -21,8 +21,9 @@
 #define IRLED 4
 #define IRDETECT 13
 
-Car *car;
-Transceiver *ir;
+Car *car = nullptr;
+Transceiver *ir = nullptr;
+float oldCruiseSpeed = 0;
 
 void onAPress(){};
 void onARelease(){};
@@ -37,6 +38,28 @@ void onTriggerRelease() { car->disableTurbo(); };
 
 void onReceiveIRData(uint16_t address, uint16_t data, bool isRepeat)
 {
+    const auto powerButton = 0xB946;
+    const auto upButton = 0xB748;
+    const auto downButton = 0xB24D;
+    const auto leftButton = 0xB14E;
+    const auto rightButton = 0xB649;
+    if (!car) // Early return in case car is not created.
+    {
+        return;
+    }
+    switch (data)
+    {
+    case powerButton:
+        car->setCruiseSpeed(1);
+        break;
+    case upButton:
+        car->setCruiseSpeed(car->getCruiseSpeed() + 1000);
+        break;
+    case downButton:
+        car->setCruiseSpeed(car->getCruiseSpeed() - 1000);
+        break;
+    }
+
     ESP_LOGI("MAIN", "Address=%04X, Command=%04X\r\n\r\n", address, data);
 }
 
@@ -65,16 +88,16 @@ extern "C" void app_main(void)
         ir->enableTx();
     }
 
-    vTaskDelay(5000 / portTICK_PERIOD_MS);
-    while (true)
-    {
-        if (!isRx)
-        {
-            ir->send();
-            ESP_LOGI("MAIN", "SEND");
-        }
-        vTaskDelay(1000 / portTICK_PERIOD_MS);
-    }
+    // vTaskDelay(5000 / portTICK_PERIOD_MS);
+    // while (true)
+    // {
+    //     if (!isRx)
+    //     {
+    //         ir->send();
+    //         ESP_LOGI("MAIN", "SEND");
+    //     }
+    //     vTaskDelay(1000 / portTICK_PERIOD_MS);
+    // }
 
     auto bt = BTClassicHID::getInstance();
     esp_bd_addr_t joystickAddress{0xe0, 0xf8, 0x48, 0x05, 0x29, 0x50};
