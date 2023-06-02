@@ -15,6 +15,14 @@ Transceiver::Transceiver(int receivePin, int sendPin)
     setupTxChannel(sendPin);
 }
 
+Transceiver::~Transceiver(){
+    disableRx();
+    disableTx();
+    if (mRxCh) { rmt_del_channel(mRxCh); }
+    if (mTxCh) { rmt_del_channel(mTxCh); }
+    if (mRxQueue) { vQueueDelete(mRxQueue); }
+}
+
 void Transceiver::setupTxChannel(int txPin)
 {
     rmt_tx_channel_config_t txConfig;
@@ -88,19 +96,19 @@ void Transceiver::receiveTask()
     rmt_symbol_word_t buffer[mPacketSize];
     ESP_ERROR_CHECK(rmt_receive(mRxCh, &buffer, sizeof(buffer), &receiveCfg));
 
+    rmt_rx_done_event_data_t eventToProccess;
     while (true)
     {
         static constexpr auto msToWaitforVal = 1000;
 
-        if (xQueueReceive(mRxQueue, &mEventBeingProc, msToWaitforVal / portTICK_PERIOD_MS))
+        if (xQueueReceive(mRxQueue, &eventToProccess, msToWaitforVal / portTICK_PERIOD_MS))
         {
-            auto result = mNecParser.Parse(mEventBeingProc);
+            auto result = mNecParser.Parse(eventToProccess);
             if (result.has_value())
             {
                 auto [addr, data, isRepeat] = result.value();
                 mDataReceivedHandler(addr, data, isRepeat);
             }
-
             ESP_ERROR_CHECK(rmt_receive(mRxCh, &buffer, sizeof(buffer), &receiveCfg));
         }
         else
@@ -113,38 +121,46 @@ void Transceiver::receiveTask()
 
 void Transceiver::enableRx()
 {
+    if (mIsRxEnabled) {return;} // early return if we are already ready to Receive
     rmt_enable(mRxCh);
-    xTaskCreate(this->receiveTaskImpl, RX_QUEUE_TASK_NAME, 4096, this, configMAX_PRIORITIES - 1, &mReceiveProccess);
+    xTaskCreate(this->receiveTaskImpl, RX_QUEUE_TASK_NAME, 4096, this, 5, &mReceiveProccess);
+    mIsRxEnabled = true;
 };
 
 void Transceiver::disableRx()
 {
+    if(!mIsRxEnabled){return;}// early return if we are already are disabled
     rmt_disable(mRxCh);
     vTaskDelete(mReceiveProccess);
+    mIsRxEnabled = false;
 };
 
-void Transceiver::enableTx() { rmt_enable(mTxCh); };
-
-void Transceiver::disableTx() { rmt_disable(mTxCh); };
-
-void Transceiver::send()
-{
-
+void Transceiver::enableTx() {
+    if(mIsTxEnabled){return;}
+    rmt_enable(mTxCh);
     ir_nec_encoder_config_t nec_encoder_cfg = {
         .resolution = Transceiver::IR_RESOLUTION_HZ,
     };
-    rmt_encoder_handle_t nec_encoder = NULL;
-    ESP_ERROR_CHECK(rmt_new_ir_nec_encoder(&nec_encoder_cfg, &nec_encoder));
+    ESP_ERROR_CHECK(rmt_new_ir_nec_encoder(&nec_encoder_cfg, &mNecEncoder));
+    mIsTxEnabled = true;
+};
 
+void Transceiver::disableTx() {
+    if(!mIsTxEnabled){return;}
+    if (mNecEncoder){  rmt_del_encoder(mNecEncoder); }
+    rmt_disable(mTxCh);
+    mIsTxEnabled = false;
+};
+
+void Transceiver::send(uint16_t address, uint16_t command, uint16_t numRepeats = 0)
+{
     rmt_transmit_config_t aTransmitConfig;
-    aTransmitConfig.loop_count = 0;
+    aTransmitConfig.loop_count = numRepeats;
 
     const ir_nec_scan_code_t scan_code = {
-        .address = 0x0440,
-        .command = mFakePayload,
+        .address = address,
+        .command = command,
     };
 
-    mFakePayload++;
-    ESP_ERROR_CHECK(rmt_transmit(mTxCh, nec_encoder, &scan_code, sizeof(scan_code), &aTransmitConfig));
-    ESP_LOGI(LOG_TAG, "Sent %d", mFakePayload);
+    ESP_ERROR_CHECK(rmt_transmit(mTxCh, mNecEncoder, &scan_code, sizeof(scan_code), &aTransmitConfig));
 }
