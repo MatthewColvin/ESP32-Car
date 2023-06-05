@@ -15,12 +15,22 @@ Transceiver::Transceiver(int receivePin, int sendPin)
     setupTxChannel(sendPin);
 }
 
-Transceiver::~Transceiver(){
+Transceiver::~Transceiver()
+{
     disableRx();
     disableTx();
-    if (mRxCh) { rmt_del_channel(mRxCh); }
-    if (mTxCh) { rmt_del_channel(mTxCh); }
-    if (mRxQueue) { vQueueDelete(mRxQueue); }
+    if (mRxCh)
+    {
+        rmt_del_channel(mRxCh);
+    }
+    if (mTxCh)
+    {
+        rmt_del_channel(mTxCh);
+    }
+    if (mRxQueue)
+    {
+        vQueueDelete(mRxQueue);
+    }
 }
 
 void Transceiver::setupTxChannel(int txPin)
@@ -31,8 +41,6 @@ void Transceiver::setupTxChannel(int txPin)
     txConfig.resolution_hz = Transceiver::IR_RESOLUTION_HZ;
     txConfig.trans_queue_depth = 4;
     txConfig.gpio_num = txPin;
-    txConfig.flags.invert_out = false;
-    txConfig.flags.with_dma = false;
     ESP_ERROR_CHECK(rmt_new_tx_channel(&txConfig, &mTxCh));
 
     rmt_carrier_config_t tx_carrier_cfg;
@@ -121,7 +129,10 @@ void Transceiver::receiveTask()
 
 void Transceiver::enableRx()
 {
-    if (mIsRxEnabled) {return;} // early return if we are already ready to Receive
+    if (mIsRxEnabled)
+    {
+        return;
+    } // early return if we are already ready to Receive
     rmt_enable(mRxCh);
     xTaskCreate(this->receiveTaskImpl, RX_QUEUE_TASK_NAME, 4096, this, 5, &mReceiveProccess);
     mIsRxEnabled = true;
@@ -129,38 +140,55 @@ void Transceiver::enableRx()
 
 void Transceiver::disableRx()
 {
-    if(!mIsRxEnabled){return;}// early return if we are already are disabled
+    if (!mIsRxEnabled)
+    {
+        return;
+    } // early return if we are already are disabled
     rmt_disable(mRxCh);
     vTaskDelete(mReceiveProccess);
     mIsRxEnabled = false;
 };
 
-void Transceiver::enableTx() {
-    if(mIsTxEnabled){return;}
+void Transceiver::enableTx()
+{
+    if (mIsTxEnabled)
+    {
+        return;
+    }
     rmt_enable(mTxCh);
     ir_nec_encoder_config_t nec_encoder_cfg = {
         .resolution = Transceiver::IR_RESOLUTION_HZ,
     };
     ESP_ERROR_CHECK(rmt_new_ir_nec_encoder(&nec_encoder_cfg, &mNecEncoder));
     mIsTxEnabled = true;
+    ESP_LOGI(LOG_TAG, "IR Transmit Enabled");
 };
 
-void Transceiver::disableTx() {
-    if(!mIsTxEnabled){return;}
-    if (mNecEncoder){  rmt_del_encoder(mNecEncoder); }
+void Transceiver::disableTx()
+{
+    if (!mIsTxEnabled)
+    {
+        return;
+    }
+    if (mNecEncoder)
+    {
+        rmt_del_encoder(mNecEncoder);
+    }
     rmt_disable(mTxCh);
     mIsTxEnabled = false;
 };
 
-void Transceiver::send(uint16_t address, uint16_t command, uint16_t numRepeats = 0)
+void Transceiver::send(uint16_t address, uint16_t command, uint16_t numRepeats)
 {
     rmt_transmit_config_t aTransmitConfig;
-    aTransmitConfig.loop_count = numRepeats;
+    aTransmitConfig.loop_count = 0; // Todo this has to be zero
+    aTransmitConfig.flags.eot_level = 1;
 
     const ir_nec_scan_code_t scan_code = {
         .address = address,
         .command = command,
     };
-
+    // TODO figure out why this is not sending more than one time.
+    ESP_ERROR_CHECK(rmt_encoder_reset(mNecEncoder));
     ESP_ERROR_CHECK(rmt_transmit(mTxCh, mNecEncoder, &scan_code, sizeof(scan_code), &aTransmitConfig));
 }

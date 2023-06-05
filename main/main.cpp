@@ -21,13 +21,14 @@
 #define LeftMotorRightPin 17
 #define IRLED 4
 #define IRDETECT 13
+constexpr auto SpeedSetIRAddress = 0x1254;
 
 Car *car = nullptr;
 Transceiver *ir = nullptr;
 buzzer *horn = new buzzer(GPIO_NUM_23);
 
-void onAPress(){horn->on();};
-void onARelease(){horn->off();};
+void onAPress() { horn->on(); };
+void onARelease() { horn->off(); };
 void onBPress() { car->setCruiseSpeed(car->getCruiseSpeed() - 1000); };
 void onBRelease(){};
 void onXPress() { car->setCruiseSpeed(car->getCruiseSpeed() + 1000); };
@@ -39,6 +40,7 @@ void onTriggerRelease() { car->disableTurbo(); };
 
 void onReceiveIRData(uint16_t address, uint16_t data, bool isRepeat)
 {
+
     const auto powerButton = 0xB946;
     const auto upButton = 0xB748;
     const auto downButton = 0xB24D;
@@ -47,6 +49,12 @@ void onReceiveIRData(uint16_t address, uint16_t data, bool isRepeat)
     if (!car) // Early return in case car is not created.
     {
         return;
+    }
+
+    if (address == SpeedSetIRAddress)
+    {
+        car->setCruiseSpeed(data);
+        horn->on();
     }
     switch (data)
     {
@@ -73,7 +81,7 @@ void registerJoystickButtonHandlers(std::shared_ptr<Mocute052> aJoystick)
     aJoystick->onTrigger(onTriggerPress, onTriggerRelease);
 }
 
-constexpr bool isRx = true;
+constexpr bool isRx = false;
 
 extern "C" void app_main(void)
 {
@@ -89,16 +97,26 @@ extern "C" void app_main(void)
         ir->enableTx();
     }
 
-    // vTaskDelay(5000 / portTICK_PERIOD_MS);
-    // while (true)
-    // {
-    //     if (!isRx)
-    //     {
-    //         ir->send();
-    //         ESP_LOGI("MAIN", "SEND");
-    //     }
-    //     vTaskDelay(1000 / portTICK_PERIOD_MS);
-    // }
+    bool isSpeedAscending = true;
+    uint16_t speed = 1000;
+    while (!isRx)
+    {
+
+        if (speed <= 1000)
+        {
+            isSpeedAscending = true;
+            speed = 1000;
+        }
+        else if (speed >= Motor::MAX_SPEED - 1000)
+        {
+            isSpeedAscending = false;
+        }
+
+        ESP_LOGI("main", "sending speed: %d", speed);
+        ir->send(SpeedSetIRAddress, speed);
+        speed += isSpeedAscending ? 1000 : -1000;
+        vTaskDelay(5000 / portTICK_PERIOD_MS);
+    }
 
     auto bt = BTClassicHID::getInstance();
     esp_bd_addr_t joystickAddress{0xe0, 0xf8, 0x48, 0x05, 0x29, 0x50};
