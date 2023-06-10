@@ -86,21 +86,21 @@ constexpr bool isRx = false;
 extern "C" void app_main(void)
 {
     nvs_flash_init();
-    ir = new Transceiver(IRDETECT, IRLED);
-    ir->mSetReceiveHandler(onReceiveIRData);
-    if (isRx)
-    {
-        ir->enableRx();
-    }
-    else
-    {
-        ir->enableTx();
-    }
 
     bool isSpeedAscending = true;
     uint16_t speed = 1000;
     while (!isRx)
     {
+        ir = new Transceiver(IRDETECT, IRLED);
+        ir->mSetReceiveHandler(onReceiveIRData);
+        if (isRx)
+        {
+            ir->enableRx();
+        }
+        else
+        {
+            ir->enableTx();
+        }
 
         if (speed <= 1000)
         {
@@ -111,11 +111,11 @@ extern "C" void app_main(void)
         {
             isSpeedAscending = false;
         }
-
         ESP_LOGI("main", "sending speed: %d", speed);
         ir->send(SpeedSetIRAddress, speed);
         speed += isSpeedAscending ? 1000 : -1000;
-        vTaskDelay(5000 / portTICK_PERIOD_MS);
+        delete (ir);
+        vTaskDelay(50000 / portTICK_PERIOD_MS);
     }
 
     auto bt = BTClassicHID::getInstance();

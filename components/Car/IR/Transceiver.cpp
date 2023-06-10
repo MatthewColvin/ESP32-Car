@@ -155,7 +155,7 @@ void Transceiver::enableTx()
     {
         return;
     }
-    rmt_enable(mTxCh);
+    ESP_ERROR_CHECK(rmt_enable(mTxCh));
     ir_nec_encoder_config_t nec_encoder_cfg = {
         .resolution = Transceiver::IR_RESOLUTION_HZ,
     };
@@ -170,11 +170,11 @@ void Transceiver::disableTx()
     {
         return;
     }
+    rmt_disable(mTxCh);
     if (mNecEncoder)
     {
         rmt_del_encoder(mNecEncoder);
     }
-    rmt_disable(mTxCh);
     mIsTxEnabled = false;
 };
 
