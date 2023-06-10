@@ -21,6 +21,15 @@ Transceiver::~Transceiver()
     teardownRxChannel();
 }
 
+void Transceiver::reset()
+{
+    teardownTxChannel();
+    teardownRxChannel();
+
+    setupRxChannel();
+    setupTxChannel();
+}
+
 void Transceiver::teardownTxChannel()
 {
     disableTx();

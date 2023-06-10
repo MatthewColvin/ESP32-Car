@@ -50,6 +50,8 @@ public:
      */
     void disableTx();
 
+    void reset();
+
 private:
     static constexpr auto IR_RESOLUTION_HZ = 1000000; // 1MHz resolution, 1 tick = 1us;
     static constexpr auto mPacketSize = 64;
@@ -69,21 +71,22 @@ private:
     TaskHandle_t mReceiveProccess;            // Task Handle for Receiving incoming transmissions
     void receiveTask();                       // Task running on mReceiveProccess
     static void receiveTaskImpl(void *aThis); // Wrapper for Task so it can be used with FreeRtos
-
     QueueHandle_t mRxQueue = xQueueCreate(5, sizeof(rmt_rx_done_event_data_t));
+
     IrNECParser mNecParser;                     // Parser To Parse things coming off the Queue
     RxHandlerTy mDataReceivedHandler = nullptr; // Callback for user of class to handle parsed data from the Queue
 
     // Transmit
     const int mTxPin;
     bool mIsTxEnabled = false;
-    rmt_channel_handle_t mTxCh = nullptr;
     void setupTxChannel();
     void teardownTxChannel();
+    rmt_channel_handle_t mTxCh = nullptr;
 
     // Todo figure out what these are for...
     rmt_tx_event_callbacks_t mTxCallbacks;
     static bool onSendDoneImpl(rmt_channel_handle_t rx_chan, const rmt_tx_done_event_data_t *edata, void *user_ctx);
     bool onSendDone(const rmt_tx_done_event_data_t *edata);
+
     rmt_encoder_handle_t mNecEncoder = nullptr;
 };

@@ -81,27 +81,16 @@ void registerJoystickButtonHandlers(std::shared_ptr<Mocute052> aJoystick)
     aJoystick->onTrigger(onTriggerPress, onTriggerRelease);
 }
 
-constexpr bool isRx = false;
-
 extern "C" void app_main(void)
 {
     nvs_flash_init();
 
     bool isSpeedAscending = true;
     uint16_t speed = 1000;
-    while (!isRx)
+    ir = new Transceiver(IRDETECT, IRLED);
+    while (true)
     {
-        ir = new Transceiver(IRDETECT, IRLED);
-        ir->mSetReceiveHandler(onReceiveIRData);
-        if (isRx)
-        {
-            ir->enableRx();
-        }
-        else
-        {
-            ir->enableTx();
-        }
-
+        ir->enableTx();
         if (speed <= 1000)
         {
             isSpeedAscending = true;
@@ -113,9 +102,9 @@ extern "C" void app_main(void)
         }
         ESP_LOGI("main", "sending speed: %d", speed);
         ir->send(SpeedSetIRAddress, speed);
+        ir->reset();
         speed += isSpeedAscending ? 1000 : -1000;
-        delete (ir);
-        vTaskDelay(50000 / portTICK_PERIOD_MS);
+        vTaskDelay(5000 / portTICK_PERIOD_MS);
     }
 
     auto bt = BTClassicHID::getInstance();
