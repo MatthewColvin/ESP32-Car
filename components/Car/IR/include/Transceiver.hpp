@@ -55,8 +55,10 @@ private:
     static constexpr auto mPacketSize = 64;
 
     // Receive
+    const int mRxPin;
     bool mIsRxEnabled = false;
-    void setupRxChannel(int rxPin);
+    void setupRxChannel();
+    void teardownRxChannel();
     rmt_channel_handle_t mRxCh = nullptr;
 
     // Callback for the remote library to put data on the Receive Queue
@@ -73,9 +75,11 @@ private:
     RxHandlerTy mDataReceivedHandler = nullptr; // Callback for user of class to handle parsed data from the Queue
 
     // Transmit
+    const int mTxPin;
     bool mIsTxEnabled = false;
     rmt_channel_handle_t mTxCh = nullptr;
-    void setupTxChannel(int txPin);
+    void setupTxChannel();
+    void teardownTxChannel();
 
     // Todo figure out what these are for...
     rmt_tx_event_callbacks_t mTxCallbacks;

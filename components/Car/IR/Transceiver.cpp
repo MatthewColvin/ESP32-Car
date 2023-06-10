@@ -9,38 +9,39 @@
 #define LOG_TAG "Transceiver"
 #define RX_QUEUE_TASK_NAME "RX_Processor"
 
-Transceiver::Transceiver(int receivePin, int sendPin)
+Transceiver::Transceiver(int receivePin, int sendPin) : mRxPin(receivePin), mTxPin(sendPin)
 {
-    setupRxChannel(receivePin);
-    setupTxChannel(sendPin);
+    setupRxChannel();
+    setupTxChannel();
 }
 
 Transceiver::~Transceiver()
 {
-    disableRx();
+    teardownTxChannel();
+    teardownRxChannel();
+}
+
+void Transceiver::teardownTxChannel()
+{
     disableTx();
-    if (mRxCh)
-    {
-        rmt_del_channel(mRxCh);
-    }
     if (mTxCh)
     {
         rmt_del_channel(mTxCh);
     }
-    if (mRxQueue)
-    {
-        vQueueDelete(mRxQueue);
-    }
 }
 
-void Transceiver::setupTxChannel(int txPin)
+void Transceiver::setupTxChannel()
 {
     rmt_tx_channel_config_t txConfig;
     txConfig.clk_src = RMT_CLK_SRC_DEFAULT;
     txConfig.mem_block_symbols = mPacketSize;
     txConfig.resolution_hz = Transceiver::IR_RESOLUTION_HZ;
     txConfig.trans_queue_depth = 4;
-    txConfig.gpio_num = txPin;
+    txConfig.gpio_num = mTxPin;
+    txConfig.flags.invert_out = false;
+    txConfig.flags.io_loop_back = false;
+    txConfig.flags.io_od_mode = false;
+    txConfig.flags.with_dma = false;
     ESP_ERROR_CHECK(rmt_new_tx_channel(&txConfig, &mTxCh));
 
     rmt_carrier_config_t tx_carrier_cfg;
@@ -53,13 +54,22 @@ void Transceiver::setupTxChannel(int txPin)
     ESP_ERROR_CHECK(rmt_tx_register_event_callbacks(mTxCh, &mTxCallbacks, this));
 }
 
-void Transceiver::setupRxChannel(int rxPin)
+void Transceiver::teardownRxChannel()
+{
+    disableRx();
+    if (mRxCh)
+    {
+        rmt_del_channel(mRxCh);
+    }
+}
+
+void Transceiver::setupRxChannel()
 {
     rmt_rx_channel_config_t rxConfig;
     rxConfig.clk_src = RMT_CLK_SRC_DEFAULT;
     rxConfig.mem_block_symbols = mPacketSize;
     rxConfig.resolution_hz = Transceiver::IR_RESOLUTION_HZ;
-    rxConfig.gpio_num = rxPin;
+    rxConfig.gpio_num = mRxPin;
     rxConfig.flags.with_dma = false;
     rxConfig.flags.io_loop_back = false;
     rxConfig.flags.invert_in = false;
