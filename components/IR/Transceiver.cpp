@@ -187,7 +187,7 @@ void Transceiver::disableTx()
     mIsTxEnabled = false;
 };
 
-void Transceiver::send(uint16_t address, uint16_t data, uint16_t numRepeats)
+void Transceiver::send(uint16_t address, uint16_t data)
 {
     if (!mIsTxEnabled)
     {

@@ -20,9 +20,8 @@ public:
      *
      * @param address - NEC Address
      * @param command - NEC Command
-     * @param numRepeats - number of times to send the command
      */
-    void send(uint16_t address, uint16_t command, uint16_t numRepeats = 0);
+    void send(uint16_t address, uint16_t data);
 
     typedef std::function<void(uint16_t, uint16_t, bool)> RxHandlerTy;
 
