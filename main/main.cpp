@@ -24,7 +24,7 @@
 constexpr auto SpeedSetIRAddress = 0x1254;
 
 Car *car = nullptr;
-Transceiver *ir = nullptr;
+Transceiver *ir = new Transceiver(IRDETECT, IRLED);
 buzzer *horn = new buzzer(GPIO_NUM_23);
 
 void onAPress() { horn->on(); };
@@ -81,13 +81,10 @@ void registerJoystickButtonHandlers(std::shared_ptr<Mocute052> aJoystick)
     aJoystick->onTrigger(onTriggerPress, onTriggerRelease);
 }
 
-extern "C" void app_main(void)
+void transmitTask()
 {
-    nvs_flash_init();
-
     bool isSpeedAscending = true;
     uint16_t speed = 1000;
-    ir = new Transceiver(IRDETECT, IRLED);
     ir->enableTx();
     while (true)
     {
@@ -105,7 +102,16 @@ extern "C" void app_main(void)
         speed += isSpeedAscending ? 1000 : -1000;
         vTaskDelay(5000 / portTICK_PERIOD_MS);
     }
+}
 
+bool isTx = false;
+extern "C" void app_main(void)
+{
+    nvs_flash_init();
+    if (isTx)
+    {
+        transmitTask();
+    }
     auto bt = BTClassicHID::getInstance();
     esp_bd_addr_t joystickAddress{0xe0, 0xf8, 0x48, 0x05, 0x29, 0x50};
     auto joystick = bt->connect<Mocute052>(joystickAddress);
