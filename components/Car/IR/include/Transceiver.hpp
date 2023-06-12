@@ -50,8 +50,6 @@ public:
      */
     void disableTx();
 
-    void reset();
-
 private:
     static constexpr auto IR_RESOLUTION_HZ = 1000000; // 1MHz resolution, 1 tick = 1us;
     static constexpr auto mPacketSize = 64;
@@ -62,6 +60,7 @@ private:
     void setupRxChannel();
     void teardownRxChannel();
     rmt_channel_handle_t mRxCh = nullptr;
+    rmt_rx_channel_config_t mRxConfig;
 
     // Callback for the remote library to put data on the Receive Queue
     rmt_rx_event_callbacks_t mRxCallbacks;
@@ -82,6 +81,8 @@ private:
     void setupTxChannel();
     void teardownTxChannel();
     rmt_channel_handle_t mTxCh = nullptr;
+    rmt_tx_channel_config_t mTxConfig;
+    rmt_carrier_config_t mTxCarrierConfig;
 
     // Todo figure out what these are for...
     rmt_tx_event_callbacks_t mTxCallbacks;

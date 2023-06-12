@@ -88,9 +88,9 @@ extern "C" void app_main(void)
     bool isSpeedAscending = true;
     uint16_t speed = 1000;
     ir = new Transceiver(IRDETECT, IRLED);
+    ir->enableTx();
     while (true)
     {
-        ir->enableTx();
         if (speed <= 1000)
         {
             isSpeedAscending = true;
@@ -102,7 +102,6 @@ extern "C" void app_main(void)
         }
         ESP_LOGI("main", "sending speed: %d", speed);
         ir->send(SpeedSetIRAddress, speed);
-        ir->reset();
         speed += isSpeedAscending ? 1000 : -1000;
         vTaskDelay(5000 / portTICK_PERIOD_MS);
     }

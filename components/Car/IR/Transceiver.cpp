@@ -11,23 +11,41 @@
 
 Transceiver::Transceiver(int receivePin, int sendPin) : mRxPin(receivePin), mTxPin(sendPin)
 {
-    setupRxChannel();
+    // Tx Configs
+    mTxConfig.clk_src = RMT_CLK_SRC_DEFAULT;
+    mTxConfig.mem_block_symbols = mPacketSize;
+    mTxConfig.resolution_hz = Transceiver::IR_RESOLUTION_HZ;
+    mTxConfig.trans_queue_depth = 4;
+    mTxConfig.gpio_num = mTxPin;
+    mTxConfig.flags.invert_out = false;
+    mTxConfig.flags.io_loop_back = false;
+    mTxConfig.flags.io_od_mode = false;
+    mTxConfig.flags.with_dma = false;
+
+    mTxCarrierConfig.duty_cycle = 0.33;
+    mTxCarrierConfig.frequency_hz = 38000;
+    mTxCarrierConfig.flags.polarity_active_low = false;
+
+    mTxCallbacks.on_trans_done = this->onSendDoneImpl;
     setupTxChannel();
+
+    // Rx Configs
+    mRxConfig.clk_src = RMT_CLK_SRC_DEFAULT;
+    mRxConfig.mem_block_symbols = mPacketSize;
+    mRxConfig.resolution_hz = Transceiver::IR_RESOLUTION_HZ;
+    mRxConfig.gpio_num = mRxPin;
+    mRxConfig.flags.with_dma = false;
+    mRxConfig.flags.io_loop_back = false;
+    mRxConfig.flags.invert_in = false;
+
+    mRxCallbacks.on_recv_done = this->onReceiveImpl;
+    setupRxChannel();
 }
 
 Transceiver::~Transceiver()
 {
     teardownTxChannel();
     teardownRxChannel();
-}
-
-void Transceiver::reset()
-{
-    teardownTxChannel();
-    teardownRxChannel();
-
-    setupRxChannel();
-    setupTxChannel();
 }
 
 void Transceiver::teardownTxChannel()
@@ -41,25 +59,8 @@ void Transceiver::teardownTxChannel()
 
 void Transceiver::setupTxChannel()
 {
-    rmt_tx_channel_config_t txConfig;
-    txConfig.clk_src = RMT_CLK_SRC_DEFAULT;
-    txConfig.mem_block_symbols = mPacketSize;
-    txConfig.resolution_hz = Transceiver::IR_RESOLUTION_HZ;
-    txConfig.trans_queue_depth = 4;
-    txConfig.gpio_num = mTxPin;
-    txConfig.flags.invert_out = false;
-    txConfig.flags.io_loop_back = false;
-    txConfig.flags.io_od_mode = false;
-    txConfig.flags.with_dma = false;
-    ESP_ERROR_CHECK(rmt_new_tx_channel(&txConfig, &mTxCh));
-
-    rmt_carrier_config_t tx_carrier_cfg;
-    tx_carrier_cfg.duty_cycle = 0.33;
-    tx_carrier_cfg.frequency_hz = 38000;
-    tx_carrier_cfg.flags.polarity_active_low = false;
-    ESP_ERROR_CHECK(rmt_apply_carrier(mTxCh, &tx_carrier_cfg));
-
-    mTxCallbacks.on_trans_done = this->onSendDoneImpl;
+    ESP_ERROR_CHECK(rmt_new_tx_channel(&mTxConfig, &mTxCh));
+    ESP_ERROR_CHECK(rmt_apply_carrier(mTxCh, &mTxCarrierConfig));
     ESP_ERROR_CHECK(rmt_tx_register_event_callbacks(mTxCh, &mTxCallbacks, this));
 }
 
@@ -74,17 +75,7 @@ void Transceiver::teardownRxChannel()
 
 void Transceiver::setupRxChannel()
 {
-    rmt_rx_channel_config_t rxConfig;
-    rxConfig.clk_src = RMT_CLK_SRC_DEFAULT;
-    rxConfig.mem_block_symbols = mPacketSize;
-    rxConfig.resolution_hz = Transceiver::IR_RESOLUTION_HZ;
-    rxConfig.gpio_num = mRxPin;
-    rxConfig.flags.with_dma = false;
-    rxConfig.flags.io_loop_back = false;
-    rxConfig.flags.invert_in = false;
-    ESP_ERROR_CHECK(rmt_new_rx_channel(&rxConfig, &mRxCh));
-
-    mRxCallbacks.on_recv_done = this->onReceiveImpl;
+    ESP_ERROR_CHECK(rmt_new_rx_channel(&mRxConfig, &mRxCh));
     ESP_ERROR_CHECK(rmt_rx_register_event_callbacks(mRxCh, &mRxCallbacks, this));
 }
 
@@ -180,7 +171,6 @@ void Transceiver::enableTx()
     };
     ESP_ERROR_CHECK(rmt_new_ir_nec_encoder(&nec_encoder_cfg, &mNecEncoder));
     mIsTxEnabled = true;
-    ESP_LOGI(LOG_TAG, "IR Transmit Enabled");
 };
 
 void Transceiver::disableTx()
@@ -197,17 +187,25 @@ void Transceiver::disableTx()
     mIsTxEnabled = false;
 };
 
-void Transceiver::send(uint16_t address, uint16_t command, uint16_t numRepeats)
+void Transceiver::send(uint16_t address, uint16_t data, uint16_t numRepeats)
 {
+    if (!mIsTxEnabled)
+    {
+        ESP_LOGE(LOG_TAG, "Must enableTx() before using send()");
+        return;
+    }
     rmt_transmit_config_t aTransmitConfig;
     aTransmitConfig.loop_count = 0; // Todo this has to be zero
     aTransmitConfig.flags.eot_level = 1;
 
     const ir_nec_scan_code_t scan_code = {
         .address = address,
-        .command = command,
+        .command = data,
     };
-    // TODO figure out why this is not sending more than one time.
-    ESP_ERROR_CHECK(rmt_encoder_reset(mNecEncoder));
     ESP_ERROR_CHECK(rmt_transmit(mTxCh, mNecEncoder, &scan_code, sizeof(scan_code), &aTransmitConfig));
+    ESP_LOGI(LOG_TAG, "Sent - address:%d data:%c)", address, data);
+    // This teardown and setup feels like a bug but its the only way I could get it to send properly.
+    teardownTxChannel();
+    setupTxChannel();
+    enableTx();
 }
