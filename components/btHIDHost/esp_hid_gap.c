@@ -300,7 +300,7 @@ static void handle_bt_device_result(struct disc_res_param *disc_res)
         else if (prop->type == ESP_BT_GAP_DEV_PROP_COD)
         {
             memcpy(&codv, prop->val, sizeof(uint32_t));
-            GAP_DBG_PRINTF("major: %s, minor: %d, service: 0x%03x", esp_hid_cod_major_str(cod->major), cod->minor, cod->service);
+            //GAP_DBG_PRINTF("major: %s, minor: %d, service: 0x%03x", esp_hid_cod_major_str(cod->major), cod->minor, cod->service);
         }
         else if (prop->type == ESP_BT_GAP_DEV_PROP_EIR)
         {
