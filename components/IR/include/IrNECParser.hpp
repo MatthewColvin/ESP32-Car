@@ -30,7 +30,7 @@ public:
      *         std::nullopt - Parse was unsuccessful
      *         IrNECParser::Data packed with address and data.
      */
-    std::optional<IrNECParser::Data> Parse(rmt_rx_done_event_data_t aDoneEvent);
+    [[nodiscard]] std::optional<IrNECParser::Data> Parse(rmt_rx_done_event_data_t aDoneEvent);
 
 private:
     static constexpr auto IR_NEC_DECODE_MARGIN = 200; // Tolerance for parsing RMT symbols into bit stream

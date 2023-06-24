@@ -40,16 +40,11 @@ void onTriggerRelease() { car->disableTurbo(); };
 
 void onReceiveIRData(uint16_t address, uint16_t data, bool isRepeat)
 {
-
     const auto powerButton = 0xB946;
     const auto upButton = 0xB748;
     const auto downButton = 0xB24D;
     const auto leftButton = 0xB14E;
     const auto rightButton = 0xB649;
-    if (!car) // Early return in case car is not created.
-    {
-        return;
-    }
 
     if (address == SpeedSetIRAddress)
     {
@@ -120,6 +115,7 @@ extern "C" void app_main(void)
     Motor *right = new Motor(RightMotorLeftPin, RightMotorRightPin);
     car = new Car(joystick, left, right);
 
+    ir->mSetReceiveHandler(onReceiveIRData);
     registerJoystickButtonHandlers(joystick);
     vTaskDelete(NULL); // Delete Main Task
 }
