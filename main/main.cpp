@@ -141,7 +141,7 @@ extern "C" void app_main(void)
     led->initialize();
     led->setBrightness(0);
 
-    servo = new ServoMotor(servoPin, 500, 2500, 180);
+    servo = new ServoMotor(ServoPin, 500, 2500, 180);
     servo->attach();
     servo->write(0);
 
