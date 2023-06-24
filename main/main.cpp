@@ -2,8 +2,10 @@
 #include "motor.hpp"
 #include "BTClassicHID.hpp"
 #include "car.hpp"
-#include "Transceiver.hpp"
 #include "buzzer.hpp"
+#include "led.hpp"
+#include "servo.hpp"
+#include "Transceiver.hpp"
 
 #include "esp_bt.h"
 #include "esp_bt_device.h"
@@ -20,20 +22,25 @@
 #define RightMotorRightPin 4
 #define LeftMotorLeftPin 13
 #define LeftMotorRightPin 5
+
 #define IRLED 19
 #define IRDETECT 18
+#define LedPin GPIO_NUM_2
+#define ServoPin GPIO_NUM_12
+
+#define LEDC_CHANNEL LEDC_CHANNEL_0 // LEDC channel for PWM
+#define LEDC_TIMER LEDC_TIMER_0     // LEDC timer for PWM
+#define PWM_FREQ 5000               // PWM frequency in Hz
 constexpr auto SpeedSetIRAddress = 0x1254;
 
-Car *car = nullptr;
-Transceiver *ir = new Transceiver(IRDETECT, IRLED);
-buzzer *horn = new buzzer(GPIO_NUM_23);
+Car *car;
 
-void onAPress() { horn->on(); };
-void onARelease() { horn->off(); };
+void onAPress(){};
+void onARelease(){};
 void onBPress() { car->setCruiseSpeed(car->getCruiseSpeed() - 1000); };
 void onBRelease(){};
 void onXPress() { car->setCruiseSpeed(car->getCruiseSpeed() + 1000); };
-void onXRelease() { ESP_LOGI("main", "x release"); };
+void onXRelease(){};
 void onYPress(){};
 void onYRelease(){};
 void onTriggerPress() { car->enableTurbo(); };
@@ -129,6 +136,14 @@ extern "C" void app_main(void)
     Motor *left = new Motor(LeftMotorLeftPin, LeftMotorRightPin);
     Motor *right = new Motor(RightMotorLeftPin, RightMotorRightPin);
     car = new Car(joystick, left, right);
+
+    led = new LED(LedPin, LEDC_CHANNEL, LEDC_TIMER);
+    led->initialize();
+    led->setBrightness(0);
+
+    servo = new ServoMotor(servoPin, 500, 2500, 180);
+    servo->attach();
+    servo->write(0);
 
     ir->mSetReceiveHandler(onReceiveIRData);
     registerJoystickButtonHandlers(joystick);
