@@ -9,7 +9,23 @@
 
 using namespace std;
 
-Car::Car(std::shared_ptr<Mocute052> remote, Motor* leftMotor, Motor* rightMotor) : mRightMotor(rightMotor),
+/**
+@startuml
+!$a  = 42
+!$ab = "foo1"
+!$cd = "foo2"
+!$ef = $ab + $cd
+!$foo = { "name": "John", "age" : 30 }
+
+Alice -> Bob : $a
+Alice -> Bob : $ab
+Alice -> Bob : $cd
+Alice -> Bob : $ef
+Alice -> Bob : Do you know **$foo.name** ?
+@enduml
+ */
+
+Car::Car(std::shared_ptr<Mocute052> remote, Motor *leftMotor, Motor *rightMotor) : mRightMotor(rightMotor),
                                                                                    mLeftMotor(leftMotor),
                                                                                    mMotorMixer(std::make_unique<TankMix>(remote))
 {

@@ -1,4 +1,4 @@
-idf_component_register(SRCS "mocute052.cpp" "joystick.cpp"
+idf_component_register(SRCS "mocute052.cpp"
                        INCLUDE_DIRS "./include"
                        REQUIRES BLE btHIDHost)
 
