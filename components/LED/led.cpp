@@ -2,8 +2,8 @@
 
 #define PWM_FREQ 5000 // PWM frequency in Hz
 
-LED::LED(gpio_num_t pin, ledc_channel_t channel, ledc_timer_t timer)
-    : pin(pin), channel(channel), timer(timer) {}
+LED::LED(gpio_num_t pin, ledc_channel_t channel, ledc_timer_t timer, uint8_t brightness)
+    : pin(pin), channel(channel), timer(timer), brightness(brightness) {}
 
 void LED::initialize()
 {
@@ -34,8 +34,16 @@ void LED::initialize()
     ESP_ERROR_CHECK(ledc_channel_config(&ledc_channel));
 }
 
-void LED::setBrightness(uint8_t brightness)
+void LED::setBrightness(uint8_t newBrightness)
 {
+    if (newBrightness < 0 || newBrightness > 255) {
+        return;
+    }
+    brightness = newBrightness;
     ledc_set_duty(LEDC_HIGH_SPEED_MODE, channel, brightness);
     ledc_update_duty(LEDC_HIGH_SPEED_MODE, channel);
+}
+
+uint8_t LED::getBrightness() {
+    return brightness;
 }

@@ -25,17 +25,30 @@
 
 #define IRLED 19
 #define IRDETECT 18
-#define LedPin GPIO_NUM_2
+
 #define ServoPin GPIO_NUM_12
+
+#define BlueLedPin GPIO_NUM_5
+#define GreenLedPin GPIO_NUM_18
+#define RedLedPin GPIO_NUM_19
 
 #define LEDC_CHANNEL LEDC_CHANNEL_0 // LEDC channel for PWM
 #define LEDC_TIMER LEDC_TIMER_0     // LEDC timer for PWM
 #define PWM_FREQ 5000               // PWM frequency in Hz
 constexpr auto SpeedSetIRAddress = 0x1254;
 
-Car *car;
+/* GLOBAL VARIABLES */
+// Reminder: Make your variable names descriptive
 
-void onAPress(){};
+// TODO: Add your additional challenge variables
+// Syntax Hint: <Class name>* <variable name>;
+Car *car;
+LED *led;
+ServoMotor *servo;
+Transceiver *ir;
+
+/* JOYSTICK CALLBACKS */
+void onAPress() { led->setBrightness((led->getBrightness() + 32) % 256); };
 void onARelease(){};
 void onBPress() { car->setCruiseSpeed(car->getCruiseSpeed() - 1000); };
 void onBRelease(){};
@@ -129,17 +142,21 @@ extern "C" void app_main(void)
     }
 
     auto bt = BTClassicHID::getInstance();
+
+    // TODO: Put in your MAC Address
+    // esp_bd_addr_t joystickAddress{0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF};
     esp_bd_addr_t joystickAddress{0xe0, 0xf8, 0x48, 0x05, 0x29, 0x50};
     auto joystick = bt->connect<Mocute052>(joystickAddress);
 
-    enableMotors();
     Motor *left = new Motor(LeftMotorLeftPin, LeftMotorRightPin);
     Motor *right = new Motor(RightMotorLeftPin, RightMotorRightPin);
     car = new Car(joystick, left, right);
 
-    led = new LED(LedPin, LEDC_CHANNEL, LEDC_TIMER);
+    // TODO: Set your LED variable
+    led = new LED(BlueLedPin, LEDC_CHANNEL, LEDC_TIMER, 0);
+    // TODO: Initialize LED
+    // Hint: Use an LED class function
     led->initialize();
-    led->setBrightness(0);
 
     servo = new ServoMotor(ServoPin, 500, 2500, 180);
     servo->attach();
