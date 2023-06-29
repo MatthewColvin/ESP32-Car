@@ -1,6 +1,6 @@
 idf_component_register(SRCS "main.cpp" 
                     INCLUDE_DIRS "."
-                    REQUIRES Servo Car LED Servo)
+                    REQUIRES ServoMotor Car LED)
 
 target_compile_options(${COMPONENT_LIB} PUBLIC -std=gnu++2b)
 
