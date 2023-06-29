@@ -15,6 +15,7 @@
 
 #include <memory>
 
+#define NotMotorSleep GPIO_NUM_17
 #define RightMotorLeftPin 16
 #define RightMotorRightPin 4
 #define LeftMotorLeftPin 13
@@ -99,6 +100,18 @@ void transmitTask()
     }
 }
 
+void enableMotors()
+{
+    gpio_config_t motorSleepPin;
+    motorSleepPin.pin_bit_mask = 1ULL << NotMotorSleep;
+    motorSleepPin.mode = GPIO_MODE_OUTPUT;
+    motorSleepPin.pull_up_en = GPIO_PULLUP_ENABLE;
+    motorSleepPin.pull_down_en = GPIO_PULLDOWN_DISABLE;
+    motorSleepPin.intr_type = GPIO_INTR_DISABLE;
+
+    gpio_config(&motorSleepPin);
+    gpio_set_level(NotMotorSleep, 0);
+}
 bool isTx = false;
 extern "C" void app_main(void)
 {
@@ -107,10 +120,12 @@ extern "C" void app_main(void)
     {
         transmitTask();
     }
+
     auto bt = BTClassicHID::getInstance();
     esp_bd_addr_t joystickAddress{0xe0, 0xf8, 0x48, 0x05, 0x29, 0x50};
     auto joystick = bt->connect<Mocute052>(joystickAddress);
 
+    enableMotors();
     Motor *left = new Motor(LeftMotorLeftPin, LeftMotorRightPin);
     Motor *right = new Motor(RightMotorLeftPin, RightMotorRightPin);
     car = new Car(joystick, left, right);
