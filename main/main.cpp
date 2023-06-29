@@ -110,7 +110,7 @@ void enableMotors()
     motorSleepPin.intr_type = GPIO_INTR_DISABLE;
 
     gpio_config(&motorSleepPin);
-    gpio_set_level(NotMotorSleep, 0);
+    gpio_set_level(NotMotorSleep, 1);
 }
 bool isTx = false;
 extern "C" void app_main(void)
