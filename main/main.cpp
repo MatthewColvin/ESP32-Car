@@ -15,12 +15,12 @@
 
 #include <memory>
 
-#define RightMotorLeftPin 15
-#define RightMotorRightPin 2
-#define LeftMotorLeftPin 16
-#define LeftMotorRightPin 17
-#define IRLED 4
-#define IRDETECT 13
+#define RightMotorLeftPin 16
+#define RightMotorRightPin 4
+#define LeftMotorLeftPin 13
+#define LeftMotorRightPin 5
+#define IRLED 19
+#define IRDETECT 18
 constexpr auto SpeedSetIRAddress = 0x1254;
 
 Car *car = nullptr;
@@ -32,7 +32,7 @@ void onARelease() { horn->off(); };
 void onBPress() { car->setCruiseSpeed(car->getCruiseSpeed() - 1000); };
 void onBRelease(){};
 void onXPress() { car->setCruiseSpeed(car->getCruiseSpeed() + 1000); };
-void onXRelease(){};
+void onXRelease() { ESP_LOGI("main", "x release"); };
 void onYPress(){};
 void onYRelease(){};
 void onTriggerPress() { car->enableTurbo(); };
