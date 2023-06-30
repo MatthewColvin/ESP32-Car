@@ -70,7 +70,6 @@ void onReceiveIRData(uint16_t address, uint16_t data, bool isRepeat)
     if (address == SpeedSetIRAddress)
     {
         car->setCruiseSpeed(data);
-        horn->on();
     }
     switch (data)
     {
