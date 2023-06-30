@@ -14,7 +14,6 @@ bool HIDDevice::hasAddress(const esp_bd_addr_t anAddress)
     {
         return false;
     }
-
     for (uint8_t i = 0; i < sizeof(esp_bd_addr_t); i++)
     {
         if (anAddress[i] != mScanResult.bda[i])
