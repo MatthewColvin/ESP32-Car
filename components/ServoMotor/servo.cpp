@@ -1,17 +1,34 @@
 #include "servo.hpp"
+#include "led.hpp"
+#include "esp_log.h"
 
-ServoMotor::ServoMotor(gpio_num_t servoPin, uint32_t minPulse, uint32_t maxPulse, uint32_t maxDeg)
-    : pin(servoPin), minPulseWidth(minPulse), maxPulseWidth(maxPulse), maxDegree(maxDeg){};
+#define LOG_TAG "Servo"
+
+ServoMotor::ServoMotor(gpio_num_t servoPin)
+    : pin(servoPin)
+{
+    attach();
+};
+
+ServoMotor::~ServoMotor()
+{
+    LED::releaseChannel(mChannel);
+    LED::releaseTimer(mTimer);
+}
 
 void ServoMotor::attach()
 {
-    // gpio_pad_select_gpio(pin);
-    // gpio_set_direction(pin, GPIO_MODE_OUTPUT);
+    mChannel = LED::getAvailableChannel();
+    mTimer = LED::getAvailableTimer();
+    if (mChannel == LEDC_CHANNEL_MAX || mTimer != LEDC_TIMER_MAX)
+    {
+        ESP_LOGE(LOG_TAG, "Failed to set up Servo on PIN %d due to lack of timer or channel.", pin);
+    }
 
     ledc_timer_config_t timerConfig = {
         .speed_mode = LEDC_LOW_SPEED_MODE,
         .duty_resolution = LEDC_TIMER_13_BIT,
-        .timer_num = LEDC_TIMER_0,
+        .timer_num = mTimer,
         .freq_hz = 50,
         .clk_cfg = LEDC_AUTO_CLK,
     };
@@ -20,20 +37,19 @@ void ServoMotor::attach()
     ledc_channel_config_t channelConfig = {
         .gpio_num = pin,
         .speed_mode = LEDC_LOW_SPEED_MODE,
-        .channel = LEDC_CHANNEL_0,
+        .channel = mChannel,
         .intr_type = LEDC_INTR_DISABLE,
-        .timer_sel = LEDC_TIMER_0,
+        .timer_sel = mTimer,
         .duty = 0,
         .hpoint = 0,
-        .flags = {}
-    };
+        .flags = {}};
     ESP_ERROR_CHECK(ledc_channel_config(&channelConfig));
 }
 
-void ServoMotor::write(int angle)
+void ServoMotor::setAngle(int angle)
 {
     printf("Setting angle: %d\n", angle);
-    uint32_t pulseWidth = map(angle, 0, maxDegree, minPulseWidth, maxPulseWidth);
+    uint32_t pulseWidth = map(angle, 0, MAX_DEGREE, MIN_PULSE, MAX_PULSE);
     ledc_set_duty(LEDC_LOW_SPEED_MODE, LEDC_CHANNEL_0, pulseWidth);
     ledc_update_duty(LEDC_LOW_SPEED_MODE, LEDC_CHANNEL_0);
 }

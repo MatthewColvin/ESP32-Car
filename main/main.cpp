@@ -32,9 +32,6 @@
 #define GreenLedPin GPIO_NUM_18
 #define RedLedPin GPIO_NUM_19
 
-#define LEDC_CHANNEL LEDC_CHANNEL_0 // LEDC channel for PWM
-#define LEDC_TIMER LEDC_TIMER_0     // LEDC timer for PWM
-#define PWM_FREQ 5000               // PWM frequency in Hz
 constexpr auto SpeedSetIRAddress = 0x1254;
 
 /* GLOBAL VARIABLES */
@@ -48,13 +45,13 @@ ServoMotor *servo;
 Transceiver *ir;
 
 /* JOYSTICK CALLBACKS */
-void onAPress() { led->setBrightness((led->getBrightness() + 32) % 256); };
+void onAPress() { led->setBrightness((led->getBrightness() + 32) % LED::MAX_BRIGHTNESS); };
 void onARelease(){};
 void onBPress() { car->setCruiseSpeed(car->getCruiseSpeed() - 1000); };
 void onBRelease(){};
 void onXPress() { car->setCruiseSpeed(car->getCruiseSpeed() + 1000); };
 void onXRelease(){};
-void onYPress(){};
+void onYPress() { servo->setAngle(servo->getAngle() + 10 % ServoMotor::MAX_DEGREE); };
 void onYRelease(){};
 void onTriggerPress() { car->enableTurbo(); };
 void onTriggerRelease() { car->disableTurbo(); };
@@ -64,8 +61,8 @@ void onReceiveIRData(uint16_t address, uint16_t data, bool isRepeat)
     const auto powerButton = 0xB946;
     const auto upButton = 0xB748;
     const auto downButton = 0xB24D;
-    const auto leftButton = 0xB14E;
-    const auto rightButton = 0xB649;
+    // const auto leftButton = 0xB14E;
+    // const auto rightButton = 0xB649;
 
     if (address == SpeedSetIRAddress)
     {
@@ -147,20 +144,19 @@ extern "C" void app_main(void)
     esp_bd_addr_t joystickAddress{0xe0, 0xf8, 0x48, 0x05, 0x29, 0x50};
     auto joystick = bt->connect<Mocute052>(joystickAddress);
 
+    // TODO: Create the new motors for your car
     Motor *left = new Motor(LeftMotorLeftPin, LeftMotorRightPin);
     Motor *right = new Motor(RightMotorLeftPin, RightMotorRightPin);
+
+    // TODO: using the joystick and motor variables make a new car.
     car = new Car(joystick, left, right);
 
-    // TODO: Set your LED variable
-    led = new LED(BlueLedPin, LEDC_CHANNEL, LEDC_TIMER, 0);
-    // TODO: Initialize LED
-    // Hint: Use an LED class function
-    led->initialize();
+    // TODO: Set your LED/Servo/IR variable
+    led = new LED(BlueLedPin);
+    servo = new ServoMotor(ServoPin);
+    ir = new Transceiver(IRDETECT, IRLED);
 
-    servo = new ServoMotor(ServoPin, 500, 2500, 180);
-    servo->attach();
-    servo->write(0);
-
+    // Don't forget to tell IR how to handle incoming transmissions
     ir->mSetReceiveHandler(onReceiveIRData);
     registerJoystickButtonHandlers(joystick);
     vTaskDelete(NULL); // Delete Main Task

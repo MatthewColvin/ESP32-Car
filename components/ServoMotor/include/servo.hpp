@@ -4,18 +4,25 @@
 #include <driver/ledc.h>
 #include <driver/gpio.h>
 
-class ServoMotor {
+class ServoMotor
+{
 public:
-	ServoMotor(gpio_num_t servoPin, uint32_t minPulse, uint32_t maxPulse, uint32_t maxDeg);
+	static constexpr auto MAX_DEGREE = 180;
 
-	void attach();
-	void write(int angle);
+	ServoMotor(gpio_num_t servoPin);
+	~ServoMotor();
+	void setAngle(int angle);
+	int getAngle() { return mAngle; }
 
 private:
+	static constexpr auto MIN_PULSE = 500;
+	static constexpr auto MAX_PULSE = 2500;
+
+	void attach();
 	uint32_t map(uint32_t value, uint32_t inMin, uint32_t inMax, uint32_t outMin, uint32_t outMax);
 
 	gpio_num_t pin;
-	uint32_t minPulseWidth;
-	uint32_t maxPulseWidth;
-	uint32_t maxDegree;
+	ledc_channel_t mChannel;
+	ledc_timer_t mTimer;
+	int mAngle = 0;
 };

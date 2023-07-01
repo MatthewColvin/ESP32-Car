@@ -4,18 +4,31 @@
 #include <driver/ledc.h>
 #include <driver/gpio.h>
 
-class LED {
-public:
-    LED(gpio_num_t pin, ledc_channel_t channel, ledc_timer_t timer, uint8_t brightness);
-    ~LED() = default;
+#include <array>
 
-    void initialize();
-    void setBrightness(uint8_t newBrightness);
+class LED
+{
+public:
+    LED(gpio_num_t aPin);
+    ~LED();
+
+    static constexpr auto MAX_BRIGHTNESS = 256;
+
+    void setBrightness(uint8_t aNewBrightness);
     uint8_t getBrightness();
 
+    static ledc_channel_t getAvailableChannel();
+    static ledc_timer_t getAvailableTimer();
+    static void releaseTimer(ledc_timer_t aTimer);
+    static void releaseChannel(ledc_channel_t aChannel);
+
 private:
-    gpio_num_t pin;
-    ledc_channel_t channel;
-    ledc_timer_t timer;
-    uint8_t brightness;
+    static std::array<bool, LEDC_CHANNEL_MAX> channelAvailability;
+    static std::array<bool, LEDC_TIMER_MAX> timerAvailability;
+
+    void initialize();
+    gpio_num_t mPin;
+    ledc_channel_t mChannel;
+    ledc_timer_t mTimer;
+    uint8_t mBrightness;
 };
