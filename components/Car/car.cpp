@@ -7,6 +7,8 @@
 #include <cmath>
 
 #define LOG_TAG "Car"
+// TODO ADD function that enables motors since driver now has enable pin
+#define MotorDriveEnablePin GPIO_NUM_17
 
 using namespace std;
 
@@ -40,7 +42,7 @@ void Car::setMotorSpeed(float aLeftMotorSpeed, float aRightMotorSpeed)
         mRightMotor->reverse();
     }
     mRightMotor->setSpeed(std::floor(std::abs(aRightMotorSpeed)));
-    //ESP_LOGI(LOG_TAG,"Left:%f right:%f", aLeftMotorSpeed, aRightMotorSpeed);
+    // ESP_LOGI(LOG_TAG,"Left:%f right:%f", aLeftMotorSpeed, aRightMotorSpeed);
 }
 
 void Car::mixerPollingImpl(void *_thisCar)
@@ -53,6 +55,7 @@ void Car::mixerPollingTask()
     while (true)
     {
         IMotorMixingStrategy::motorSpeeds currentSpeeds = mMotorMixer->getMotorSpeeds();
+        // ESP_LOGI(LOG_TAG, "leftspeed:%f rightspeed:%f", currentSpeeds.left, currentSpeeds.right);
         setMotorSpeed(currentSpeeds.left, currentSpeeds.right);
         vTaskDelay(50 / portTICK_PERIOD_MS);
     }
