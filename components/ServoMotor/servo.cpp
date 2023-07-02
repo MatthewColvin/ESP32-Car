@@ -20,7 +20,7 @@ void ServoMotor::attach()
 {
     mChannel = LED::getAvailableChannel();
     mTimer = LED::getAvailableTimer();
-    if (mChannel == LEDC_CHANNEL_MAX || mTimer != LEDC_TIMER_MAX)
+    if (mChannel == LEDC_CHANNEL_MAX || mTimer == LEDC_TIMER_MAX)
     {
         ESP_LOGE(LOG_TAG, "Failed to set up Servo on PIN %d due to lack of timer or channel.", pin);
     }

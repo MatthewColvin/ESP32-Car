@@ -4,8 +4,19 @@
 #define PWM_FREQ 5000 // PWM frequency in Hz
 #define LOG_TAG "LED"
 
-std::array<bool, LEDC_CHANNEL_MAX> LED::channelAvailability{true};
-std::array<bool, LEDC_TIMER_MAX> LED::timerAvailability{true};
+template <unsigned size>
+constexpr std::array<bool, size> init_array_true()
+{
+    std::array<bool, size> anArray;
+    for (int i = 0; i < size; i++)
+    {
+        anArray[i] = true;
+    }
+    return anArray;
+};
+
+std::array<bool, LEDC_CHANNEL_MAX> LED::channelAvailability = init_array_true<LEDC_CHANNEL_MAX>();
+std::array<bool, LEDC_TIMER_MAX> LED::timerAvailability = init_array_true<LEDC_TIMER_MAX>();
 
 LED::LED(gpio_num_t aPin)
     : mPin(aPin), mBrightness(0)
@@ -23,7 +34,7 @@ void LED::initialize()
 {
     mChannel = getAvailableChannel();
     mTimer = getAvailableTimer();
-    if (mChannel == LEDC_CHANNEL_MAX || mTimer != LEDC_TIMER_MAX)
+    if (mChannel == LEDC_CHANNEL_MAX || mTimer == LEDC_TIMER_MAX)
     {
         ESP_LOGE(LOG_TAG, "Failed to set up LED on PIN %d due to lack of timer or channel.", mPin);
     }
@@ -67,6 +78,7 @@ ledc_channel_t LED::getAvailableChannel()
 {
     for (int i = 0; i < channelAvailability.size(); i++)
     {
+        ESP_LOGI(LOG_TAG, "Channel %d is %s", i, channelAvailability[i] ? "available" : "in use");
         if (channelAvailability[i])
         {
             channelAvailability[i] = false;
@@ -82,6 +94,7 @@ ledc_timer_t LED::getAvailableTimer()
 {
     for (int i = 0; i < timerAvailability.size(); i++)
     {
+        ESP_LOGI(LOG_TAG, "Timer %d is %s", i, timerAvailability[i] ? "available" : "in use");
         if (timerAvailability[i])
         {
             timerAvailability[i] = false;
