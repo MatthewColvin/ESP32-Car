@@ -62,8 +62,8 @@ protected:
     /// @brief Overriden from base device to handle bluetooth HID device events
     /// @param anInputEvent - input event from BT library
     virtual void handleInputEvent(esp_hidh_event_data_t *anInputEvent) override;
+    bool handleButton(bool oldIsDown, int buttonMask, uint8_t buttonByte, std::function<void()> pressCb, std::function<void()> releaseCb);
 
-private:
     /// @brief Current Controller X (0 - 255)
     uint8_t mX = 128;
     /// @brief Current Controller Y (0 - 255)

@@ -2,6 +2,7 @@
 #include "motor.hpp"
 #include "BTClassicHID.hpp"
 #include "car.hpp"
+#include "controller.hpp"
 #include "buzzer.hpp"
 #include "led.hpp"
 #include "servo.hpp"
