@@ -28,9 +28,9 @@
 
 #define ServoPin GPIO_NUM_12
 
-#define BlueLedPin GPIO_NUM_5
-#define GreenLedPin GPIO_NUM_18
-#define RedLedPin GPIO_NUM_19
+#define RedLedPin GPIO_NUM_25
+#define BlueLedPin GPIO_NUM_32
+#define GreenLedPin GPIO_NUM_33
 
 constexpr auto SpeedSetIRAddress = 0x1254;
 
@@ -40,12 +40,19 @@ constexpr auto SpeedSetIRAddress = 0x1254;
 // TODO: Add your additional challenge variables
 // Syntax Hint: <Class name>* <variable name>;
 Car *car;
-LED *led;
+LED *redLed;
+LED *blueLed;
+LED *greenLed;
 ServoMotor *servo;
 Transceiver *ir;
 
 /* JOYSTICK CALLBACKS */
-void onAPress() { led->setBrightness((led->getBrightness() + 32) % LED::MAX_BRIGHTNESS); };
+void onAPress()
+{
+    blueLed->setBrightness((blueLed->getBrightness() + 32) % LED::MAX_BRIGHTNESS);
+    redLed->setBrightness((blueLed->getBrightness() + 20) % LED::MAX_BRIGHTNESS);
+    greenLed->setBrightness((blueLed->getBrightness() + 10) % LED::MAX_BRIGHTNESS);
+};
 void onARelease(){};
 void onBPress() { car->setCruiseSpeed(car->getCruiseSpeed() - 1000); };
 void onBRelease(){};
@@ -141,7 +148,7 @@ extern "C" void app_main(void)
 
     // TODO: Put in your MAC Address
     // esp_bd_addr_t joystickAddress{0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF};
-    esp_bd_addr_t joystickAddress{0xe0, 0xf8, 0x48, 0x05, 0x29, 0x50};
+    esp_bd_addr_t joystickAddress{0xD0, 0x54, 0x7B, 0x00, 0xB2, 0x33};
     auto joystick = bt->connect<Mocute052>(joystickAddress);
 
     // TODO: Create the new motors for your car
@@ -152,7 +159,9 @@ extern "C" void app_main(void)
     car = new Car(joystick, left, right);
 
     // TODO: Set your LED/Servo/IR variable
-    led = new LED(BlueLedPin);
+    redLed = new LED(RedLedPin);
+    blueLed = new LED(BlueLedPin);
+    greenLed = new LED(GreenLedPin);
     servo = new ServoMotor(ServoPin);
     ir = new Transceiver(IRDETECT, IRLED);
 
