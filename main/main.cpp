@@ -2,8 +2,10 @@
 #include "motor.hpp"
 #include "BTClassicHID.hpp"
 #include "car.hpp"
-#include "Transceiver.hpp"
 #include "buzzer.hpp"
+#include "led.hpp"
+#include "servo.hpp"
+#include "Transceiver.hpp"
 
 #include "esp_bt.h"
 #include "esp_bt_device.h"
@@ -20,21 +22,43 @@
 #define RightMotorRightPin 4
 #define LeftMotorLeftPin 13
 #define LeftMotorRightPin 5
+
 #define IRLED 19
 #define IRDETECT 18
+
+#define ServoPin GPIO_NUM_12
+
+#define RedLedPin GPIO_NUM_25
+#define BlueLedPin GPIO_NUM_32
+#define GreenLedPin GPIO_NUM_33
+
 constexpr auto SpeedSetIRAddress = 0x1254;
 
-Car *car = nullptr;
-Transceiver *ir = new Transceiver(IRDETECT, IRLED);
-buzzer *horn = new buzzer(GPIO_NUM_23);
+/* GLOBAL VARIABLES */
+// Reminder: Make your variable names descriptive
 
-void onAPress() { horn->on(); };
-void onARelease() { horn->off(); };
+// TODO: Add your additional challenge variables
+// Syntax Hint: <Class name>* <variable name>;
+Car *car;
+LED *redLed;
+LED *blueLed;
+LED *greenLed;
+ServoMotor *servo;
+Transceiver *ir;
+
+/* JOYSTICK CALLBACKS */
+void onAPress()
+{
+    blueLed->setBrightness((blueLed->getBrightness() + 32) % LED::MAX_BRIGHTNESS);
+    redLed->setBrightness((blueLed->getBrightness() + 20) % LED::MAX_BRIGHTNESS);
+    greenLed->setBrightness((blueLed->getBrightness() + 10) % LED::MAX_BRIGHTNESS);
+};
+void onARelease(){};
 void onBPress() { car->setCruiseSpeed(car->getCruiseSpeed() - 1000); };
 void onBRelease(){};
 void onXPress() { car->setCruiseSpeed(car->getCruiseSpeed() + 1000); };
-void onXRelease() { ESP_LOGI("main", "x release"); };
-void onYPress(){};
+void onXRelease(){};
+void onYPress() { servo->setAngle(servo->getAngle() + 10 % ServoMotor::MAX_DEGREE); };
 void onYRelease(){};
 void onTriggerPress() { car->enableTurbo(); };
 void onTriggerRelease() { car->disableTurbo(); };
@@ -44,13 +68,12 @@ void onReceiveIRData(uint16_t address, uint16_t data, bool isRepeat)
     const auto powerButton = 0xB946;
     const auto upButton = 0xB748;
     const auto downButton = 0xB24D;
-    const auto leftButton = 0xB14E;
-    const auto rightButton = 0xB649;
+    // const auto leftButton = 0xB14E;
+    // const auto rightButton = 0xB649;
 
     if (address == SpeedSetIRAddress)
     {
         car->setCruiseSpeed(data);
-        horn->on();
     }
     switch (data)
     {
@@ -122,14 +145,27 @@ extern "C" void app_main(void)
     }
 
     auto bt = BTClassicHID::getInstance();
-    esp_bd_addr_t joystickAddress{0xe0, 0xf8, 0x48, 0x05, 0x29, 0x50};
+
+    // TODO: Put in your MAC Address
+    // esp_bd_addr_t joystickAddress{0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF};
+    esp_bd_addr_t joystickAddress{0xD0, 0x54, 0x7B, 0x00, 0xB2, 0x33};
     auto joystick = bt->connect<Mocute052>(joystickAddress);
 
-    enableMotors();
+    // TODO: Create the new motors for your car
     Motor *left = new Motor(LeftMotorLeftPin, LeftMotorRightPin);
     Motor *right = new Motor(RightMotorLeftPin, RightMotorRightPin);
+
+    // TODO: using the joystick and motor variables make a new car.
     car = new Car(joystick, left, right);
 
+    // TODO: Set your LED/Servo/IR variable
+    redLed = new LED(RedLedPin);
+    blueLed = new LED(BlueLedPin);
+    greenLed = new LED(GreenLedPin);
+    servo = new ServoMotor(ServoPin);
+    ir = new Transceiver(IRDETECT, IRLED);
+
+    // Don't forget to tell IR how to handle incoming transmissions
     ir->mSetReceiveHandler(onReceiveIRData);
     registerJoystickButtonHandlers(joystick);
     vTaskDelete(NULL); // Delete Main Task
