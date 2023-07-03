@@ -25,8 +25,8 @@
 #define LeftMotorLeftPin 13
 #define LeftMotorRightPin 5
 
-#define IRLED 19
-#define IRDETECT 18
+#define IRLED GPIO_NUM_19
+#define IRDETECT GPIO_NUM_18
 
 #define ServoPin GPIO_NUM_23
 

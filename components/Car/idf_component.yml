@@ -1,4 +1,3 @@
 ## IDF Component Manager Manifest File
 dependencies:
-  pid_ctrl: "^0.1.1"
   bdc_motor: "^0.1.0"
