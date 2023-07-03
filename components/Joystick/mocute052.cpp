@@ -22,7 +22,7 @@ Mocute052::Mocute052(HIDDevice aDevice) : HIDDevice(aDevice.getScanResult())
     };
 };
 
-bool handleButton(bool oldIsDown, int buttonMask, uint8_t buttonByte, std::function<void()> pressCb, std::function<void()> releaseCb)
+bool Mocute052::handleButton(bool oldIsDown, int buttonMask, uint8_t buttonByte, std::function<void()> pressCb, std::function<void()> releaseCb)
 {
     bool aIsDown = buttonMask & buttonByte;
     if (aIsDown != oldIsDown) // button was either pressed or released

@@ -2,6 +2,7 @@
 #include "motor.hpp"
 #include "BTClassicHID.hpp"
 #include "car.hpp"
+#include "controller.hpp"
 #include "buzzer.hpp"
 #include "led.hpp"
 #include "servo.hpp"
@@ -17,6 +18,7 @@
 
 #include <memory>
 
+#define LOG_TAG "main"
 #define NotMotorSleep GPIO_NUM_17
 #define RightMotorLeftPin 16
 #define RightMotorRightPin 4
@@ -26,11 +28,11 @@
 #define IRLED 19
 #define IRDETECT 18
 
-#define ServoPin GPIO_NUM_12
+#define ServoPin GPIO_NUM_23
 
-#define RedLedPin GPIO_NUM_25
-#define BlueLedPin GPIO_NUM_32
-#define GreenLedPin GPIO_NUM_33
+#define RedLedPin GPIO_NUM_14
+#define BlueLedPin GPIO_NUM_26
+#define GreenLedPin GPIO_NUM_27
 
 constexpr auto SpeedSetIRAddress = 0x1254;
 
@@ -43,22 +45,75 @@ Car *car;
 LED *redLed;
 LED *blueLed;
 LED *greenLed;
+int LEDState = 0;
 ServoMotor *servo;
-Transceiver *ir;
+bool servoAscending = false;
+Transceiver *ir = new Transceiver(IRDETECT, IRLED);
+
+void setRGB(uint8_t aRed, uint8_t aBlue, uint8_t aGreen)
+{
+    redLed->setBrightness(aRed);
+    greenLed->setBrightness(aGreen);
+    blueLed->setBrightness(aBlue);
+}
 
 /* JOYSTICK CALLBACKS */
 void onAPress()
 {
-    blueLed->setBrightness((blueLed->getBrightness() + 32) % LED::MAX_BRIGHTNESS);
-    redLed->setBrightness((blueLed->getBrightness() + 20) % LED::MAX_BRIGHTNESS);
-    greenLed->setBrightness((blueLed->getBrightness() + 10) % LED::MAX_BRIGHTNESS);
+    switch (LEDState)
+    {
+    case 0:
+        setRGB(0, 0, 255);
+        LEDState += 1;
+        break;
+    case 1:
+        setRGB(0, 255, 0);
+        LEDState += 1;
+        break;
+    case 2:
+        setRGB(255, 0, 0);
+        LEDState += 1;
+        break;
+    default:
+        setRGB(0, 0, 0);
+        LEDState = 0;
+    }
 };
 void onARelease(){};
-void onBPress() { car->setCruiseSpeed(car->getCruiseSpeed() - 1000); };
+void onBPress()
+{
+    car->setCruiseSpeed(car->getCruiseSpeed() - 1000);
+};
 void onBRelease(){};
-void onXPress() { car->setCruiseSpeed(car->getCruiseSpeed() + 1000); };
+void onXPress()
+{
+    car->setCruiseSpeed(car->getCruiseSpeed() + 1000);
+};
 void onXRelease(){};
-void onYPress() { servo->setAngle(servo->getAngle() + 10 % ServoMotor::MAX_DEGREE); };
+void onYPress()
+{
+    auto currentAngle = servo->getAngle();
+    if (servoAscending)
+    {
+        auto nextAngle = currentAngle += 10;
+        if (nextAngle >= ServoMotor::MAX_DEGREE)
+        {
+            servoAscending = false;
+            servo->setAngle(currentAngle - 10);
+        }
+        servo->setAngle(nextAngle);
+    }
+    else
+    {
+        auto nextAngle = currentAngle -= 10;
+        if (nextAngle <= ServoMotor::MIN_DEGREE)
+        {
+            servoAscending = true;
+            servo->setAngle(currentAngle + 10);
+        }
+        servo->setAngle(nextAngle);
+    }
+};
 void onYRelease(){};
 void onTriggerPress() { car->enableTurbo(); };
 void onTriggerRelease() { car->disableTurbo(); };
@@ -134,7 +189,7 @@ void transmitTask()
         vTaskDelay(5000 / portTICK_PERIOD_MS);
     }
 }
-
+// TODO move to car
 void enableMotors()
 {
     gpio_config_t motorSleepPin;
@@ -160,9 +215,10 @@ extern "C" void app_main(void)
 
     // TODO: Put in your MAC Address
     // esp_bd_addr_t joystickAddress{0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF};
-    esp_bd_addr_t joystickAddress{0xD0, 0x54, 0x7B, 0x00, 0xB2, 0x33};
-    auto joystick = bt->connect<Mocute052>(joystickAddress);
+    esp_bd_addr_t joystickAddress{0xD0, 0x54, 0x7B, 0x00, 0x47, 0x19};
+    auto joystick = bt->connect<controller>(joystickAddress);
 
+    enableMotors();
     // TODO: Create the new motors for your car
     Motor *left = new Motor(LeftMotorLeftPin, LeftMotorRightPin);
     Motor *right = new Motor(RightMotorLeftPin, RightMotorRightPin);
@@ -175,7 +231,6 @@ extern "C" void app_main(void)
     blueLed = new LED(BlueLedPin);
     greenLed = new LED(GreenLedPin);
     servo = new ServoMotor(ServoPin);
-    ir = new Transceiver(IRDETECT, IRLED);
 
     // Don't forget to tell IR how to handle incoming transmissions
     ir->mSetReceiveHandler(onReceiveIRData);

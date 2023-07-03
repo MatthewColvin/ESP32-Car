@@ -3,11 +3,13 @@
 #include <stdio.h>
 #include <driver/ledc.h>
 #include <driver/gpio.h>
+#include "driver/mcpwm_prelude.h"
 
 class ServoMotor
 {
 public:
-	static constexpr auto MAX_DEGREE = 180;
+	static constexpr auto MIN_DEGREE = -90;
+	static constexpr auto MAX_DEGREE = 90;
 
 	ServoMotor(gpio_num_t servoPin);
 	~ServoMotor();
@@ -15,14 +17,13 @@ public:
 	int getAngle() { return mAngle; }
 
 private:
-	static constexpr auto MIN_PULSE = 500;
-	static constexpr auto MAX_PULSE = 2500;
+	static constexpr auto MIN_PULSEWIDTH_US = 500;	// Minimum pulse width in microsecond
+	static constexpr auto MAX_PULSEWIDTH_US = 2500; // Maximum pulse width in microsecond
 
 	void attach();
-	uint32_t map(uint32_t value, uint32_t inMin, uint32_t inMax, uint32_t outMin, uint32_t outMax);
+	uint32_t angleToPulseWidth(uint32_t anAngle);
 
-	gpio_num_t pin;
-	ledc_channel_t mChannel;
-	ledc_timer_t mTimer;
+	gpio_num_t mPin;
+	mcpwm_cmpr_handle_t mComparator;
 	int mAngle = 0;
 };

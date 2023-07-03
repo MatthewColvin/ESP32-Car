@@ -64,6 +64,7 @@ void LED::initialize()
 
 void LED::setBrightness(uint8_t aNewBrightness)
 {
+    // ESP_LOGI(LOG_TAG, "Setting Brightness %d", aNewBrightness);
     mBrightness = aNewBrightness;
     ledc_set_duty(LEDC_HIGH_SPEED_MODE, mChannel, mBrightness);
     ledc_update_duty(LEDC_HIGH_SPEED_MODE, mChannel);
@@ -78,7 +79,7 @@ ledc_channel_t LED::getAvailableChannel()
 {
     for (int i = 0; i < channelAvailability.size(); i++)
     {
-        ESP_LOGI(LOG_TAG, "Channel %d is %s", i, channelAvailability[i] ? "available" : "in use");
+        // ESP_LOGI(LOG_TAG, "Channel %d is %s", i, channelAvailability[i] ? "available" : "in use");
         if (channelAvailability[i])
         {
             channelAvailability[i] = false;
@@ -94,7 +95,7 @@ ledc_timer_t LED::getAvailableTimer()
 {
     for (int i = 0; i < timerAvailability.size(); i++)
     {
-        ESP_LOGI(LOG_TAG, "Timer %d is %s", i, timerAvailability[i] ? "available" : "in use");
+        // ESP_LOGI(LOG_TAG, "Timer %d is %s", i, timerAvailability[i] ? "available" : "in use");
         if (timerAvailability[i])
         {
             timerAvailability[i] = false;

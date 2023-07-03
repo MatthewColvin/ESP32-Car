@@ -44,7 +44,7 @@ std::shared_ptr<HIDDevice> BTClassicHID::getDevice(esp_hidh_event_t anEvent, esp
     }
     else
     {
-        ESP_LOGE(LOG_TAG, "Could NOT Find Device!");
+        ESP_LOGE(LOG_TAG, "Could NOT Find Device on event %d!", anEvent);
     }
     return nullptr;
 }
@@ -53,6 +53,11 @@ void BTClassicHID::hidh_callback(void *handler_args, esp_event_base_t base, int3
 {
     esp_hidh_event_t event = (esp_hidh_event_t)id;
     esp_hidh_event_data_t *param = (esp_hidh_event_data_t *)event_data;
+    // TODO:Remove this HACK by updating the static array of devices and adding a semaphore.
+    if (event == ESP_HIDH_OPEN_EVENT)
+    {
+        vTaskDelay(100 / portTICK_PERIOD_MS);
+    }
 
     auto device = getDevice(event, param);
 
