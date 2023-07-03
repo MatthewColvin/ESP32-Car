@@ -64,6 +64,7 @@ void LED::initialize()
 
 void LED::setBrightness(uint8_t aNewBrightness)
 {
+    // ESP_LOGI(LOG_TAG, "Setting Brightness %d", aNewBrightness);
     mBrightness = aNewBrightness;
     ledc_set_duty(LEDC_HIGH_SPEED_MODE, mChannel, mBrightness);
     ledc_update_duty(LEDC_HIGH_SPEED_MODE, mChannel);

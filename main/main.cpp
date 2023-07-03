@@ -30,9 +30,9 @@
 
 #define ServoPin GPIO_NUM_23
 
-#define RedLedPin GPIO_NUM_25
-#define BlueLedPin GPIO_NUM_32
-#define GreenLedPin GPIO_NUM_33
+#define RedLedPin GPIO_NUM_14
+#define BlueLedPin GPIO_NUM_26
+#define GreenLedPin GPIO_NUM_27
 
 constexpr auto SpeedSetIRAddress = 0x1254;
 
@@ -45,16 +45,39 @@ Car *car;
 LED *redLed;
 LED *blueLed;
 LED *greenLed;
+int LEDState = 0;
 ServoMotor *servo;
 bool servoAscending = false;
-Transceiver *ir;
+Transceiver *ir = new Transceiver(IRDETECT, IRLED);
+
+void setRGB(uint8_t aRed, uint8_t aBlue, uint8_t aGreen)
+{
+    redLed->setBrightness(aRed);
+    greenLed->setBrightness(aGreen);
+    blueLed->setBrightness(aBlue);
+}
 
 /* JOYSTICK CALLBACKS */
 void onAPress()
 {
-    blueLed->setBrightness((blueLed->getBrightness() + 32) % LED::MAX_BRIGHTNESS);
-    redLed->setBrightness((blueLed->getBrightness() + 20) % LED::MAX_BRIGHTNESS);
-    greenLed->setBrightness((blueLed->getBrightness() + 10) % LED::MAX_BRIGHTNESS);
+    switch (LEDState)
+    {
+    case 0:
+        setRGB(0, 0, 255);
+        LEDState += 1;
+        break;
+    case 1:
+        setRGB(0, 255, 0);
+        LEDState += 1;
+        break;
+    case 2:
+        setRGB(255, 0, 0);
+        LEDState += 1;
+        break;
+    default:
+        setRGB(0, 0, 0);
+        LEDState = 0;
+    }
 };
 void onARelease(){};
 void onBPress()
@@ -166,7 +189,7 @@ void transmitTask()
         vTaskDelay(5000 / portTICK_PERIOD_MS);
     }
 }
-
+// TODO move to car
 void enableMotors()
 {
     gpio_config_t motorSleepPin;
@@ -208,7 +231,6 @@ extern "C" void app_main(void)
     blueLed = new LED(BlueLedPin);
     greenLed = new LED(GreenLedPin);
     servo = new ServoMotor(ServoPin);
-    ir = new Transceiver(IRDETECT, IRLED);
 
     // Don't forget to tell IR how to handle incoming transmissions
     ir->mSetReceiveHandler(onReceiveIRData);
