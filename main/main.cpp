@@ -18,6 +18,7 @@
 
 #include <memory>
 
+#define LOG_TAG "main"
 #define NotMotorSleep GPIO_NUM_17
 #define RightMotorLeftPin 16
 #define RightMotorRightPin 4
@@ -27,7 +28,7 @@
 #define IRLED 19
 #define IRDETECT 18
 
-#define ServoPin GPIO_NUM_12
+#define ServoPin GPIO_NUM_23
 
 #define RedLedPin GPIO_NUM_25
 #define BlueLedPin GPIO_NUM_32
@@ -45,6 +46,7 @@ LED *redLed;
 LED *blueLed;
 LED *greenLed;
 ServoMotor *servo;
+bool servoAscending = false;
 Transceiver *ir;
 
 /* JOYSTICK CALLBACKS */
@@ -55,11 +57,40 @@ void onAPress()
     greenLed->setBrightness((blueLed->getBrightness() + 10) % LED::MAX_BRIGHTNESS);
 };
 void onARelease(){};
-void onBPress() { car->setCruiseSpeed(car->getCruiseSpeed() - 1000); };
+void onBPress()
+{
+    car->setCruiseSpeed(car->getCruiseSpeed() - 1000);
+};
 void onBRelease(){};
-void onXPress() { car->setCruiseSpeed(car->getCruiseSpeed() + 1000); };
+void onXPress()
+{
+    car->setCruiseSpeed(car->getCruiseSpeed() + 1000);
+};
 void onXRelease(){};
-void onYPress() { servo->setAngle(servo->getAngle() + 10 % ServoMotor::MAX_DEGREE); };
+void onYPress()
+{
+    auto currentAngle = servo->getAngle();
+    if (servoAscending)
+    {
+        auto nextAngle = currentAngle += 10;
+        if (nextAngle >= ServoMotor::MAX_DEGREE)
+        {
+            servoAscending = false;
+            servo->setAngle(currentAngle - 10);
+        }
+        servo->setAngle(nextAngle);
+    }
+    else
+    {
+        auto nextAngle = currentAngle -= 10;
+        if (nextAngle <= ServoMotor::MIN_DEGREE)
+        {
+            servoAscending = true;
+            servo->setAngle(currentAngle + 10);
+        }
+        servo->setAngle(nextAngle);
+    }
+};
 void onYRelease(){};
 void onTriggerPress() { car->enableTurbo(); };
 void onTriggerRelease() { car->disableTurbo(); };
@@ -161,9 +192,10 @@ extern "C" void app_main(void)
 
     // TODO: Put in your MAC Address
     // esp_bd_addr_t joystickAddress{0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF};
-    esp_bd_addr_t joystickAddress{0xD0, 0x54, 0x7B, 0x00, 0xB2, 0x33};
-    auto joystick = bt->connect<Mocute052>(joystickAddress);
+    esp_bd_addr_t joystickAddress{0xD0, 0x54, 0x7B, 0x00, 0x47, 0x19};
+    auto joystick = bt->connect<controller>(joystickAddress);
 
+    enableMotors();
     // TODO: Create the new motors for your car
     Motor *left = new Motor(LeftMotorLeftPin, LeftMotorRightPin);
     Motor *right = new Motor(RightMotorLeftPin, RightMotorRightPin);
