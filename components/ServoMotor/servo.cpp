@@ -80,8 +80,9 @@ void ServoMotor::setAngle(int angle)
     if (angle > MAX_DEGREE || angle < MIN_DEGREE)
     {
         ESP_LOGE(LOG_TAG, "ERROR: Angle must be between %d and %d", MIN_DEGREE, MAX_DEGREE);
+        return;
     }
-    ESP_LOGI(LOG_TAG, "Setting Angle: %d", angle);
+    // ESP_LOGI(LOG_TAG, "Setting Angle: %d", angle);
     auto pulseWidth = angleToPulseWidth(angle);
     ESP_ERROR_CHECK(mcpwm_comparator_set_compare_value(mComparator, pulseWidth));
     mAngle = angle;
