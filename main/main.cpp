@@ -233,7 +233,9 @@ extern "C" void app_main(void)
     servo = new ServoMotor(ServoPin);
 
     // Don't forget to tell IR how to handle incoming transmissions
+    // TODO add log to remind to enable RX
     ir->mSetReceiveHandler(onReceiveIRData);
+    ir->enableRx();
     registerJoystickButtonHandlers(joystick);
     vTaskDelete(NULL); // Delete Main Task
 }
