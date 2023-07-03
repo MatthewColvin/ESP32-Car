@@ -1,4 +1,5 @@
 #include "servo.hpp"
+#include "driver/mcpwm_gen.h"
 #include "esp_log.h"
 
 #define LOG_TAG "Servo"
