@@ -78,7 +78,7 @@ ledc_channel_t LED::getAvailableChannel()
 {
     for (int i = 0; i < channelAvailability.size(); i++)
     {
-        ESP_LOGI(LOG_TAG, "Channel %d is %s", i, channelAvailability[i] ? "available" : "in use");
+        // ESP_LOGI(LOG_TAG, "Channel %d is %s", i, channelAvailability[i] ? "available" : "in use");
         if (channelAvailability[i])
         {
             channelAvailability[i] = false;
@@ -94,7 +94,7 @@ ledc_timer_t LED::getAvailableTimer()
 {
     for (int i = 0; i < timerAvailability.size(); i++)
     {
-        ESP_LOGI(LOG_TAG, "Timer %d is %s", i, timerAvailability[i] ? "available" : "in use");
+        // ESP_LOGI(LOG_TAG, "Timer %d is %s", i, timerAvailability[i] ? "available" : "in use");
         if (timerAvailability[i])
         {
             timerAvailability[i] = false;
