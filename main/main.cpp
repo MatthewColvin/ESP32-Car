@@ -2,6 +2,11 @@
 #include "motor.hpp"
 #include "BTClassicHID.hpp"
 #include "car.hpp"
+#include "controller.hpp"
+#include "buzzer.hpp"
+#include "led.hpp"
+#include "servo.hpp"
+#include "Transceiver.hpp"
 
 #include "esp_bt.h"
 #include "esp_bt_device.h"
@@ -14,32 +19,39 @@
 #include <memory>
 #define LOG_TAG "main"
 
-#define RightMotorLeftPin  15
-#define RightMotorRightPin 2
-#define LeftMotorLeftPin 16
-#define LeftMotorRightPin 17
+#define LOG_TAG "main"
+#define NotMotorSleep GPIO_NUM_17
+#define RightMotorLeftPin 16
+#define RightMotorRightPin 4
+#define LeftMotorLeftPin 13
+#define LeftMotorRightPin 5
 
-Car* car;
+#define IRLED GPIO_NUM_19
+#define IRDETECT GPIO_NUM_18
 
-void onAPress(){ESP_LOGI(LOG_TAG,"A Press");};
-void onARelease(){ESP_LOGI(LOG_TAG,"A Release");};
-void onBPress(){ ESP_LOGI(LOG_TAG,"B Press");};
-void onBRelease(){ESP_LOGI(LOG_TAG,"B Release");};
-void onXPress(){ESP_LOGI(LOG_TAG,"X Press");};
-void onXRelease(){ESP_LOGI(LOG_TAG,"X Release");};
-void onYPress(){ESP_LOGI(LOG_TAG,"Y Press");};
-void onYRelease(){ESP_LOGI(LOG_TAG,"Y Release");};
-void onTriggerPress(){ESP_LOGI(LOG_TAG,"Trigger Press");};
-void onTriggerRelease(){ESP_LOGI(LOG_TAG,"Trigger Release");};
-void onJoystick(uint8_t x, uint8_t y){ ESP_LOGI(LOG_TAG,"X:%d Y:%d",x,y);}
+void onAPress() { ESP_LOGI(LOG_TAG, "A Press"); }
+void onBPress() { ESP_LOGI(LOG_TAG, "B Press"); }
+void onXPress() { ESP_LOGI(LOG_TAG, "X Press"); }
+void onYPress() { ESP_LOGI(LOG_TAG, "Y Press"); }
+void onARelease() { ESP_LOGI(LOG_TAG, "A Release"); }
+void onBRelease() { ESP_LOGI(LOG_TAG, "B Release"); }
+void onXRelease() { ESP_LOGI(LOG_TAG, "X Release"); }
+void onYRelease() { ESP_LOGI(LOG_TAG, "Y Release"); }
+void onTriggerPress() { ESP_LOGI(LOG_TAG, "Trigger Press"); };
+void onTriggerRelease() { ESP_LOGI(LOG_TAG, "Trigger Release"); };
+void onJoystick(uint8_t x, uint8_t y) { ESP_LOGI(LOG_TAG, "X:%d Y:%d", x, y); }
+void onReceiveIRData(uint16_t address, uint16_t data, bool isRepeat)
+{
+    ESP_LOGI("IR RECEIVED DATA", "Address=%04X, Command=%04X\r\n\r\n", address, data);
+}
 
-
-void registerJoystickButtonHandlers(std::shared_ptr<Mocute052> aJoystick){
-    aJoystick->onA(onAPress,onARelease);
-    aJoystick->onB(onBPress,onBRelease);
-    aJoystick->onX(onXPress,onXRelease);
-    aJoystick->onY(onYPress,onYRelease);
-    aJoystick->onTrigger(onTriggerPress,onTriggerRelease);
+void registerJoystickButtonHandlers(std::shared_ptr<Mocute052> aJoystick)
+{
+    aJoystick->onA(onAPress, onARelease);
+    aJoystick->onB(onBPress, onBRelease);
+    aJoystick->onX(onXPress, onXRelease);
+    aJoystick->onY(onYPress, onYRelease);
+    aJoystick->onTrigger(onTriggerPress, onTriggerRelease);
     aJoystick->onJoyStick(onJoystick);
 }
 
@@ -47,31 +59,14 @@ extern "C" void app_main(void)
 {
     nvs_flash_init();
     auto bt = BTClassicHID::getInstance();
-    esp_bd_addr_t joystickAddress{0xe0, 0xf8, 0x48, 0x05, 0x29, 0x50};
+    esp_bd_addr_t joystickAddress{0xD0, 0x54, 0x7B, 0x00, 0x00, 0x00}; // 00 will act as "don't cares allowing it to connect to any controller."
 
-    while (true){
+    while (true)
+    {
         auto results = bt->scan(5);
-
-        printf("\n");
-        for (int i = 0; i<results.size();i++){
-            auto address = results[i].getAddress();
-            printf("Found HID Device #(%d)  ", i);
-            for (int j = 0; j<sizeof(esp_bd_addr_t); j++){
-                printf("%d:",address[j]);
-            }
-            printf("\n");
-        }
-        ESP_LOGI(LOG_TAG,"Please enter number within 5 seconds to connect.");
-        vTaskDelay(5000/portTICK_PERIOD_MS);
-        auto input = getchar();
-        if(input>0 && input < results.size()){
-            auto joystick = bt->connect<Mocute052>(results[input].getAddress());
-            registerJoystickButtonHandlers(joystick);
-            break;
-        }else{
-            ESP_LOGI(LOG_TAG,"Rescanning...");
-        }
+        auto joystick = bt->connect<controller>(joystickAddress);
+        registerJoystickButtonHandlers(joystick);
+        break;
     }
-
     vTaskDelete(NULL); // Delete Main Task
 }

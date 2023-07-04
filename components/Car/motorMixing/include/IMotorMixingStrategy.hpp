@@ -21,16 +21,26 @@ public:
      */
     struct motorSpeeds
     {
+        /// @brief Left motor speed
         float left;
+        /// @brief Right Motor speed
         float right;
     };
-
+    /// @brief Get the motor speeds given the current state of x and y
+    /// @return motorSpeeds - current speed to run the motors at
     motorSpeeds getMotorSpeeds();
 
+    /// @brief Allow the mixer to use the max speed the motor can handle
     void enableTurbo() { mIsTurboEnabled = true; };
+    /// @brief Force the mixer to use cruise speed as the max motor speed.
     void disableTurbo() { mIsTurboEnabled = false; };
 
+    /// @brief Get the current Cruise speed
+    /// @return float current cruise speed
     float getCruiseSpeed() { return mCruiseSpeed; };
+
+    /// @brief Set the cruise speed of the car
+    /// @param aCruiseSpeed - a max speed of the motor when not in turbo
     void setCruiseSpeed(float aCruiseSpeed);
 
 protected:
@@ -39,7 +49,9 @@ protected:
      */
     struct speeds
     {
+        /// @brief Left motor speed in terms of controller (-128 to 127)
         float left;
+        /// @brief Right motor speed in terms of controller (-128 to 127)
         float right;
     };
 
@@ -70,6 +82,7 @@ protected:
      * @brief Max speed of any motor while turbo is true
      */
     float mMaxSpeed = Motor::MAX_SPEED;
+    /// @brief keep track of when turbo mode is disabled and enabled
     bool mIsTurboEnabled = false;
 
 private:
@@ -81,13 +94,16 @@ private:
      * @param aY - Y value between -128 and 127
      */
     void controllerInputHandler(uint8_t aX, uint8_t aY);
+
+protected:
     /**
      * @brief Map value from range (aMin-aMax) into (aTargetMin-aTargetMax)
      */
     float mapValues(float value, float aMin, float aMax, float aTargetMin, float aTargetMax);
 
 protected:
-    // Current Control input from the controller in (-128 to 127 )
+    /// @brief Current Control X input from the controller in (-128 to 127 )
     float mX = 0;
+    /// @brief Current Control Y input from the controller in (-128 to 127 )
     float mY = 0;
 };

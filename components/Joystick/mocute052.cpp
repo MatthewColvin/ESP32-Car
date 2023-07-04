@@ -7,15 +7,6 @@
 #define buttonXMask 0x40
 #define buttonYMask 0x80
 #define triggerMask 0x10
-/**
- * @brief
- *
- * @param oldIsDown old button state of the button
- * @param buttonMask check this bit for the button state
- * @param pressCb run when button is pressed
- * @param releaseCb run when button is released
- * @return current state of button
- */
 
 Mocute052::Mocute052(HIDDevice aDevice) : HIDDevice(aDevice.getScanResult())
 {
@@ -31,7 +22,7 @@ Mocute052::Mocute052(HIDDevice aDevice) : HIDDevice(aDevice.getScanResult())
     };
 };
 
-bool handleButton(bool oldIsDown, int buttonMask, uint8_t buttonByte, std::function<void()> pressCb, std::function<void()> releaseCb)
+bool Mocute052::handleButton(bool oldIsDown, int buttonMask, uint8_t buttonByte, std::function<void()> pressCb, std::function<void()> releaseCb)
 {
     bool aIsDown = buttonMask & buttonByte;
     if (aIsDown != oldIsDown) // button was either pressed or released
@@ -78,7 +69,7 @@ void Mocute052::handleInputEvent(esp_hidh_event_data_t *anInputEvent)
         mIsYdown = handleButton(mIsYdown, buttonYMask, XYbuttonByte, mHandleYPress, mHandleYRelease);
         mIsTriggerdown = handleButton(mIsTriggerdown, triggerMask, TriggerByte, mHandleTriggerPress, mHandleTriggerRelease);
 
-        //ESP_LOGI(LOG_TAG, "X:%d Y:%d", x, y);
-        //ESP_LOG_BUFFER_HEX(LOG_TAG, anInputEvent->input.data, anInputEvent->input.length);
+        // ESP_LOGI(LOG_TAG, "X:%d Y:%d", x, y);
+        // ESP_LOG_BUFFER_HEX(LOG_TAG, anInputEvent->input.data, anInputEvent->input.length);
     }
 }

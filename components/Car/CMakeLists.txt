@@ -1,5 +1,5 @@
-idf_component_register(SRCS "motor.cpp" "car.cpp" "./motorMixing/TankMix.cpp" "./motorMixing/IMotorMixingStrategy.cpp"
-                       INCLUDE_DIRS "./include" "./motorMixing/include"
-                       REQUIRES esp_common driver Joystick)
+idf_component_register(SRC_DIRS "./" "./motorMixing/" 
+                       INCLUDE_DIRS "./include" "./motorMixing/include" 
+                       REQUIRES esp_common driver Joystick bdc_motor)
 
 target_compile_options(${COMPONENT_LIB} PUBLIC -std=gnu++2b)
