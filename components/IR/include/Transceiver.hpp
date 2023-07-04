@@ -2,6 +2,7 @@
 #include "driver/rmt_types.h"
 #include "driver/rmt_rx.h"
 #include "driver/rmt_tx.h"
+#include "hal/gpio_types.h"
 #include "freertos/FreeRTOS.h"
 #include "freertos/queue.h"
 #include "ir_nec_encoder.h"

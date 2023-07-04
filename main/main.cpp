@@ -135,6 +135,13 @@ void onReceiveIRData(uint16_t address, uint16_t data, bool isRepeat)
     const auto powerButton = 0xB946;
     const auto upButton = 0xB748;
     const auto downButton = 0xB24D;
+
+    const auto oneButton = 0xFE01;
+    const auto twoButton = 0xFD02;
+    const auto threeButton = 0xFC03;
+    const auto fourButton = 0xFB04;
+    const auto fiveButton = 0xFA05;
+    const auto sixButton = 0xF906;
     // const auto leftButton = 0xB14E;
     // const auto rightButton = 0xB649;
 
@@ -152,6 +159,24 @@ void onReceiveIRData(uint16_t address, uint16_t data, bool isRepeat)
         break;
     case downButton:
         car->setCruiseSpeed(car->getCruiseSpeed() - 1000);
+        break;
+    case oneButton:
+        redLed->setBrightness(redLed->getBrightness() + 10);
+        break;
+    case twoButton:
+        blueLed->setBrightness(blueLed->getBrightness() + 10);
+        break;
+    case threeButton:
+        greenLed->setBrightness(greenLed->getBrightness() + 10);
+        break;
+    case fourButton:
+        redLed->setBrightness(redLed->getBrightness() - 10);
+        break;
+    case fiveButton:
+        blueLed->setBrightness(blueLed->getBrightness() - 10);
+        break;
+    case sixButton:
+        greenLed->setBrightness(greenLed->getBrightness() - 10);
         break;
     }
 
