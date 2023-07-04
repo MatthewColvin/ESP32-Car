@@ -2,6 +2,7 @@
 #include "driver/rmt_types.h"
 #include "driver/rmt_rx.h"
 #include "driver/rmt_tx.h"
+#include "hal/gpio_types.h"
 #include "freertos/FreeRTOS.h"
 #include "freertos/queue.h"
 #include "ir_nec_encoder.h"
@@ -12,7 +13,7 @@
 class Transceiver
 {
 public:
-    Transceiver(int receivePin, int sendPin);
+    Transceiver(gpio_num_t receivePin, gpio_num_t sendPin);
     ~Transceiver();
 
     /**
@@ -54,7 +55,7 @@ private:
     static constexpr auto mPacketSize = 64;
 
     // Receive
-    const int mRxPin;
+    const gpio_num_t mRxPin;
     bool mIsRxEnabled = false;
     void setupRxChannel();
     void teardownRxChannel();
@@ -75,7 +76,7 @@ private:
     RxHandlerTy mDataReceivedHandler = nullptr; // Callback for user of class to handle parsed data from the Queue
 
     // Transmit
-    const int mTxPin;
+    const gpio_num_t mTxPin;
     bool mIsTxEnabled = false;
     void setupTxChannel();
     void teardownTxChannel();

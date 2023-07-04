@@ -9,7 +9,7 @@
 #define LOG_TAG "Transceiver"
 #define RX_QUEUE_TASK_NAME "RX_Processor"
 
-Transceiver::Transceiver(int receivePin, int sendPin) : mRxPin(receivePin), mTxPin(sendPin)
+Transceiver::Transceiver(gpio_num_t receivePin, gpio_num_t sendPin) : mRxPin(receivePin), mTxPin(sendPin)
 {
     // Tx Configs
     mTxConfig.clk_src = RMT_CLK_SRC_DEFAULT;
