@@ -25,6 +25,18 @@ bool HIDDevice::hasAddress(const esp_bd_addr_t anAddress)
     return true;
 }
 
+bool HIDDevice::hasExactAddress(const esp_bd_addr_t anAddress)
+{
+    for (uint8_t i = 0; i < sizeof(esp_bd_addr_t); i++)
+    {
+        if (anAddress[i] != mScanResult.bda[i])
+        {
+            return false;
+        }
+    }
+    return true;
+}
+
 esp_ble_addr_type_t HIDDevice::getAddressType()
 {
     if (mScanResult.transport == ESP_HID_TRANSPORT_BLE)

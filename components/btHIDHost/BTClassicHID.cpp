@@ -37,7 +37,7 @@ std::shared_ptr<HIDDevice> BTClassicHID::getDevice(esp_hidh_event_t anEvent, esp
         return nullptr;
     }
     auto currentDevice = std::find_if(mConnectedDevices.begin(), mConnectedDevices.end(), [anAddress](std::shared_ptr<HIDDevice> aDevice)
-                                      { return aDevice && aDevice->hasAddress(anAddress); });
+                                      { return aDevice && aDevice->hasExactAddress(anAddress); });
     if (currentDevice != mConnectedDevices.end())
     {
         return *currentDevice;
@@ -84,8 +84,7 @@ void BTClassicHID::hidh_callback(void *handler_args, esp_event_base_t base, int3
         break;
     case ESP_HIDH_CLOSE_EVENT:
         device->handleCloseEvent(param);
-        // TODO to handle removal from mconnecteddevices
-        break;
+        ESP_LOGI(LOG_TAG, "Closing refcount: %li", device.use_count());
     case ESP_HIDH_START_EVENT:
     case ESP_HIDH_STOP_EVENT:
         // only used for BT classic do nothing for now.

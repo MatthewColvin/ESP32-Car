@@ -17,6 +17,7 @@ public:
 
     uint8_t *getAddress() { return mScanResult.bda; }
     bool hasAddress(const esp_bd_addr_t anAddress);
+    bool hasExactAddress(const esp_bd_addr_t anAddress);
     esp_hid_transport_t getTransport() { return mScanResult.transport; }
     esp_ble_addr_type_t getAddressType();
 
