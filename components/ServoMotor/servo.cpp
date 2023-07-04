@@ -61,15 +61,22 @@ void ServoMotor::attach()
     ESP_ERROR_CHECK(mcpwm_new_generator(oper, &generator_config, &generator));
 
     // Set inital angle to zero
-    setAngle(0);
+    setAngle(ServoMotor::MIN_DEGREE);
 
     // Set generator action on timer and compare event
     // go high on counter empty
-    ESP_ERROR_CHECK(mcpwm_generator_set_action_on_timer_event(generator,
-                                                              MCPWM_GEN_TIMER_EVENT_ACTION(MCPWM_TIMER_DIRECTION_UP, MCPWM_TIMER_EVENT_EMPTY, MCPWM_GEN_ACTION_HIGH)));
+    mcpwm_gen_timer_event_action_t actionEvent;
+    actionEvent.action = MCPWM_GEN_ACTION_HIGH;
+    actionEvent.direction = MCPWM_TIMER_DIRECTION_UP;
+    actionEvent.event = MCPWM_TIMER_EVENT_EMPTY;
+    ESP_ERROR_CHECK(mcpwm_generator_set_actions_on_timer_event(generator, actionEvent));
+
     // go low on compare threshold
-    ESP_ERROR_CHECK(mcpwm_generator_set_action_on_compare_event(generator,
-                                                                MCPWM_GEN_COMPARE_EVENT_ACTION(MCPWM_TIMER_DIRECTION_UP, mComparator, MCPWM_GEN_ACTION_LOW)));
+    mcpwm_gen_compare_event_action_t compareAction;
+    compareAction.action = MCPWM_GEN_ACTION_LOW;
+    compareAction.comparator = mComparator;
+    compareAction.direction = MCPWM_TIMER_DIRECTION_UP;
+    ESP_ERROR_CHECK(mcpwm_generator_set_actions_on_compare_event(generator, compareAction));
 
     // Enable and start timer
     ESP_ERROR_CHECK(mcpwm_timer_enable(timer));
