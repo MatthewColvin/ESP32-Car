@@ -17,7 +17,7 @@ public:
     void operator=(const BTClassicHID &) = delete;
     static std::shared_ptr<BTClassicHID> getInstance();
 
-    static std::vector<HIDDevice> scan(uint32_t seconds);
+    static std::vector<HIDDevice> scan(uint32_t seconds, esp_bd_addr_t anEarlyReturnAddress = nullptr);
     static bool connect(std::shared_ptr<HIDDevice> aDevice);
 
     template <typename deviceType>
@@ -50,7 +50,7 @@ std::shared_ptr<deviceType> BTClassicHID::connect(esp_bd_addr_t aDeviceAddress, 
     std::shared_ptr<deviceType> retDevice = nullptr;
     for (int i = 0; i < numScans && !connected; i++)
     {
-        auto devices = scan(secondsPerScan);
+        auto devices = scan(secondsPerScan, aDeviceAddress);
         ESP_LOGI(LOG_TAG, "Found %d Devices on Scan %d", devices.size(), i);
         for (auto device : devices)
         {

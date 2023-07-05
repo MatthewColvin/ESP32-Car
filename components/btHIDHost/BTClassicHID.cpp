@@ -121,11 +121,11 @@ BTClassicHID::BTClassicHID()
     ESP_ERROR_CHECK(esp_hidh_init(&config));
 }
 
-std::vector<HIDDevice> BTClassicHID::scan(uint32_t seconds)
+std::vector<HIDDevice> BTClassicHID::scan(uint32_t seconds, esp_bd_addr_t anEarlyReturnAddress)
 {
     size_t numResults = 0;
     esp_hid_scan_result_t *results = nullptr;
-    esp_hid_scan(seconds, &numResults, &results);
+    esp_hid_scan(seconds, &numResults, &results, anEarlyReturnAddress);
 
     std::vector<HIDDevice> devices;
     for (int i = 0; i < numResults; i++)

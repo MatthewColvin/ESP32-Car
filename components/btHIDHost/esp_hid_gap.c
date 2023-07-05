@@ -29,6 +29,10 @@ static size_t num_bt_scan_results = 0;
 static esp_hid_scan_result_t *ble_scan_results = NULL;
 static size_t num_ble_scan_results = 0;
 
+// Address used to return early from a scan.
+static esp_bd_addr_t *early_return_address_ptr = NULL;
+static esp_bd_addr_t early_return_address;
+
 static SemaphoreHandle_t bt_hidh_cb_semaphore = NULL;
 #define WAIT_BT_CB() xSemaphoreTake(bt_hidh_cb_semaphore, portMAX_DELAY)
 #define SEND_BT_CB() xSemaphoreGive(bt_hidh_cb_semaphore)
@@ -300,7 +304,7 @@ static void handle_bt_device_result(struct disc_res_param *disc_res)
         else if (prop->type == ESP_BT_GAP_DEV_PROP_COD)
         {
             memcpy(&codv, prop->val, sizeof(uint32_t));
-            //GAP_DBG_PRINTF("major: %s, minor: %d, service: 0x%03x", esp_hid_cod_major_str(cod->major), cod->minor, cod->service);
+            // GAP_DBG_PRINTF("major: %s, minor: %d, service: 0x%03x", esp_hid_cod_major_str(cod->major), cod->minor, cod->service);
         }
         else if (prop->type == ESP_BT_GAP_DEV_PROP_EIR)
         {
@@ -375,6 +379,22 @@ static void handle_bt_device_result(struct disc_res_param *disc_res)
     if (cod->major == ESP_BT_COD_MAJOR_DEV_PERIPHERAL || (find_scan_result(disc_res->bda, bt_scan_results) != NULL))
     {
         add_bt_scan_result(disc_res->bda, cod, &uuid, name, name_len, rssi);
+        if (early_return_address_ptr)
+        {
+            esp_bd_addr_t earlyReturnAddress;
+            bool isEarlyReturn = true;
+            for (int i = 0; i < sizeof(esp_bd_addr_t); i++)
+            {
+                if (disc_res->bda[i] != *early_return_address_ptr[i])
+                {
+                    isEarlyReturn = false;
+                }
+            }
+            if (isEarlyReturn)
+            {
+                esp_bt_gap_cancel_discovery();
+            }
+        }
     }
 }
 #endif
@@ -921,7 +941,7 @@ esp_err_t esp_hid_gap_init(uint8_t mode)
     return ESP_OK;
 }
 
-esp_err_t esp_hid_scan(uint32_t seconds, size_t *num_results, esp_hid_scan_result_t **results)
+esp_err_t esp_hid_scan(uint32_t seconds, size_t *num_results, esp_hid_scan_result_t **results, esp_bd_addr_t anEarlyReturnAddress)
 {
     if (num_bt_scan_results || bt_scan_results || num_ble_scan_results || ble_scan_results)
     {
@@ -929,6 +949,8 @@ esp_err_t esp_hid_scan(uint32_t seconds, size_t *num_results, esp_hid_scan_resul
         return ESP_FAIL;
     }
 
+    // TODO copy the early return address into static and then point to it.
+    // Null the pointer at the bottom so it does not cause issues when called again.
 #if CONFIG_BT_BLE_ENABLED
     if (start_ble_scan(seconds) == ESP_OK)
     {
