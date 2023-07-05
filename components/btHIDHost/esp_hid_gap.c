@@ -948,9 +948,11 @@ esp_err_t esp_hid_scan(uint32_t seconds, size_t *num_results, esp_hid_scan_resul
         ESP_LOGE(TAG, "There are old scan results. Free them first!");
         return ESP_FAIL;
     }
-
-    // TODO copy the early return address into static and then point to it.
-    // Null the pointer at the bottom so it does not cause issues when called again.
+    if (anEarlyReturnAddress)
+    {
+        memcpy(early_return_address, anEarlyReturnAddress, sizeof(esp_bd_addr_t));
+        early_return_address_ptr = &early_return_address;
+    }
 #if CONFIG_BT_BLE_ENABLED
     if (start_ble_scan(seconds) == ESP_OK)
     {
@@ -992,5 +994,7 @@ esp_err_t esp_hid_scan(uint32_t seconds, size_t *num_results, esp_hid_scan_resul
     bt_scan_results = NULL;
     num_ble_scan_results = 0;
     ble_scan_results = NULL;
+    early_return_address_ptr = NULL;
+
     return ESP_OK;
 }
