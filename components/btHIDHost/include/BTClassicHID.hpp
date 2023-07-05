@@ -34,7 +34,8 @@ private:
     static constexpr char LOG_TAG[] = "BTClassicHID";
 
     static void hidh_callback(void *handler_args, esp_event_base_t base, int32_t id, void *event_data);
-    static std::shared_ptr<HIDDevice> getDevice(esp_hidh_event_t anEvent, esp_hidh_event_data_t *aParam);
+    static void onDisconnect(std::weak_ptr<HIDDevice> aDevice);
+    static std::weak_ptr<HIDDevice> getDevice(esp_hidh_event_t anEvent, esp_hidh_event_data_t *aParam);
 };
 
 template <typename deviceType>

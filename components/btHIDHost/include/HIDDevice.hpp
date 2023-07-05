@@ -4,6 +4,7 @@
 #include "esp_hidh.h"
 
 #include <string>
+#include <functional>
 
 class BTClassicHID;
 
@@ -13,7 +14,9 @@ class HIDDevice
 
 public:
     HIDDevice(esp_hid_scan_result_t aScanResult);
+    virtual ~HIDDevice();
     esp_hid_scan_result_t getScanResult() { return mScanResult; }
+    void onDisconnect(std::function<void()> aDisconnectionHandler) { mHandleDisconnect = aDisconnectionHandler; };
 
     uint8_t *getAddress() { return mScanResult.bda; }
     bool hasAddress(const esp_bd_addr_t anAddress);
@@ -30,4 +33,5 @@ protected:
 
 private:
     esp_hid_scan_result_t mScanResult;
+    std::function<void()> mHandleDisconnect = nullptr;
 };

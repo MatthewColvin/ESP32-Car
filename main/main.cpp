@@ -55,18 +55,26 @@ void registerJoystickButtonHandlers(std::shared_ptr<Mocute052> aJoystick)
     aJoystick->onJoyStick(onJoystick);
 }
 
+void connectJoystickTask(void *nothing)
+{
+    auto bt = BTClassicHID::getInstance();
+    esp_bd_addr_t joystickAddress{0xD0, 0x54, 0x7B, 0x00, 0x00, 0x00}; // 00 will act as "don't cares allowing it to connect to any controller."
+    while (true)
+    {
+        auto joystick = bt->connect<controller>(joystickAddress);
+        registerJoystickButtonHandlers(joystick);
+        joystick->onDisconnect([]
+                               { xTaskCreate(connectJoystickTask, "ConnectTojoystick", 4096, nullptr, 5, nullptr); });
+        break;
+    }
+    vTaskDelete(NULL);
+}
+
 extern "C" void app_main(void)
 {
     nvs_flash_init();
-    auto bt = BTClassicHID::getInstance();
-    esp_bd_addr_t joystickAddress{0xD0, 0x54, 0x7B, 0x00, 0x00, 0x00}; // 00 will act as "don't cares allowing it to connect to any controller."
 
-    while (true)
-    {
-        auto results = bt->scan(5);
-        auto joystick = bt->connect<controller>(joystickAddress);
-        registerJoystickButtonHandlers(joystick);
-        break;
-    }
+    xTaskCreate(connectJoystickTask, "ConnectTojoystick", 4096, nullptr, 5, nullptr);
+
     vTaskDelete(NULL); // Delete Main Task
 }
