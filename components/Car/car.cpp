@@ -3,6 +3,7 @@
 #include "NoZeroTurnMix.hpp"
 
 #include "esp_log.h"
+#include "driver/gpio.h"
 
 #include <cmath>
 
@@ -19,6 +20,17 @@ Car::Car(std::shared_ptr<Mocute052> remote, Motor *leftMotor, Motor *rightMotor)
                                                                                    mHandling(Car::Handling::Tank)
 {
     xTaskCreate(this->mixerPollingImpl, "CarMixingPoll", 2048, this, 5, NULL);
+
+    // Configure Motor Pin to allow control of motor drivers
+    gpio_config_t motorSleepPinConfig;
+    motorSleepPinConfig.pin_bit_mask = 1ULL << MotorDriveEnablePin;
+    motorSleepPinConfig.mode = GPIO_MODE_OUTPUT;
+    motorSleepPinConfig.pull_up_en = GPIO_PULLUP_ENABLE;
+    motorSleepPinConfig.pull_down_en = GPIO_PULLDOWN_DISABLE;
+    motorSleepPinConfig.intr_type = GPIO_INTR_DISABLE;
+    gpio_config(&motorSleepPinConfig);
+
+    enableMotors();
 }
 
 void Car::setMotorSpeed(float aLeftMotorSpeed, float aRightMotorSpeed)
@@ -73,4 +85,12 @@ void Car::setHandling(Car::Handling aHandling)
         mMotorMixer = std::make_unique<NoZeroTurnMix>(mController);
         break;
     }
+}
+
+void Car::enableMotors(){
+    gpio_set_level(MotorDriveEnablePin, 1);
+}
+
+void Car::disableMotors(){
+    gpio_set_level(MotorDriveEnablePin, 0);
 }
