@@ -10,36 +10,17 @@ HIDDevice::HIDDevice(esp_hid_scan_result_t aScanResult) : mScanResult(aScanResul
 HIDDevice::~HIDDevice()
 {
     // TODO Could Print address of device.
-    ESP_LOGI(LOG_TAG, "Successfully Destroyed Device");
+    // ESP_LOGI(LOG_TAG, "Successfully Destroyed Device");
 }
 
 bool HIDDevice::hasAddress(const esp_bd_addr_t anAddress)
 {
-    for (uint8_t i = 0; i < sizeof(esp_bd_addr_t); i++)
-    {
-        // TODO: Consider a different design because 0x00 maybe a valid address
-        // 0x00 is a don't care value to help with dynamic addresses
-        if (anAddress[i] != 0x00)
-        {
-            if (anAddress[i] != mScanResult.bda[i])
-            {
-                return false;
-            }
-        }
-    }
-    return true;
+    return isAddressEqualIgnoreZeros(anAddress, mScanResult.bda);
 }
 
 bool HIDDevice::hasExactAddress(const esp_bd_addr_t anAddress)
 {
-    for (uint8_t i = 0; i < sizeof(esp_bd_addr_t); i++)
-    {
-        if (anAddress[i] != mScanResult.bda[i])
-        {
-            return false;
-        }
-    }
-    return true;
+   return isAddressEqual(anAddress,mScanResult.bda);
 }
 
 esp_ble_addr_type_t HIDDevice::getAddressType()

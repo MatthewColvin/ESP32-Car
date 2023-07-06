@@ -58,7 +58,7 @@ void registerJoystickButtonHandlers(std::shared_ptr<Mocute052> aJoystick)
 void connectJoystickTask(void *nothing)
 {
     auto bt = BTClassicHID::getInstance();
-    esp_bd_addr_t joystickAddress{0xD0, 0x54, 0x7B, 0x00, 0x00, 0x00}; // 00 will act as "don't cares allowing it to connect to any controller."
+    esp_bd_addr_t joystickAddress{0xD0, 0x54, 0x7B, 0x00, 0x47, 0x19}; // 00 will act as "don't cares allowing it to connect to any controller."
     while (true)
     {
         auto joystick = bt->connect<controller>(joystickAddress);

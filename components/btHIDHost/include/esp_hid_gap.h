@@ -78,6 +78,8 @@ extern "C"
 
     void print_uuid(esp_bt_uuid_t *uuid);
     const char *ble_addr_type_str(esp_ble_addr_type_t ble_addr_type);
+    bool isAddressEqual(const esp_bd_addr_t left,const esp_bd_addr_t right);
+    bool isAddressEqualIgnoreZeros(const esp_bd_addr_t left,const esp_bd_addr_t right);
 
 #ifdef __cplusplus
 }

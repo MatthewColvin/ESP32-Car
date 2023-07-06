@@ -95,5 +95,5 @@
         "numbers": "cpp",
         "semaphore": "cpp"
     },
-    "idf.port": "/dev/ttyUSB3"
+    "idf.port": "/dev/ttyUSB0"
 }
