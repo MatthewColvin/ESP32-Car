@@ -51,7 +51,7 @@ std::shared_ptr<deviceType> BTClassicHID::connect(esp_bd_addr_t aDeviceAddress, 
     for (int i = 0; i < numScans && !connected; i++)
     {
         auto devices = scan(secondsPerScan, aDeviceAddress);
-        ESP_LOGI(LOG_TAG, "Found %d Devices on Scan %d", devices.size(), i);
+        // ESP_LOGI(LOG_TAG, "Found %d Devices on Scan %d", devices.size(), i);
         for (auto device : devices)
         {
             if (device.hasAddress(aDeviceAddress))
@@ -59,8 +59,8 @@ std::shared_ptr<deviceType> BTClassicHID::connect(esp_bd_addr_t aDeviceAddress, 
                 retDevice = std::make_shared<deviceType>(device);
                 if (connect(retDevice))
                 {
-                    ESP_LOGI(LOG_TAG, "Connected!");
-                    ESP_LOGI(LOG_TAG, ESP_BD_ADDR_STR, ESP_BD_ADDR_HEX(retDevice->getAddress()));
+                    // ESP_LOGI(LOG_TAG, "Connected!");
+                    // ESP_LOGI(LOG_TAG, ESP_BD_ADDR_STR, ESP_BD_ADDR_HEX(retDevice->getAddress()));
                     connected = true;
                 }
             }
