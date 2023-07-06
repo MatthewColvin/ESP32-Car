@@ -29,6 +29,11 @@ static size_t num_bt_scan_results = 0;
 static esp_hid_scan_result_t *ble_scan_results = NULL;
 static size_t num_ble_scan_results = 0;
 
+// Address used to return early from a scan.
+static esp_bd_addr_t *early_return_address_ptr = NULL;
+static esp_bd_addr_t early_return_address;
+static bool device_found_early = false;
+
 static SemaphoreHandle_t bt_hidh_cb_semaphore = NULL;
 #define WAIT_BT_CB() xSemaphoreTake(bt_hidh_cb_semaphore, portMAX_DELAY)
 #define SEND_BT_CB() xSemaphoreGive(bt_hidh_cb_semaphore)
@@ -241,6 +246,11 @@ static void add_ble_scan_result(esp_bd_addr_t bda, esp_ble_addr_type_t addr_type
     r->next = ble_scan_results;
     ble_scan_results = r;
     num_ble_scan_results++;
+    device_found_early = early_return_address_ptr && isAddressEqualIgnoreZeros(*early_return_address_ptr,bda);
+    if (device_found_early){
+        ESP_LOGI("BTHID","Scan End EARLY!");
+        esp_ble_gap_stop_scanning();
+    }
 }
 #endif /* CONFIG_BT_BLE_ENABLED */
 
@@ -284,23 +294,23 @@ static void handle_bt_device_result(struct disc_res_param *disc_res)
         esp_bt_gap_dev_prop_t *prop = &disc_res->prop[i];
         if (prop->type != ESP_BT_GAP_DEV_PROP_EIR)
         {
-            GAP_DBG_PRINTF(", %s: ", gap_bt_prop_type_names[prop->type]);
+            //GAP_DBG_PRINTF(", %s: ", gap_bt_prop_type_names[prop->type]);
         }
         if (prop->type == ESP_BT_GAP_DEV_PROP_BDNAME)
         {
             name = (uint8_t *)prop->val;
             name_len = strlen((const char *)name);
-            GAP_DBG_PRINTF("%s", (const char *)name);
+            //GAP_DBG_PRINTF("%s", (const char *)name);
         }
         else if (prop->type == ESP_BT_GAP_DEV_PROP_RSSI)
         {
             rssi = *((int8_t *)prop->val);
-            GAP_DBG_PRINTF("%d", rssi);
+            //GAP_DBG_PRINTF("%d", rssi);
         }
         else if (prop->type == ESP_BT_GAP_DEV_PROP_COD)
         {
             memcpy(&codv, prop->val, sizeof(uint32_t));
-            GAP_DBG_PRINTF("major: %s, minor: %d, service: 0x%03x", esp_hid_cod_major_str(cod->major), cod->minor, cod->service);
+            // GAP_DBG_PRINTF("major: %s, minor: %d, service: 0x%03x", esp_hid_cod_major_str(cod->major), cod->minor, cod->service);
         }
         else if (prop->type == ESP_BT_GAP_DEV_PROP_EIR)
         {
@@ -344,7 +354,7 @@ static void handle_bt_device_result(struct disc_res_param *disc_res)
             {
                 uuid.len = len;
                 memcpy(uuid.uuid.uuid128, (uint8_t *)data, len);
-                GAP_DBG_PRINTF(", ");
+                // GAP_DBG_PRINTF(", ");
                 // print_uuid(&uuid);
                 continue;
             }
@@ -361,11 +371,11 @@ static void handle_bt_device_result(struct disc_res_param *disc_res)
                 {
                     name = data;
                     name_len = len;
-                    GAP_DBG_PRINTF(", NAME: ");
-                    for (int x = 0; x < len; x++)
-                    {
-                        GAP_DBG_PRINTF("%c", (char)data[x]);
-                    }
+                    // GAP_DBG_PRINTF(", NAME: ");
+                    // for (int x = 0; x < len; x++)
+                    // {
+                    //     GAP_DBG_PRINTF("%c", (char)data[x]);
+                    // }
                 }
             }
         }
@@ -375,6 +385,11 @@ static void handle_bt_device_result(struct disc_res_param *disc_res)
     if (cod->major == ESP_BT_COD_MAJOR_DEV_PERIPHERAL || (find_scan_result(disc_res->bda, bt_scan_results) != NULL))
     {
         add_bt_scan_result(disc_res->bda, cod, &uuid, name, name_len, rssi);
+        device_found_early = early_return_address_ptr && isAddressEqualIgnoreZeros(*early_return_address_ptr,disc_res->bda);
+        if (device_found_early)
+        {
+            esp_bt_gap_cancel_discovery();
+        }
     }
 }
 #endif
@@ -570,7 +585,7 @@ static void ble_gap_event_handler(esp_gap_ble_cb_event_t event, esp_ble_gap_cb_p
             break;
         }
         case ESP_GAP_SEARCH_INQ_CMPL_EVT:
-            ESP_LOGV(TAG, "BLE GAP EVENT SCAN DONE: %d", scan_result->scan_rst.num_resps);
+            ESP_LOGI(TAG, "BLE GAP EVENT SCAN DONE: %d", scan_result->scan_rst.num_resps);
             SEND_BLE_CB();
             break;
         default:
@@ -580,7 +595,10 @@ static void ble_gap_event_handler(esp_gap_ble_cb_event_t event, esp_ble_gap_cb_p
     }
     case ESP_GAP_BLE_SCAN_STOP_COMPLETE_EVT:
     {
-        ESP_LOGV(TAG, "BLE GAP EVENT SCAN CANCELED");
+        ESP_LOGI(TAG, "BLE GAP EVENT SCAN CANCELED");
+        if(device_found_early){
+            SEND_BLE_CB();
+        }
         break;
     }
 
@@ -921,14 +939,18 @@ esp_err_t esp_hid_gap_init(uint8_t mode)
     return ESP_OK;
 }
 
-esp_err_t esp_hid_scan(uint32_t seconds, size_t *num_results, esp_hid_scan_result_t **results)
+esp_err_t esp_hid_scan(uint32_t seconds, size_t *num_results, esp_hid_scan_result_t **results, esp_bd_addr_t anEarlyReturnAddress)
 {
     if (num_bt_scan_results || bt_scan_results || num_ble_scan_results || ble_scan_results)
     {
         ESP_LOGE(TAG, "There are old scan results. Free them first!");
         return ESP_FAIL;
     }
-
+    if (anEarlyReturnAddress)
+    {
+        memcpy(early_return_address, anEarlyReturnAddress, sizeof(esp_bd_addr_t));
+        early_return_address_ptr = &early_return_address;
+    }
 #if CONFIG_BT_BLE_ENABLED
     if (start_ble_scan(seconds) == ESP_OK)
     {
@@ -941,13 +963,15 @@ esp_err_t esp_hid_scan(uint32_t seconds, size_t *num_results, esp_hid_scan_resul
 #endif /* CONFIG_BT_BLE_ENABLED */
 
 #if CONFIG_BT_HID_HOST_ENABLED
-    if (start_bt_scan(seconds) == ESP_OK)
-    {
-        WAIT_BT_CB();
-    }
-    else
-    {
-        return ESP_FAIL;
+    if (!device_found_early){
+        if (start_bt_scan(seconds) == ESP_OK)
+        {
+            WAIT_BT_CB();
+        }
+        else
+        {
+            return ESP_FAIL;
+        }
     }
 #endif
 
@@ -970,5 +994,46 @@ esp_err_t esp_hid_scan(uint32_t seconds, size_t *num_results, esp_hid_scan_resul
     bt_scan_results = NULL;
     num_ble_scan_results = 0;
     ble_scan_results = NULL;
+    early_return_address_ptr = NULL;
+    device_found_early = false;
+
     return ESP_OK;
+}
+
+bool isAddressEqual(const esp_bd_addr_t left, const esp_bd_addr_t right){
+    if(!left || !right){
+        ESP_LOGE("BTHID", "Attempted to compare null address");
+        return false;
+    }
+     for (uint8_t i = 0; i < sizeof(esp_bd_addr_t); i++)
+    {
+        if (left[i] != right[i])
+        {
+            return false;
+        }
+    }
+    return true;
+
+}
+
+bool isAddressEqualIgnoreZeros(const esp_bd_addr_t left, const esp_bd_addr_t right){
+    if(!left || !right){
+        ESP_LOGE("BTHID", "Attempted to compare null address");
+        return false;
+    }
+
+    for (uint8_t i = 0; i < sizeof(esp_bd_addr_t); i++)
+    {
+        // TODO: Consider a different design because 0x00 maybe a valid address
+        // 0x00 is a don't care value to help with dynamic addresses
+        if (left[i] != 0x00 || right[i] == 0x00)
+        {
+            if (left[i] != right[i])
+            {
+                ESP_LOGI("BTHID", "left:%d right:%d", left[i], right[i]);
+                return false;
+            }
+        }
+    }
+    return true;
 }

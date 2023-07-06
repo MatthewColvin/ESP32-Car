@@ -6,11 +6,12 @@
 #include "freertos/semphr.h"
 
 #include <algorithm>
+#include <cstring>
 
 std::shared_ptr<BTClassicHID> BTClassicHID::mInstance = nullptr;
 std::array<std::shared_ptr<HIDDevice>, MAX_CONNECTED_DEVICES> BTClassicHID::mConnectedDevices{};
 
-std::shared_ptr<HIDDevice> BTClassicHID::getDevice(esp_hidh_event_t anEvent, esp_hidh_event_data_t *aParams)
+std::weak_ptr<HIDDevice> BTClassicHID::getDevice(esp_hidh_event_t anEvent, esp_hidh_event_data_t *aParams)
 {
     const uint8_t *anAddress{};
     switch (anEvent)
@@ -34,10 +35,10 @@ std::shared_ptr<HIDDevice> BTClassicHID::getDevice(esp_hidh_event_t anEvent, esp
     case ESP_HIDH_START_EVENT: /*!< HID host stack started, used only for Classic Bluetooth */
     case ESP_HIDH_STOP_EVENT:  /*!< HID host stack stopped, used only for Classic Bluetooth */
     default:
-        return nullptr;
+        return std::weak_ptr<HIDDevice>();
     }
     auto currentDevice = std::find_if(mConnectedDevices.begin(), mConnectedDevices.end(), [anAddress](std::shared_ptr<HIDDevice> aDevice)
-                                      { return aDevice && aDevice->hasAddress(anAddress); });
+                                      { return aDevice && aDevice->hasExactAddress(anAddress); });
     if (currentDevice != mConnectedDevices.end())
     {
         return *currentDevice;
@@ -46,7 +47,7 @@ std::shared_ptr<HIDDevice> BTClassicHID::getDevice(esp_hidh_event_t anEvent, esp
     {
         ESP_LOGE(LOG_TAG, "Could NOT Find Device on event %d!", anEvent);
     }
-    return nullptr;
+    return std::weak_ptr<HIDDevice>();
 }
 
 void BTClassicHID::hidh_callback(void *handler_args, esp_event_base_t base, int32_t id, void *event_data)
@@ -60,40 +61,40 @@ void BTClassicHID::hidh_callback(void *handler_args, esp_event_base_t base, int3
     }
 
     auto device = getDevice(event, param);
-
     // Event expects a device to run it.
-    if (!device && event <= ESP_HIDH_CLOSE_EVENT)
+    if (auto deviceRef = device.lock())
     {
-        ESP_LOGE(LOG_TAG, "Cannot Preform HID Callback without Device");
-        return;
+        switch (event)
+        {
+        case ESP_HIDH_OPEN_EVENT:
+            deviceRef->handleOpenEvent(param);
+            break;
+        case ESP_HIDH_BATTERY_EVENT:
+            deviceRef->handleBatteryEvent(param);
+            break;
+        case ESP_HIDH_INPUT_EVENT:
+            deviceRef->handleInputEvent(param);
+            break;
+        case ESP_HIDH_FEATURE_EVENT:
+            deviceRef->handleFeatureEvent(param);
+            break;
+        case ESP_HIDH_CLOSE_EVENT:
+            deviceRef->handleCloseEvent(param);
+            onDisconnect(deviceRef);
+        case ESP_HIDH_START_EVENT:
+        case ESP_HIDH_STOP_EVENT:
+            // only used for BT classic do nothing for now.
+            break;
+        default:
+            ESP_LOGE(LOG_TAG, "INVALID HIDH EVENT: %d NOT HANDLED", event);
+            break;
+        }
     }
-
-    switch (event)
+    else if (event != ESP_HIDH_START_EVENT && event != ESP_HIDH_STOP_EVENT) // No error on stop and start
     {
-    case ESP_HIDH_OPEN_EVENT:
-        device->handleOpenEvent(param);
-        break;
-    case ESP_HIDH_BATTERY_EVENT:
-        device->handleBatteryEvent(param);
-        break;
-    case ESP_HIDH_INPUT_EVENT:
-        device->handleInputEvent(param);
-        break;
-    case ESP_HIDH_FEATURE_EVENT:
-        device->handleFeatureEvent(param);
-        break;
-    case ESP_HIDH_CLOSE_EVENT:
-        device->handleCloseEvent(param);
-        // TODO to handle removal from mconnecteddevices
-        break;
-    case ESP_HIDH_START_EVENT:
-    case ESP_HIDH_STOP_EVENT:
-        // only used for BT classic do nothing for now.
-        break;
-    default:
-        ESP_LOGE(LOG_TAG, "HIDH EVENT: %d NOT HANDLED", event);
-        break;
+        ESP_LOGE(LOG_TAG, "Cannot Preform HID Callback without Device for event %d", event);
     }
+    return;
 }
 
 std::shared_ptr<BTClassicHID> BTClassicHID::getInstance()
@@ -120,11 +121,11 @@ BTClassicHID::BTClassicHID()
     ESP_ERROR_CHECK(esp_hidh_init(&config));
 }
 
-std::vector<HIDDevice> BTClassicHID::scan(uint32_t seconds)
+std::vector<HIDDevice> BTClassicHID::scan(uint32_t seconds, esp_bd_addr_t anEarlyReturnAddress)
 {
     size_t numResults = 0;
     esp_hid_scan_result_t *results = nullptr;
-    esp_hid_scan(seconds, &numResults, &results);
+    esp_hid_scan(seconds, &numResults, &results, anEarlyReturnAddress);
 
     std::vector<HIDDevice> devices;
     for (int i = 0; i < numResults; i++)
@@ -158,4 +159,31 @@ bool BTClassicHID::connect(std::shared_ptr<HIDDevice> aDevice)
     }
     ESP_LOGE(LOG_TAG, "Max Devices connected sorry!");
     return false;
+}
+
+void BTClassicHID::onDisconnect(std::weak_ptr<HIDDevice> aDevice)
+{
+    esp_bd_addr_t anAddress;
+    if (auto device = aDevice.lock())
+    {
+        memcpy(anAddress, device->getAddress(), sizeof(anAddress));
+    }
+    else
+    {
+        ESP_LOGE(LOG_TAG, "Invalid device trying to be disconnected");
+        return; // NOTE Early Return so anAddress does not get searched below
+    }
+
+    auto currentDevice = std::find_if(mConnectedDevices.begin(), mConnectedDevices.end(), [anAddress](std::shared_ptr<HIDDevice> aDevice)
+                                      { return aDevice && aDevice->hasExactAddress(anAddress); });
+    if (currentDevice != mConnectedDevices.end())
+    {
+        // Only 2 Uses of this Device should be the mConnectedDevices and hidh_callback so if its more than that print an error
+        if (currentDevice->use_count() > 2)
+        {
+            // TODO clean up logging here to add more device info
+            ESP_LOGE(LOG_TAG, "Dangling usages of Device please clean them up on device disconnection!");
+        }
+        currentDevice->reset(); // remove reference from the array
+    }
 }

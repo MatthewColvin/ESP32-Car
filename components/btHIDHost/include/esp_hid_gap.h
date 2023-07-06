@@ -70,7 +70,7 @@ extern "C"
     } esp_hid_scan_result_t;
 
     esp_err_t esp_hid_gap_init(uint8_t mode);
-    esp_err_t esp_hid_scan(uint32_t seconds, size_t *num_results, esp_hid_scan_result_t **results);
+    esp_err_t esp_hid_scan(uint32_t seconds, size_t *num_results, esp_hid_scan_result_t **results, esp_bd_addr_t anEarlyReturnAddress);
     void esp_hid_scan_results_free(esp_hid_scan_result_t *results);
 
     esp_err_t esp_hid_ble_gap_adv_init(uint16_t appearance, const char *device_name);
@@ -78,6 +78,8 @@ extern "C"
 
     void print_uuid(esp_bt_uuid_t *uuid);
     const char *ble_addr_type_str(esp_ble_addr_type_t ble_addr_type);
+    bool isAddressEqual(const esp_bd_addr_t left,const esp_bd_addr_t right);
+    bool isAddressEqualIgnoreZeros(const esp_bd_addr_t left,const esp_bd_addr_t right);
 
 #ifdef __cplusplus
 }
