@@ -20,7 +20,7 @@ static const char *TAG = "ESP_HID_GAP";
 #define GAP_DBG_PRINTF(...) printf(__VA_ARGS__)
 
 #if CONFIG_BT_HID_HOST_ENABLED
-static const char *gap_bt_prop_type_names[5] = {"", "BDNAME", "COD", "RSSI", "EIR"};
+// static const char *gap_bt_prop_type_names[5] = {"", "BDNAME", "COD", "RSSI", "EIR"};
 #endif
 
 static esp_hid_scan_result_t *bt_scan_results = NULL;
@@ -248,7 +248,6 @@ static void add_ble_scan_result(esp_bd_addr_t bda, esp_ble_addr_type_t addr_type
     num_ble_scan_results++;
     device_found_early = early_return_address_ptr && isAddressEqualIgnoreZeros(*early_return_address_ptr,bda);
     if (device_found_early){
-        ESP_LOGI("BTHID","Scan End EARLY!");
         esp_ble_gap_stop_scanning();
     }
 }
@@ -473,30 +472,30 @@ static void bt_gap_event_handler(esp_bt_gap_cb_event_t event, esp_bt_gap_cb_para
     }
 #if (CONFIG_BT_SSP_ENABLED)
     case ESP_BT_GAP_KEY_NOTIF_EVT:
-        ESP_LOGI(TAG, "BT GAP KEY_NOTIF passkey:%" PRIu32, param->key_notif.passkey);
+        ESP_LOGV(TAG, "BT GAP KEY_NOTIF passkey:%" PRIu32, param->key_notif.passkey);
         break;
     case ESP_BT_GAP_CFM_REQ_EVT:
     {
-        ESP_LOGI(TAG, "ESP_BT_GAP_CFM_REQ_EVT Please compare the numeric value: %" PRIu32, param->cfm_req.num_val);
+        ESP_LOGV(TAG, "ESP_BT_GAP_CFM_REQ_EVT Please compare the numeric value: %" PRIu32, param->cfm_req.num_val);
         esp_bt_gap_ssp_confirm_reply(param->cfm_req.bda, true);
         break;
     }
 #endif
     case ESP_BT_GAP_MODE_CHG_EVT:
-        ESP_LOGI(TAG, "BT GAP MODE_CHG_EVT mode:%d", param->mode_chg.mode);
+        ESP_LOGV(TAG, "BT GAP MODE_CHG_EVT mode:%d", param->mode_chg.mode);
         break;
     case ESP_BT_GAP_PIN_REQ_EVT:
     {
-        ESP_LOGI(TAG, "ESP_BT_GAP_PIN_REQ_EVT min_16_digit:%d", param->pin_req.min_16_digit);
+        ESP_LOGV(TAG, "ESP_BT_GAP_PIN_REQ_EVT min_16_digit:%d", param->pin_req.min_16_digit);
         if (param->pin_req.min_16_digit)
         {
-            ESP_LOGI(TAG, "Input pin code: 0000 0000 0000 0000");
+            ESP_LOGV(TAG, "Input pin code: 0000 0000 0000 0000");
             esp_bt_pin_code_t pin_code = {0};
             esp_bt_gap_pin_reply(param->pin_req.bda, true, 16, pin_code);
         }
         else
         {
-            ESP_LOGI(TAG, "Input pin code: 1234");
+            ESP_LOGV(TAG, "Input pin code: 1234");
             esp_bt_pin_code_t pin_code;
             pin_code[0] = '1';
             pin_code[1] = '2';
@@ -585,7 +584,7 @@ static void ble_gap_event_handler(esp_gap_ble_cb_event_t event, esp_ble_gap_cb_p
             break;
         }
         case ESP_GAP_SEARCH_INQ_CMPL_EVT:
-            ESP_LOGI(TAG, "BLE GAP EVENT SCAN DONE: %d", scan_result->scan_rst.num_resps);
+            ESP_LOGV(TAG, "BLE GAP EVENT SCAN DONE: %d", scan_result->scan_rst.num_resps);
             SEND_BLE_CB();
             break;
         default:
@@ -595,7 +594,7 @@ static void ble_gap_event_handler(esp_gap_ble_cb_event_t event, esp_ble_gap_cb_p
     }
     case ESP_GAP_BLE_SCAN_STOP_COMPLETE_EVT:
     {
-        ESP_LOGI(TAG, "BLE GAP EVENT SCAN CANCELED");
+        ESP_LOGV(TAG, "BLE GAP EVENT SCAN CANCELED");
         if(device_found_early){
             SEND_BLE_CB();
         }
@@ -623,36 +622,36 @@ static void ble_gap_event_handler(esp_gap_ble_cb_event_t event, esp_ble_gap_cb_p
         }
         else
         {
-            ESP_LOGI(TAG, "BLE GAP AUTH SUCCESS");
+            ESP_LOGV(TAG, "BLE GAP AUTH SUCCESS");
         }
         break;
 
     case ESP_GAP_BLE_KEY_EVT: // shows the ble key info share with peer device to the user.
-        ESP_LOGI(TAG, "BLE GAP KEY type = %s", esp_ble_key_type_str(param->ble_security.ble_key.key_type));
+        ESP_LOGV(TAG, "BLE GAP KEY type = %s", esp_ble_key_type_str(param->ble_security.ble_key.key_type));
         break;
 
     case ESP_GAP_BLE_PASSKEY_NOTIF_EVT: // ESP_IO_CAP_OUT
         // The app will receive this evt when the IO has Output capability and the peer device IO has Input capability.
         // Show the passkey number to the user to input it in the peer device.
-        ESP_LOGI(TAG, "BLE GAP PASSKEY_NOTIF passkey:%" PRIu32, param->ble_security.key_notif.passkey);
+        ESP_LOGV(TAG, "BLE GAP PASSKEY_NOTIF passkey:%" PRIu32, param->ble_security.key_notif.passkey);
         break;
 
     case ESP_GAP_BLE_NC_REQ_EVT: // ESP_IO_CAP_IO
         // The app will receive this event when the IO has DisplayYesNO capability and the peer device IO also has DisplayYesNo capability.
         // show the passkey number to the user to confirm it with the number displayed by peer device.
-        ESP_LOGI(TAG, "BLE GAP NC_REQ passkey:%" PRIu32, param->ble_security.key_notif.passkey);
+        ESP_LOGV(TAG, "BLE GAP NC_REQ passkey:%" PRIu32, param->ble_security.key_notif.passkey);
         esp_ble_confirm_reply(param->ble_security.key_notif.bd_addr, true);
         break;
 
     case ESP_GAP_BLE_PASSKEY_REQ_EVT: // ESP_IO_CAP_IN
         // The app will receive this evt when the IO has Input capability and the peer device IO has Output capability.
         // See the passkey number on the peer device and send it back.
-        ESP_LOGI(TAG, "BLE GAP PASSKEY_REQ");
+        ESP_LOGV(TAG, "BLE GAP PASSKEY_REQ");
         // esp_ble_passkey_reply(param->ble_security.ble_req.bd_addr, true, 1234);
         break;
 
     case ESP_GAP_BLE_SEC_REQ_EVT:
-        ESP_LOGI(TAG, "BLE GAP SEC_REQ");
+        ESP_LOGV(TAG, "BLE GAP SEC_REQ");
         // Send the positive(true) security response to the peer device to accept the security request.
         // If not accept the security request, should send the security response with negative(false) accept value.
         esp_ble_gap_security_rsp(param->ble_security.ble_req.bd_addr, true);
@@ -1002,7 +1001,7 @@ esp_err_t esp_hid_scan(uint32_t seconds, size_t *num_results, esp_hid_scan_resul
 
 bool isAddressEqual(const esp_bd_addr_t left, const esp_bd_addr_t right){
     if(!left || !right){
-        ESP_LOGE("BTHID", "Attempted to compare null address");
+        ESP_LOGE(TAG, "Attempted to compare null address");
         return false;
     }
      for (uint8_t i = 0; i < sizeof(esp_bd_addr_t); i++)
@@ -1018,7 +1017,7 @@ bool isAddressEqual(const esp_bd_addr_t left, const esp_bd_addr_t right){
 
 bool isAddressEqualIgnoreZeros(const esp_bd_addr_t left, const esp_bd_addr_t right){
     if(!left || !right){
-        ESP_LOGE("BTHID", "Attempted to compare null address");
+        ESP_LOGE(TAG, "Attempted to compare null address");
         return false;
     }
 
@@ -1030,7 +1029,6 @@ bool isAddressEqualIgnoreZeros(const esp_bd_addr_t left, const esp_bd_addr_t rig
         {
             if (left[i] != right[i])
             {
-                ESP_LOGI("BTHID", "left:%d right:%d", left[i], right[i]);
                 return false;
             }
         }

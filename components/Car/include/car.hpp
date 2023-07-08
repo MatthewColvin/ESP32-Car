@@ -39,6 +39,11 @@ public:
     void setHandling(Car::Handling aHandling);
     Car::Handling getHandling(){return mHandling;};
 
+    /// @brief Force motors to be on by enabling motor drivers
+    void enableMotors();
+    /// @brief Force motors to be off by disabling motor drivers
+    void disableMotors();
+
 private:
     std::shared_ptr<Mocute052> mController;
 

@@ -28,22 +28,26 @@ void ServoMotor::attach()
 {
     // Create timer
     mcpwm_timer_handle_t timer = NULL;
-    mcpwm_timer_config_t timer_config = {
-        .group_id = 0,
-        .clk_src = MCPWM_TIMER_CLK_SRC_DEFAULT,
-        .resolution_hz = SERVO_TIMEBASE_RESOLUTION_HZ,
-        .count_mode = MCPWM_TIMER_COUNT_MODE_UP,
-        .period_ticks = SERVO_TIMEBASE_PERIOD,
-        .flags = {},
-    };
+    mcpwm_timer_config_t timer_config;
+    timer_config.group_id = 0;
+    timer_config.clk_src = MCPWM_TIMER_CLK_SRC_DEFAULT;
+    timer_config.resolution_hz = SERVO_TIMEBASE_RESOLUTION_HZ;
+    timer_config.count_mode = MCPWM_TIMER_COUNT_MODE_UP;
+    timer_config.period_ticks = SERVO_TIMEBASE_PERIOD;
+    timer_config.flags.update_period_on_empty = true;
+    timer_config.flags.update_period_on_sync = true;
     ESP_ERROR_CHECK(mcpwm_new_timer(&timer_config, &timer));
 
     // Create Operator
     mcpwm_oper_handle_t oper = NULL;
-    mcpwm_operator_config_t operator_config = {
-        .group_id = 0, // operator must be in the same group to the timer
-        .flags = {},
-    };
+    mcpwm_operator_config_t operator_config;
+    operator_config.group_id = 0;
+    operator_config.flags.update_gen_action_on_tez = true;
+    operator_config.flags.update_gen_action_on_tep = true;
+    operator_config.flags.update_gen_action_on_sync = true;
+    operator_config.flags.update_dead_time_on_tez = true;
+    operator_config.flags.update_dead_time_on_tep = true;
+    operator_config.flags.update_dead_time_on_sync = true;
     ESP_ERROR_CHECK(mcpwm_new_operator(&operator_config, &oper));
 
     // Connect timer and operator
@@ -55,9 +59,10 @@ void ServoMotor::attach()
     ESP_ERROR_CHECK(mcpwm_new_comparator(oper, &comparator_config, &mComparator));
 
     mcpwm_gen_handle_t generator = NULL;
-    mcpwm_generator_config_t generator_config = {
-        .gen_gpio_num = mPin,
-        .flags = {}};
+    mcpwm_generator_config_t generator_config;
+    generator_config.gen_gpio_num = mPin;
+    generator_config.flags.invert_pwm = false;
+    generator_config.flags.io_loop_back =false;
     ESP_ERROR_CHECK(mcpwm_new_generator(oper, &generator_config, &generator));
 
     // Set inital angle to zero
