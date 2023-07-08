@@ -79,15 +79,9 @@ void onAPress()
     }
 };
 void onARelease(){};
-void onBPress()
-{
-    car->setCruiseSpeed(car->getCruiseSpeed() - 1000);
-};
+void onBPress() { ir->send(0x00, 0x10); };
 void onBRelease(){};
-void onXPress()
-{
-    car->setCruiseSpeed(car->getCruiseSpeed() + 1000);
-};
+void onXPress() { ir->send(0x20, 0x00); };
 void onXRelease(){};
 void onYPress()
 {
@@ -117,43 +111,8 @@ void onYRelease(){};
 void onTriggerPress() { car->enableTurbo(); };
 void onTriggerRelease() { car->disableTurbo(); };
 
-void changeCarHandling()
-{
-    if (car->getHandling() == Car::Handling::Tank)
-    {
-        car->setHandling(Car::Handling::Car);
-    }
-    else
-    {
-        car->setHandling(Car::Handling::Tank);
-    }
-}
-
 void onReceiveIRData(uint16_t address, uint16_t data, bool isRepeat)
 {
-    const auto powerButton = 0xB946;
-    const auto upButton = 0xB748;
-    const auto downButton = 0xB24D;
-    // const auto leftButton = 0xB14E;
-    // const auto rightButton = 0xB649;
-
-    if (address == SpeedSetIRAddress)
-    {
-        car->setCruiseSpeed(data);
-    }
-    switch (data)
-    {
-    case powerButton:
-        car->setCruiseSpeed(1);
-        break;
-    case upButton:
-        car->setCruiseSpeed(car->getCruiseSpeed() + 1000);
-        break;
-    case downButton:
-        car->setCruiseSpeed(car->getCruiseSpeed() - 1000);
-        break;
-    }
-
     ESP_LOGI("MAIN", "Address=%04X, Command=%04X\r\n\r\n", address, data);
 }
 
@@ -166,38 +125,9 @@ void registerJoystickButtonHandlers(std::shared_ptr<Mocute052> aJoystick)
     aJoystick->onTrigger(onTriggerPress, onTriggerRelease);
 }
 
-void transmitTask()
-{
-    bool isSpeedAscending = true;
-    uint16_t speed = 1000;
-    ir->enableTx();
-    while (true)
-    {
-        if (speed <= 1000)
-        {
-            isSpeedAscending = true;
-            speed = 1000;
-        }
-        else if (speed >= Motor::MAX_SPEED - 1000)
-        {
-            isSpeedAscending = false;
-        }
-        ESP_LOGI("main", "sending speed: %d", speed);
-        ir->send(SpeedSetIRAddress, speed);
-        speed += isSpeedAscending ? 1000 : -1000;
-        vTaskDelay(5000 / portTICK_PERIOD_MS);
-    }
-}
-
-bool isTx = false;
 extern "C" void app_main(void)
 {
     nvs_flash_init();
-    if (isTx)
-    {
-        transmitTask();
-    }
-
     auto bt = BTClassicHID::getInstance();
 
     // TODO: Put in your MAC Address
@@ -222,6 +152,7 @@ extern "C" void app_main(void)
     // TODO add log to remind to enable RX
     ir->mSetReceiveHandler(onReceiveIRData);
     ir->enableRx();
+    ir->enableTx();
     registerJoystickButtonHandlers(joystick);
     vTaskDelete(NULL); // Delete Main Task
 }
