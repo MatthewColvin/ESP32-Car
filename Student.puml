@@ -1,0 +1,385 @@
+@startuml
+
+/' Objects '/
+
+class BTClassicHID {
+        #BTClassicHID()
+        +{static} connect(std::shared_ptr<HIDDevice> aDevice) : bool
+        #{static} initCompleteEvent : static SemaphoreHandle_t
+        -{static} LOG_TAG : static constexpr char
+        #{static} mConnectedDevices : static std::array<std::shared_ptr<HIDDevice>, MAX_CONNECTED_DEVICES>
+        #{static} mInstance : static std::shared_ptr<BTClassicHID>
+        +{static} getInstance() : std::shared_ptr<BTClassicHID>
+        +connect(esp_bd_addr_t aDeviceAddress, int numScans, int secondsPerScan) : std::shared_ptr<deviceType>
+        +{static} scan(uint32_t seconds, esp_bd_addr_t anEarlyReturnAddress) : std::vector<HIDDevice>
+        -{static} getDevice(esp_hidh_event_t anEvent, esp_hidh_event_data_t* aParam) : std::weak_ptr<HIDDevice>
+        -{static} hidh_callback(void* handler_args, esp_event_base_t base, int32_t id, void* event_data) : void
+        -{static} onDisconnect(std::weak_ptr<HIDDevice> aDevice) : void
+}
+
+
+class Car {
+        +Car(std::shared_ptr<Mocute052> remote, Motor* leftMotor, Motor* rightMotor)
+        -mHandling : Car::Handling
+        +getCruiseSpeed() : float
+        +getHandling() : int
+        -mController : std::shared_ptr<Mocute052>
+        -mMotorMixer : std::unique_ptr<IMotorMixingStrategy>
+        -mLeftMotor : std::unique_ptr<Motor>
+        -mRightMotor : std::unique_ptr<Motor>
+        +disableMotors() : void
+        +disableTurbo() : void
+        +enableMotors() : void
+        +enableTurbo() : void
+        -{static} mixerPollingImpl(void* _thisCar) : void
+        -mixerPollingTask() : void
+        +setCruiseSpeed(float aCruiseSpeed) : void
+        +setHandling(Car::Handling aHandling) : void
+        -setMotorSpeed(float aLeftMotorSpeed, float aRightMotorSpeed) : void
+}
+
+
+class HIDDevice {
+        +HIDDevice(esp_hid_scan_result_t aScanResult)
+        -function<void()
+        +~HIDDevice()
+        +hasAddress(const esp_bd_addr_t anAddress) : bool
+        +hasExactAddress(const esp_bd_addr_t anAddress) : bool
+        +getAddressType() : esp_ble_addr_type_t
+        +getScanResult() : esp_hid_scan_result_t
+        -mScanResult : esp_hid_scan_result_t
+        +getTransport() : esp_hid_transport_t
+        +getAddress() : uint8_t*
+        #handleBatteryEvent(esp_hidh_event_data_t* aBatteryEvent) : void
+        #handleCloseEvent(esp_hidh_event_data_t* aCloseEvent) : void
+        #handleFeatureEvent(esp_hidh_event_data_t* aFeatureEvent) : void
+        #handleInputEvent(esp_hidh_event_data_t* anInputEvent) : void
+        #handleOpenEvent(esp_hidh_event_data_t* aOpenEvent) : void
+        +onDisconnect(std::function<void ( )> aDisconnectionHandler) : void
+}
+
+
+abstract class IMotorMixingStrategy {
+        +IMotorMixingStrategy(std::shared_ptr<Mocute052> aController)
+        #mIsTurboEnabled : bool
+        +getCruiseSpeed() : float
+        #mCruiseSpeed : float
+        #mMaxSpeed : float
+        #mX : float
+        #mY : float
+        #mapValues(float value, float aMin, float aMax, float aTargetMin, float aTargetMax) : float
+        +getMotorSpeeds() : motorSpeeds
+        #{abstract} mixAndGetSpeeds() : speeds
+        #validateSpeeds(speeds aSpeedToValidate) : speeds
+        -controllerInputHandler(uint8_t aX, uint8_t aY) : void
+        +disableTurbo() : void
+        +enableTurbo() : void
+        +setCruiseSpeed(float aCruiseSpeed) : void
+}
+
+
+class IrNECParser {
+        +IrNECParser()
+        -example_parse_nec_frame(rmt_symbol_word_t* rmt_nec_symbols, size_t symbol_num) : bool
+        -mIsRepeat : bool
+        -nec_check_in_range(uint32_t signal_duration, uint32_t spec_duration) : bool
+        -nec_parse_frame(rmt_symbol_word_t* rmt_nec_symbols) : bool
+        -nec_parse_frame_repeat(rmt_symbol_word_t* rmt_nec_symbols) : bool
+        -nec_parse_logic0(rmt_symbol_word_t* rmt_nec_symbols) : bool
+        -nec_parse_logic1(rmt_symbol_word_t* rmt_nec_symbols) : bool
+        -{static} IR_NEC_DECODE_MARGIN : static constexpr auto
+        -{static} NEC_LEADING_CODE_DURATION_0 : static constexpr auto
+        -{static} NEC_LEADING_CODE_DURATION_1 : static constexpr auto
+        -{static} NEC_PAYLOAD_ONE_DURATION_0 : static constexpr auto
+        -{static} NEC_PAYLOAD_ONE_DURATION_1 : static constexpr auto
+        -{static} NEC_PAYLOAD_ZERO_DURATION_0 : static constexpr auto
+        -{static} NEC_PAYLOAD_ZERO_DURATION_1 : static constexpr auto
+        -{static} NEC_REPEAT_CODE_DURATION_0 : static constexpr auto
+        -{static} NEC_REPEAT_CODE_DURATION_1 : static constexpr auto
+        +Parse(rmt_rx_done_event_data_t aDoneEvent) : std::optional<IrNECParser::Data>
+        -mNecCodeAddress : uint16_t
+        -mNecCodeCommand : uint16_t
+}
+
+
+class LED {
+        +LED(gpio_num_t aPin)
+        +~LED()
+        -mPin : gpio_num_t
+        +{static} getAvailableChannel() : ledc_channel_t
+        -mChannel : ledc_channel_t
+        +{static} getAvailableTimer() : ledc_timer_t
+        -mTimer : ledc_timer_t
+        +{static} MAX_BRIGHTNESS : static constexpr auto
+        -{static} channelAvailability : static std::array<bool, LEDC_CHANNEL_MAX>
+        -{static} timerAvailability : static std::array<bool, LEDC_TIMER_MAX>
+        +getBrightness() : uint8_t
+        -mBrightness : uint8_t
+        -initialize() : void
+        +{static} releaseChannel(ledc_channel_t aChannel) : void
+        +{static} releaseTimer(ledc_timer_t aTimer) : void
+        +setBrightness(uint8_t aNewBrightness) : void
+}
+
+
+class Mocute052 {
+        +Mocute052(HIDDevice aDevice)
+        #handleButton(bool oldIsDown, int buttonMask, uint8_t buttonByte, std::function<void ( )> pressCb, std::function<void ( )> releaseCb) : bool
+        #mIsAdown : bool
+        #mIsBdown : bool
+        #mIsTriggerdown : bool
+        #mIsXdown : bool
+        #mIsYdown : bool
+        +{static} MAX_XY : static constexpr float
+        +{static} MIN_XY : static constexpr float
+        #mX : uint8_t
+        #mY : uint8_t
+        #handleInputEvent(esp_hidh_event_data_t* anInputEvent) : void
+        +onA(std::function<void ( )> aPressHandler, std::function<void ( )> aReleaseHandler) : void
+        +onB(std::function<void ( )> aPressHandler, std::function<void ( )> aReleaseHandler) : void
+        +onJoyStick(std::function<void ( uint8_t, uint8_t )> aJoyStickHandler) : void
+        +onTrigger(std::function<void ( )> aPressHandler, std::function<void ( )> aReleaseHandler) : void
+        +onX(std::function<void ( )> aPressHandler, std::function<void ( )> aReleaseHandler) : void
+        +onY(std::function<void ( )> aPressHandler, std::function<void ( )> aReleaseHandler) : void
+}
+
+
+class Motor {
+        +Motor(const int LeftPin, const int rightPin)
+        -mConfig : bdc_motor_config_t
+        -mHandle : bdc_motor_handle_t
+        -mPwmConfig : bdc_motor_mcpwm_config_t
+        +{static} MAX_SPEED : static constexpr float
+        +{static} MIN_SPEED : static constexpr float
+        +disable() : void
+        +forward() : void
+        +reverse() : void
+        +setSpeed(uint32_t aSpeed) : void
+}
+
+
+class NoZeroTurnMix {
+        +NoZeroTurnMix(std::shared_ptr<Mocute052> aController)
+        #mixAndGetSpeeds() : speeds
+}
+
+
+class ServoMotor {
+        +ServoMotor(gpio_num_t servoPin)
+        -mPin : gpio_num_t
+        +getAngle() : int
+        -mAngle : int
+        -mComparator : mcpwm_cmpr_handle_t
+        +{static} MAX_DEGREE : static constexpr auto
+        -{static} MAX_PULSEWIDTH_US : static constexpr auto
+        +{static} MIN_DEGREE : static constexpr auto
+        -{static} MIN_PULSEWIDTH_US : static constexpr auto
+        -angleToPulseWidth(uint32_t anAngle) : uint32_t
+        -attach() : void
+        +setAngle(int angle) : void
+}
+
+
+class TankMix {
+        +TankMix(std::shared_ptr<Mocute052> aController)
+        #mixAndGetSpeeds() : speeds
+}
+
+
+class Transceiver {
+        +Transceiver(gpio_num_t receivePin, gpio_num_t sendPin)
+        -mNecParser : IrNECParser
+        -mRxQueue : QueueHandle_t
+        -mDataReceivedHandler : RxHandlerTy
+        -mReceiveProccess : TaskHandle_t
+        -mIsRxEnabled : bool
+        -mIsTxEnabled : bool
+        -onReceive(const rmt_rx_done_event_data_t* edata) : bool
+        -{static} onReceiveImpl(rmt_channel_handle_t rx_chan, const rmt_rx_done_event_data_t* edata, void* user_ctx) : bool
+        -onSendDone(const rmt_tx_done_event_data_t* edata) : bool
+        -{static} onSendDoneImpl(rmt_channel_handle_t rx_chan, const rmt_tx_done_event_data_t* edata, void* user_ctx) : bool
+        -mRxPin : const gpio_num_t
+        -mTxPin : const gpio_num_t
+        -mTxCarrierConfig : rmt_carrier_config_t
+        -mRxCh : rmt_channel_handle_t
+        -mTxCh : rmt_channel_handle_t
+        -mNecEncoder : rmt_encoder_handle_t
+        -mRxConfig : rmt_rx_channel_config_t
+        -mRxCallbacks : rmt_rx_event_callbacks_t
+        -mTxConfig : rmt_tx_channel_config_t
+        -mTxCallbacks : rmt_tx_event_callbacks_t
+        -{static} IR_RESOLUTION_HZ : static constexpr auto
+        -{static} mPacketSize : static constexpr auto
+        +disableRx() : void
+        +disableTx() : void
+        +enableRx() : void
+        +enableTx() : void
+        +mSetReceiveHandler(RxHandlerTy aReceiveHandler) : void
+        -receiveTask() : void
+        -{static} receiveTaskImpl(void* aThis) : void
+        +send(uint16_t address, uint16_t data) : void
+        -setupRxChannel() : void
+        -setupTxChannel() : void
+        -teardownRxChannel() : void
+        -teardownTxChannel() : void
+}
+
+
+class buzzer {
+        +buzzer(gpio_num_t pin)
+        -isBuzzing : bool
+        +isOn() : bool
+        -mPin : gpio_num_t
+        +off() : void
+        +on() : void
+}
+
+
+class controller {
+        +controller(HIDDevice aDevice)
+        #handleInputEvent(esp_hidh_event_data_t* anInputEvent) : void
+}
+
+
+enum Car::Handling {
+        Car
+        Tank
+}
+
+
+class IMotorMixingStrategy::motorSpeeds {
+        +left : float
+        +right : float
+}
+
+
+class IMotorMixingStrategy::speeds {
+        +left : float
+        +right : float
+}
+
+
+class IrNECParser::Data {
+        +Data(uint16_t aAddr, uint16_t aData, bool aIsRepeat)
+        +isRepeat : bool
+        +address : uint16_t
+        +data : uint16_t
+}
+
+
+class esp_hid_scan_result_t {
+        + : <anon-union-1>
+        +name : const char*
+        +bda : esp_bd_addr_t
+        +transport : esp_hid_transport_t
+        +usage : esp_hid_usage_t
+        +rssi : int8_t
+        +next : struct esp_hidh_scan_result_s*
+}
+
+
+class esp_hidh_scan_result_s::anon_union_1::anon_struct_1 {
+        +cod : esp_bt_cod_t
+        +uuid : esp_bt_uuid_t
+}
+
+
+class esp_hidh_scan_result_s::anon_union_1::anon_struct_2 {
+        +addr_type : esp_ble_addr_type_t
+        +appearance : uint16_t
+}
+
+
+class ir_nec_encoder_config_t {
+        +resolution : uint32_t
+}
+
+
+class ir_nec_scan_code_t {
+        +address : uint16_t
+        +command : uint16_t
+}
+
+
+class esp_hidh_scan_result_s::anon_union_1 {
+        +bt : <anon-struct-1>
+        +ble : <anon-struct-2>
+}
+
+
+
+
+
+/' Inheritance relationships '/
+
+.HIDDevice <|-- .Mocute052
+
+
+.IMotorMixingStrategy <|-- .NoZeroTurnMix
+
+
+.IMotorMixingStrategy <|-- .TankMix
+
+
+.Mocute052 <|-- .controller
+
+
+
+
+
+/' Aggregation relationships '/
+
+.BTClassicHID *-- .BTClassicHID
+
+
+.BTClassicHID *-- .HIDDevice
+
+
+.Car *-- .Car
+
+
+.Car *-- .Car::Handling
+
+
+.Car *-- .IMotorMixingStrategy
+
+
+.Car *-- .Mocute052
+
+
+.Car "2" *-- .Motor
+
+
+.HIDDevice *-- .esp_hid_scan_result_t
+
+
+.Transceiver *-- .IrNECParser
+
+
+
+
+
+
+/' Nested objects '/
+
+.Car +-- .Car::Handling
+
+
+.IMotorMixingStrategy +-- .IMotorMixingStrategy::motorSpeeds
+
+
+.IMotorMixingStrategy +-- .IMotorMixingStrategy::speeds
+
+
+.IrNECParser +-- .IrNECParser::Data
+
+
+.esp_hidh_scan_result_s::anon_union_1 +-- .esp_hidh_scan_result_s::anon_union_1::anon_struct_1
+
+
+.esp_hidh_scan_result_s::anon_union_1 +-- .esp_hidh_scan_result_s::anon_union_1::anon_struct_2
+
+
+
+
+@enduml

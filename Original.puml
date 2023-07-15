@@ -1,9 +1,5 @@
 @startuml
 
-
-
-
-
 /' Objects '/
 
 class BTClassicHID {
