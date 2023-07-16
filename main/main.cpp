@@ -18,22 +18,24 @@
 
 #include <memory>
 
-#define LOG_TAG "main"
-#define RightMotorLeftPin 16
-#define RightMotorRightPin 4
-#define LeftMotorLeftPin 13
-#define LeftMotorRightPin 5
+#define LOG_TAG "MAIN"
+#define RightMotorLeftPin GPIO_NUM_16
+#define RightMotorRightPin GPIO_NUM_4
+#define LeftMotorLeftPin GPIO_NUM_13
+#define LeftMotorRightPin GPIO_NUM_5
 
 #define IRLED GPIO_NUM_19
 #define IRDETECT GPIO_NUM_18
 
 #define ServoPin GPIO_NUM_23
 
-#define RedLedPin GPIO_NUM_14
-#define BlueLedPin GPIO_NUM_26
-#define GreenLedPin GPIO_NUM_27
+#define ExternalRedLedPin GPIO_NUM_14
+#define ExternalBlueLedPin GPIO_NUM_26
+#define ExternalGreenLedPin GPIO_NUM_27
 
-constexpr auto SpeedSetIRAddress = 0x1254;
+#define StatusRedLedPin GPIO_NUM_25
+#define StatusBlueLedPin GPIO_NUM_32
+#define StatusGreenLedPin GPIO_NUM_33
 
 /* GLOBAL VARIABLES */
 // Reminder: Make your variable names descriptive
@@ -41,75 +43,18 @@ constexpr auto SpeedSetIRAddress = 0x1254;
 // TODO: Add your additional challenge variables
 // Syntax Hint: <Class name>* <variable name>;
 Car *car;
-LED *redLed;
-LED *blueLed;
-LED *greenLed;
-int LEDState = 0;
-ServoMotor *servo;
-bool servoAscending = false;
-Transceiver *ir = new Transceiver(IRDETECT, IRLED);
 
-void setRGB(uint8_t aRed, uint8_t aBlue, uint8_t aGreen)
-{
-    redLed->setBrightness(aRed);
-    greenLed->setBrightness(aGreen);
-    blueLed->setBrightness(aBlue);
-}
-
-/* JOYSTICK CALLBACKS */
-void onAPress()
-{
-    switch (LEDState)
-    {
-    case 0:
-        setRGB(0, 0, 255);
-        LEDState += 1;
-        break;
-    case 1:
-        setRGB(0, 255, 0);
-        LEDState += 1;
-        break;
-    case 2:
-        setRGB(255, 0, 0);
-        LEDState += 1;
-        break;
-    default:
-        setRGB(0, 0, 0);
-        LEDState = 0;
-    }
-};
+/* JOYSTICK HANDLERS */
+void onAPress(){};
 void onARelease(){};
-void onBPress() { ir->send(0x00, 0x10); };
+void onBPress(){};
 void onBRelease(){};
-void onXPress() { ir->send(0x20, 0x00); };
+void onXPress(){};
 void onXRelease(){};
-void onYPress()
-{
-    auto currentAngle = servo->getAngle();
-    if (servoAscending)
-    {
-        auto nextAngle = currentAngle += 10;
-        if (nextAngle >= ServoMotor::MAX_DEGREE)
-        {
-            servoAscending = false;
-            servo->setAngle(currentAngle - 10);
-        }
-        servo->setAngle(nextAngle);
-    }
-    else
-    {
-        auto nextAngle = currentAngle -= 10;
-        if (nextAngle <= ServoMotor::MIN_DEGREE)
-        {
-            servoAscending = true;
-            servo->setAngle(currentAngle + 10);
-        }
-        servo->setAngle(nextAngle);
-    }
-};
+void onYPress(){};
 void onYRelease(){};
-void onTriggerPress() { car->enableTurbo(); };
-void onTriggerRelease() { car->disableTurbo(); };
+void onTriggerPress(){};
+void onTriggerRelease(){};
 
 void onReceiveIRData(uint16_t address, uint16_t data, bool isRepeat)
 {
@@ -131,28 +76,16 @@ extern "C" void app_main(void)
     auto bt = BTClassicHID::getInstance();
 
     // TODO: Put in your MAC Address
-    // esp_bd_addr_t joystickAddress{0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF};
-    esp_bd_addr_t joystickAddress{0xD0, 0x54, 0x7B, 0x00, 0x00, 0x00};
+    esp_bd_addr_t joystickAddress{0xD0, 0x54, 0x7B, 0xFF, 0xFF, 0xFF};
     auto joystick = bt->connect<controller>(joystickAddress);
 
     // TODO: Create the new motors for your car
-    Motor *left = new Motor(LeftMotorLeftPin, LeftMotorRightPin);
-    Motor *right = new Motor(RightMotorLeftPin, RightMotorRightPin);
-
-    // TODO: using the joystick and motor variables make a new car.
-    car = new Car(joystick, left, right);
-
+    // TODO: Using the joystick and motor variables make a new car.
     // TODO: Set your LED/Servo/IR variable
-    redLed = new LED(RedLedPin);
-    blueLed = new LED(BlueLedPin);
-    greenLed = new LED(GreenLedPin);
-    servo = new ServoMotor(ServoPin);
 
-    // Don't forget to tell IR how to handle incoming transmissions
-    // TODO add log to remind to enable RX
-    ir->mSetReceiveHandler(onReceiveIRData);
-    ir->enableRx();
-    ir->enableTx();
+    // TODO: Don't forget to tell IR how to handle incoming transmissions
+    // TODO: add log to remind to enable RX
+
     registerJoystickButtonHandlers(joystick);
     vTaskDelete(NULL); // Delete Main Task
 }
