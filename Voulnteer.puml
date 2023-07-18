@@ -1,0 +1,255 @@
+@startuml
+
+/' Objects '/
+
+
+package "CAR"{
+        class Car {
+                Class to control car movements with a joystick remote and two motors.
+
+                +Car(Mocute052 remote, Motor* leftMotor, Motor* rightMotor)
+                -mHandling : Car::Handling
+                -mController : Mocute052
+                -mLeftMotor : Motor
+                -mRightMotor : Motor
+                -mMotorMixer : IMotorMixingStrategy
+                +getCruiseSpeed() : float
+                +setCruiseSpeed(float aCruiseSpeed) : void
+                +getHandling() : Car::Handling
+                +setHandling(Car::Handling aHandling) : void
+                +disableMotors() : void
+                +enableMotors() : void
+                +enableTurbo() : void
+                +disableTurbo() : void
+                -setMotorSpeed(aLeftMotorSpeed, aRightMotorSpeed) : void
+        }
+
+        class Motor {
+                Class that allows for easy control of a motor by wrapping an espidf 
+                componet from a 3rd party creator. See "managed components" folder
+                
+                +Motor(LeftPin, rightPin)
+                +setSpeed(aSpeed) : void
+                +disable() : void
+                +forward() : void
+                +reverse() : void
+                +MAX_SPEED : static constexpr float
+                +MIN_SPEED : static constexpr float
+        }
+
+        package "Control"{
+                class controller {
+                        The bulk order of controller had a differnt packet format 
+                        so this class allows it to be parse correctly 
+
+                        +controller(HIDDevice aDevice)
+                        #handleInputEvent(esp_hidh_event_data_t* anInputEvent) : void
+                }
+
+                class Mocute052 {
+                        Joystick controller class to handle and communicate button
+                        presses and joystick coordinates.
+                        
+                        +Mocute052(HIDDevice aDevice)
+                        +MAX_XY : float
+                        +MIN_XY : float
+                        #mX : uint8_t
+                        #mY : uint8_t
+                        +onA(aPressHandler, aReleaseHandler) : void
+                        +onB(aPressHandler, aReleaseHandler) : void
+                        +onX(aPressHandler, aReleaseHandler) : void
+                        +onY(aPressHandler, aReleaseHandler) : void
+                        +onTrigger(aPressHandler, aReleaseHandler) : void
+                        +onJoyStick(aJoyStickHandler) : void
+                }
+
+                package "Input Mixing"{
+                        enum Car::Handling {
+                                Car
+                                Tank
+                        }
+
+                        abstract class IMotorMixingStrategy {
+                                Strategy Pattern to allow for swapping out how the car reacts to 
+                                input from the controller. The Car polls this class to 
+                                get its current speed and direction for both motors.
+
+                                +IMotorMixingStrategy(Mocute052 aController)
+                                #mIsTurboEnabled : bool
+                                #mCruiseSpeed : float
+                                #mMaxSpeed : float
+                                #mX : float
+                                #mY : float
+                                #{abstract} mixAndGetSpeeds() : speeds
+                                -controllerInputHandler(aX, aY) : void
+                                +enableTurbo() : void
+                                +disableTurbo() : void
+                                +getCruiseSpeed() : float
+                                +setCruiseSpeed(aCruiseSpeed) : void
+                        }
+
+                        class NoZeroTurnMix {
+                                When changing the car to use this mix it allow only 180 degree turns
+                                The benefit of this is extra resolution and there for finer control.
+                                
+                                +NoZeroTurnMix(Mocute052 aController)
+                                #mixAndGetSpeeds() : speeds
+                        }
+
+                        class TankMix {
+                                When changing the car to use this mix it allow full 360 degree turns
+                                
+                                +TankMix(Mocute052 aController)
+                                #mixAndGetSpeeds() : speeds
+                        }
+
+                        class IMotorMixingStrategy::motorSpeeds {
+                                Speed in terms of the motor
+                                
+                                +left : float
+                                +right : float
+                        }
+
+                        class IMotorMixingStrategy::speeds {
+                                Speed in terms of the controller
+                                
+                                +left : float
+                                +right : float
+                        }
+
+                }
+        }
+
+}
+
+package "Bluetooth"{
+
+        class HIDDevice {
+                Base class for all devices that will connect to the BTClassicHID
+
+                +HIDDevice(aScanResult)
+                +hasAddress(anAddress) : bool
+                +getScanResult() : esp_hid_scan_result_t
+                -mScanResult : esp_hid_scan_result_t
+                +getAddress() : uint8_t
+                #handleInputEvent(anInputEvent) : void
+                +onDisconnect(aDisconnectionHandler) : void
+        }
+        class BTClassicHID {
+                Class to allow for connection to BLE or BT classic HID devices. 
+                Heavily developed off espidf example code 
+
+                #BTClassicHID()
+                +connect(HIDDevice aDevice) : bool
+                +connect(aDeviceAddress, numScans, secondsPerScan) : deviceType
+                +getInstance() : BTClassicHID
+                -getDevice(anEvent, aParam) : HIDDevice
+                +scan(seconds, anEarlyReturnAddress) : vector<HIDDevice>
+                -onDisconnect(HIDDevice aDevice) : void
+                #mConnectedDevices : array<HIDDevice, MAX_CONNECTED_DEVICES>
+                #mInstance : BTClassicHID
+        }
+
+}
+
+package "Peripherals"{
+        package "IR"{
+                class IrNECParser {
+                        Class that parses incoming packets from IR into data usable by
+                        the Transceiver class. 
+                        
+                        +IrNECParser()
+                        -mIsRepeat : bool
+                        -nec_check_in_range(signal_duration, spec_duration) : bool
+                        -nec_parse_frame(rmt_nec_symbols) : bool
+                        -nec_parse_logic0(rmt_nec_symbols) : bool
+                        -nec_parse_logic1(rmt_nec_symbols) : bool
+                        +Parse(aDoneEvent) : IrNECParser::Data
+                        -mNecCodeAddress : uint16_t
+                        -mNecCodeCommand : uint16_t
+                }
+                    
+                class Transceiver {
+                        Class that sets up IR communication/control and allows for easy 
+                        registration of handler for incoming IR data.
+                        
+                        +Transceiver(receivePin, sendPin)
+                        -mRxPin : gpio_num_t
+                        -mTxPin : gpio_num_t
+                        -mDataReceivedHandler : RxHandlerTy
+                        +send(address, data) : void
+                        +mSetReceiveHandler(RxHandlerTy aReceiveHandler) : void
+                        -onReceive(edata) : bool
+                        +enableRx() : void
+                        +enableTx() : void
+                        +disableRx() : void
+                        +disableTx() : void
+                        -mNecEncoder : rmt_encoder_handle_t
+                        -mNecParser : IrNECParser
+                }
+                
+                class IrNECParser::Data {
+                        +Data(uint16_t aAddr, uint16_t aData, bool aIsRepeat)
+                        +isRepeat : bool
+                        +address : uint16_t
+                        +data : uint16_t
+                }
+        }
+
+        class LED {
+                Class to configure and control the brightness of an LED using values 0-255.
+
+                +LED(gpio_num_t aPin)
+                -mBrightness : uint8_t
+                -mPin : gpio_num_t
+                +MAX_BRIGHTNESS
+                -initialize() : void
+                +getBrightness() : uint8_t
+                +setBrightness(aNewBrightness) : void
+        }
+
+        class ServoMotor {
+                Class that controls the angle of the servo motor arm.
+                Angle range is [-90,90] degrees.
+
+                +ServoMotor(servoPin)
+                +getAngle() : int
+                +setAngle(angle) : void
+                -mPin : gpio_num_t
+                -mAngle : int
+                +MAX_DEGREE : static constexpr auto
+                +MIN_DEGREE : static constexpr auto
+                -angleToPulseWidth(anAngle) : uint32_t
+        }
+}
+
+
+
+
+/' Inheritance relationships '/
+
+.HIDDevice <|-- .Mocute052
+.IMotorMixingStrategy <|-- .NoZeroTurnMix
+.IMotorMixingStrategy <|-- .TankMix
+.Mocute052 <|-- .controller
+
+
+/' Aggregation relationships '/
+
+.BTClassicHID *-- .BTClassicHID : "Singleton"
+.BTClassicHID "1  " *-- "< 5 " .HIDDevice : "  Contains"
+.Car *-- .Car::Handling
+.Car *-- .IMotorMixingStrategy
+.Car *-- .Mocute052
+.Car "2" *-- .Motor
+.Transceiver *-- .IrNECParser
+
+
+/' Nested objects '/
+
+.Car +-- .Car::Handling
+.IMotorMixingStrategy +-- .IMotorMixingStrategy::motorSpeeds
+.IMotorMixingStrategy +-- .IMotorMixingStrategy::speeds
+.IrNECParser +-- .IrNECParser::Data
+
+@enduml

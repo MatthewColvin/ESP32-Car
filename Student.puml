@@ -1,0 +1,119 @@
+@startuml
+
+/' Objects '/
+
+package "CAR"{
+        class Car {
+                Class to control car movements with a remote and two motors.
+                Cna also control the type of handling used to control the car.
+
+                +Car(Controller remote, Motor* leftMotor, Motor* rightMotor)
+                -mLeftMotor : Motor
+                -mRightMotor : Motor
+                -mController : Controller
+                -mHandling : Car::Handling
+                +enableMotors() : void
+                +disableMotors() : void
+                +getHandling() : int
+                +setHandling(Car::Handling aHandling) : void
+                +getCruiseSpeed() : float
+                +setCruiseSpeed(float aCruiseSpeed) : void
+                +enableTurbo() : void
+                +disableTurbo() : void
+        }
+
+        enum Car::Handling {
+                The two ways to control the car.
+                Each will turn the car differently.
+
+                Car
+                Tank
+        }
+
+        class Motor {
+                Class that controls a motor.
+                Max speed is 20000.
+                
+                +Motor(LeftPin, rightPin)
+                +setSpeed(aSpeed) : void
+                +forward() : void
+                +reverse() : void
+        }
+
+        class Controller {
+                Class that controls what happens on button presses and joystick movement.
+
+                +Controller(HIDDevice aDevice)
+                +onA(aPressHandler, aReleaseHandler) : void
+                +onB(aPressHandler, aReleaseHandler) : void
+                +onX(aPressHandler, aReleaseHandler) : void
+                +onY(aPressHandler, aReleaseHandler) : void
+                +onTrigger(aPressHandler, aReleaseHandler) : void
+                +onJoyStick(aJoyStickHandler) : void
+        }
+}
+
+Package "Peripheral"{
+        
+        class LED {
+        Class that controls the brightness of an LED using values [0-255].
+
+        +LED(gpio_num_t aPin)
+        -mPin : gpio_num_t
+        -mBrightness : uint8_t
+        +getBrightness() : uint8_t
+        +setBrightness(aNewBrightness) : void
+        }
+
+        class ServoMotor {
+                Class that controls the angle of the servo motor arm.
+                Angle range is [-90,90] degrees.
+
+                +ServoMotor(servoPin)
+                +getAngle() : int
+                +setAngle(angle) : void
+                -mPin : gpio_num_t
+                -mAngle : int
+        }
+
+        class IrNECParser {
+                Class that parses incoming packets from IR into data usable by
+                the Transceiver class. 
+                
+                +IrNECParser()
+                +Parse(aDoneEvent) : IrNECParser::Data
+        }
+
+        class Transceiver {
+                Class that sets up IR communication/control and allows for easy 
+                registration of handler for incoming IR data.
+                
+                +Transceiver(receivePin, sendPin)
+                -mRxPin : gpio_num_t
+                -mTxPin : gpio_num_t
+                -mDataReceivedHandler : RxHandlerTy
+                +send(address, data) : void
+                +mSetReceiveHandler(RxHandlerTy aReceiveHandler) : void
+                -onReceive(edata) : bool
+                +enableRx() : void
+                +enableTx() : void
+                +disableRx() : void
+                +disableTx() : void
+                -mNecEncoder : rmt_encoder_handle_t
+                -mNecParser : IrNECParser
+        }
+
+
+
+}
+
+
+/' Aggregation relationships '/
+
+.Car *-- .Car::Handling
+.Car *-- .Controller
+.Car "2" *-- .Motor
+.Transceiver *-- .IrNECParser
+
+
+@enduml

@@ -20,6 +20,24 @@
                 "showReuseMessage": true,
                 "clear": false
             }
+        },
+        {
+            "label": "Start Puml Server",
+            "type": "shell",
+            "command": "java",
+            "args": [
+                "-jar",
+                "${workspaceFolder}/plantuml.jar",
+                "-picoweb"
+            ],
+            "presentation": {
+                "echo": true,
+                "reveal": "always",
+                "focus": false,
+                "panel": "shared",
+                "showReuseMessage": true,
+                "clear": false
+            }
         }
     ]
 }
