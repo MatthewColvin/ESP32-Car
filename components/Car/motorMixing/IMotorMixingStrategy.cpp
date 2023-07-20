@@ -44,12 +44,12 @@ IMotorMixingStrategy::speeds IMotorMixingStrategy::validateSpeeds(IMotorMixingSt
     speeds retSpeeds = aSpeedToValidate;
     if (aSpeedToValidate.right > Mocute052::MAX_XY)
     {
-        ESP_LOGE(LOG_TAG, "ERROR: Cannot set right motor speed to %f max is %f", aSpeedToValidate.right, Mocute052::MAX_XY);
+        //ESP_LOGE(LOG_TAG, "ERROR: Cannot set right motor speed to %f max is %f", aSpeedToValidate.right, Mocute052::MAX_XY);
         retSpeeds.right = Mocute052::MAX_XY;
     }
     else if (aSpeedToValidate.right < Mocute052::MIN_XY)
     {
-        ESP_LOGE(LOG_TAG, "ERROR: Cannot set right motor speed to %f min is %f", aSpeedToValidate.right, Mocute052::MIN_XY);
+        //ESP_LOGE(LOG_TAG, "ERROR: Cannot set right motor speed to %f min is %f", aSpeedToValidate.right, Mocute052::MIN_XY);
         retSpeeds.right = Mocute052::MIN_XY;
     }
     else
@@ -59,12 +59,12 @@ IMotorMixingStrategy::speeds IMotorMixingStrategy::validateSpeeds(IMotorMixingSt
 
     if (aSpeedToValidate.left > Mocute052::MAX_XY)
     {
-        ESP_LOGE(LOG_TAG, "ERROR: Cannot set left motor speed to %f max is %f", aSpeedToValidate.left, Mocute052::MAX_XY);
+        //ESP_LOGE(LOG_TAG, "ERROR: Cannot set left motor speed to %f max is %f", aSpeedToValidate.left, Mocute052::MAX_XY);
         retSpeeds.left = Mocute052::MAX_XY;
     }
     else if (aSpeedToValidate.left < Mocute052::MIN_XY)
     {
-        ESP_LOGE(LOG_TAG, "ERROR: Cannot set left motor speed to %f min is %f", aSpeedToValidate.left, Mocute052::MIN_XY);
+        //ESP_LOGE(LOG_TAG, "ERROR: Cannot set left motor speed to %f min is %f", aSpeedToValidate.left, Mocute052::MIN_XY);
         retSpeeds.left = Mocute052::MIN_XY;
     }
     else
