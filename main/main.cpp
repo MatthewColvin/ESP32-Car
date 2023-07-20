@@ -19,35 +19,40 @@
 #include <memory>
 
 #define LOG_TAG "MAIN"
+// NOTE: To print out information while the program is running,
+// use the syntax:
+// ESP_LOGI(LOG_TAG, "Print information like %d \n", variableName);
 
 /* PIN ASSIGNMENTS */
 /* - These are all of the pins on your board you could be using in the challenge */
-#define RightMotorLeftPin GPIO_NUM_16
+/* - The #define means these are variables where their value isn't allowed to change */
+#define RightMotorLeftPin GPIO_NUM_16        // Motor
 #define RightMotorRightPin GPIO_NUM_4
 #define LeftMotorLeftPin GPIO_NUM_13
 #define LeftMotorRightPin GPIO_NUM_5
 
-#define StatusGreenLedPin GPIO_NUM_22
+#define StatusGreenLedPin GPIO_NUM_22        // Green Status LED on board (1 = on, 0 = off)
 
-#define OnBoardRedLedPin GPIO_NUM_25
+#define OnBoardRedLedPin GPIO_NUM_25         // LEDs on board (0 = on, 1 = off)
 #define OnBoardGreenLedPin GPIO_NUM_33
 #define OnBoardBlueLedPin GPIO_NUM_32
 
-#define IRLED GPIO_NUM_19
+#define IRLED GPIO_NUM_19                    // IR Transceiver
 #define IRDETECT GPIO_NUM_18
 
-#define ServoPin GPIO_NUM_23
+#define ServoPin GPIO_NUM_23                 // Servo Motor
 
-#define ExternalRedLedPin GPIO_NUM_14
+#define ExternalRedLedPin GPIO_NUM_14        // LEDs on separate board (0 = off, 255 = full brightness)
 #define ExternalGreenLedPin GPIO_NUM_26
 #define ExternalBlueLedPin GPIO_NUM_27
 
 /* GLOBAL VARIABLES */
-/* - These variable s can be used anywhere in this file */
+/* - These variables can be used anywhere in this file */
 Car *car;
 // TODO ALL: Add your additional challenge variables
 // Syntax Hint: <Class name>* <variable name>;
 // Reminder: Make your variable names descriptive
+
 
 /* JOYSTICK HANDLERS */
 /* - These will be the functions called when you press a button on your controller */
@@ -78,10 +83,11 @@ void registerJoystickButtonHandlers(std::shared_ptr<Mocute052> aJoystick)
 }
 
 /* IR Transceiver Receive Handler */
-/* - This will be used for the IR challenge */
+/* - This will be used for the IR challenge                             */
+/* - This function is what gets called when you receive data through IR */
 void onReceiveIRData(uint16_t address, uint16_t data, bool isRepeat)
 {
-    ESP_LOGI("MAIN", "Address=%04X, Command=%04X\r\n\r\n", address, data);
+    ESP_LOGI(LOG_TAG, "Address=%04X, Command=%04X\r\n\r\n", address, data);
 }
 
 /* MAIN C FUNCTION */
@@ -101,13 +107,18 @@ extern "C" void app_main(void)
     // TODO ALL: Using the joystick and motor variables make a new car.
     // Syntax Hint: carVariableName = new Car(joystickVariable, leftMotorVariable, rightMotorVariable);
     
+    // TODO (optional): If you'd like to use any of the LEDs on your board to signal
+    //                  something has happened, set it up here.
+    // Syntax Hint: gpio_reset_pin(ledPin);
+    //              gpio_set_direction(ledPin, GPIO_MODE_OUTPUT);
+    
     // TODO (challenge specific): Set your LED/Servo/IR variable
     // Syntax Hint: variableName = new Class(parameters, ...);
 
     // TODO (challenge specific): Tell IR how to handle incoming transmissions
     // Hint: do this with a function from the IR Transceiver class object
     
-    // TODO (challenge specific): Enable IR transmit & receieve
+    // TODO (challenge specific): Enable IR to transmit & receive
     // Hint: do this with a function from the IR Transceiver class object
 
     registerJoystickButtonHandlers(joystick);
