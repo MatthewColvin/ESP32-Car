@@ -95,5 +95,14 @@
         "numbers": "cpp",
         "semaphore": "cpp"
     },
-    "idf.port": "/dev/ttyUSB0"
+    "idf.port": "/dev/ttyUSB0",
+    "markdownlint.config": {
+        "MD033": {
+            "allowed_elements": [
+                "nobr",
+                "sup",
+                "a"
+            ]
+        }
+    }
 }
