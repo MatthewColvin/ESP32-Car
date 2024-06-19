@@ -116,10 +116,10 @@ int64_t volcano_pulse_measurement = 0;
 
 void led_sensor_handler(int64_t timestamp_ms) {
   ESP_LOGI("MAIN", "------------- INTERRUPT -------------\n");
-  if (gpio_get_level(StatusLedPin)) {
-    gpio_set_level(StatusLedPin, 0);
+  if (gpio_get_level(InternalRedLedPin)) {
+    gpio_set_level(InternalRedLedPin, 0);
   } else {
-    gpio_set_level(StatusLedPin, 1);
+    gpio_set_level(InternalRedLedPin, 1);
   }
 
   if (!last_time_seen) {
@@ -160,9 +160,9 @@ extern "C" void app_main(void) {
 
   // Don't forget to tell IR how to handle incoming transmissions
   // TODO add log to remind to enable RX
-  ir->mSetReceiveHandler(onReceiveIRData);
-  ir->enableRx();
-  ir->enableTx();
+  // ir->SetReceiveHandler(onReceiveIRData);
+  // ir->enableRx();
+  // ir->enableTx();
   registerJoystickButtonHandlers(joystick);
   vTaskDelete(NULL); // Delete Main Task
 }
