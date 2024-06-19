@@ -19,9 +19,9 @@ jobs:
         run: pip install --upgrade platformio
 
       - name: Build PlatformIO env:2023Hardware
-        working-directory: ./Platformio
+        working-directory: ./
         run: pio run -e 2023Hardware
 
       - name: Build PlatformIO env:2024Hardware
-        working-directory: ./Platformio
+        working-directory: ./
         run: pio run -e 2024Hardware
