@@ -73,26 +73,29 @@ void onBPress(){
 };
 void onBRelease(){};
 void onXPress(){
-    // ir->send(0x20, 0x00);
+    lightSensor->Enable();
 };
-void onXRelease(){};
+void onXRelease(){
+    lightSensor->Disable();
+};
 void onYPress() {
   auto currentAngle = servo->getAngle();
-  if (servoAscending) {
-    auto nextAngle = currentAngle += 10;
-    if (nextAngle >= ServoMotor::MAX_DEGREE) {
-      servoAscending = false;
-      servo->setAngle(currentAngle - 10);
-    }
-    servo->setAngle(nextAngle);
-  } else {
-    auto nextAngle = currentAngle -= 10;
-    if (nextAngle <= ServoMotor::MIN_DEGREE) {
-      servoAscending = true;
-      servo->setAngle(currentAngle + 10);
-    }
-    servo->setAngle(nextAngle);
-  }
+  servo->setAngle((currentAngle + 10) % 90);
+//   if (servoAscending) {
+//     auto nextAngle = currentAngle += 10;
+//     if (nextAngle >= ServoMotor::MAX_DEGREE) {
+//       servoAscending = false;
+//       servo->setAngle(currentAngle - 10);
+//     }
+//     servo->setAngle(nextAngle);
+//   } else {
+//     auto nextAngle = currentAngle -= 10;
+//     if (nextAngle <= ServoMotor::MIN_DEGREE) {
+//       servoAscending = true;
+//       servo->setAngle(currentAngle + 10);
+//     }
+//     servo->setAngle(nextAngle);
+//   }
 };
 void onYRelease(){};
 void onTriggerPress() { car->enableTurbo(); };
@@ -115,7 +118,7 @@ int64_t last_time_seen = 0;
 int64_t volcano_pulse_measurement = 0;
 
 void led_sensor_handler(int64_t timestamp_ms) {
-  ESP_LOGI("MAIN", "------------- INTERRUPT -------------\n");
+  ESP_LOGI("LightSensor", "------------- INTERRUPT -------------\n");
   if (gpio_get_level(InternalRedLedPin)) {
     gpio_set_level(InternalRedLedPin, 0);
   } else {
@@ -126,7 +129,7 @@ void led_sensor_handler(int64_t timestamp_ms) {
     last_time_seen = timestamp_ms;
   } else {
     volcano_pulse_measurement = timestamp_ms - last_time_seen;
-    ESP_LOGI("MAIN", "%lli - %lli = %lli", timestamp_ms, last_time_seen,
+    ESP_LOGI("LightSensor", "%lli - %lli = %lli", timestamp_ms, last_time_seen,
              volcano_pulse_measurement);
     last_time_seen = 0;
     volcano_pulse_measurement = 0;
@@ -137,12 +140,9 @@ extern "C" void app_main(void) {
   nvs_flash_init();
   auto bt = BTClassicHID::getInstance();
 
-  lightSensor = new LightSensor(ServoPin, led_sensor_handler);
-  lightSensor->Enable();
-
   // TODO: Put in your MAC Address
   // esp_bd_addr_t joystickAddress{0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF};
-  esp_bd_addr_t joystickAddress{0xD0, 0x54, 0x7B, 0x39, 0x5E, 0xA1};
+  esp_bd_addr_t joystickAddress{0xD0, 0x54, 0x7B, 0x00, 0x00, 0x00};
   auto joystick = bt->connect<controller>(joystickAddress);
 
   // TODO: Create the new motors for your car
@@ -157,6 +157,9 @@ extern "C" void app_main(void) {
   blueLed = new LED(BlueLedPin);
   greenLed = new LED(GreenLedPin);
   servo = new ServoMotor(ServoPin);
+
+  // TODO: Set your Light Sensor variable
+  lightSensor = new LightSensor(ServoPin, led_sensor_handler);
 
   // Don't forget to tell IR how to handle incoming transmissions
   // TODO add log to remind to enable RX

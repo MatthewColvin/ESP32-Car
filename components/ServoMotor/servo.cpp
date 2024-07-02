@@ -33,12 +33,14 @@ void ServoMotor::attach() {
   timer_config.period_ticks = SERVO_TIMEBASE_PERIOD;
   timer_config.flags.update_period_on_empty = true;
   timer_config.flags.update_period_on_sync = true;
+  timer_config.intr_priority = 0;
   ESP_ERROR_CHECK(mcpwm_new_timer(&timer_config, &timer));
 
   // Create Operator
   mcpwm_oper_handle_t oper = NULL;
   mcpwm_operator_config_t operator_config;
   operator_config.group_id = 0;
+  operator_config.intr_priority = 0;
   operator_config.flags.update_gen_action_on_tez = true;
   operator_config.flags.update_gen_action_on_tep = true;
   operator_config.flags.update_gen_action_on_sync = true;
@@ -53,6 +55,7 @@ void ServoMotor::attach() {
   // Create comparator and generator from the operator
   mcpwm_comparator_config_t comparator_config;
   comparator_config.flags.update_cmp_on_tez = true;
+  comparator_config.intr_priority = 0;
   ESP_ERROR_CHECK(mcpwm_new_comparator(oper, &comparator_config, &mComparator));
 
   mcpwm_gen_handle_t generator = NULL;

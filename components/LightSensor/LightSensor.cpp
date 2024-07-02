@@ -21,12 +21,12 @@ void LightSensor::Initialize() {
   if (err == ESP_ERR_INVALID_ARG) {
     ESP_LOGE("LightSensor", "Invalid Arguments!!!");
   }
+
+  gpio_install_isr_service(ESP_INTR_FLAG_EDGE);
 }
 
 void LightSensor::Enable() {
   gpio_set_intr_type(mPin, GPIO_INTR_POSEDGE);
-
-  gpio_install_isr_service(ESP_INTR_FLAG_EDGE);
   gpio_isr_handler_add(mPin, LightSensorIsrHandler, this);
   ESP_LOGI("LightSensor", "Light Sensor is now enabled");
 }
