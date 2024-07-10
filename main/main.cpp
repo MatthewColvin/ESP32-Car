@@ -159,7 +159,7 @@ extern "C" void app_main(void) {
   servo = new ServoMotor(ServoPin);
 
   // TODO: Set your Light Sensor variable
-  lightSensor = new LightSensor(ServoPin, led_sensor_handler);
+  lightSensor = new LightSensor(LightSensorPin, led_sensor_handler);
 
   // Don't forget to tell IR how to handle incoming transmissions
   // TODO add log to remind to enable RX
