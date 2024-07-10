@@ -21,25 +21,29 @@
 #include <memory>
 
 #define LOG_TAG "main"
+
+/* TEST CONTROLS */
+#define ALL_TEST 0
+#define LED_TEST 0
+#define INT_LED_TEST 0
+#define STATUS_LED_TEST 0
+#define SERVO_TEST 0
+#define MOTOR_TEST 0
+#define LIGHT_SENSOR_TEST 1
+#define IR_TEST 0
+
 #define HALF_SEC 500 / portTICK_PERIOD_MS
 #define REST 2 * HALF_SEC
 
-constexpr auto SpeedSetIRAddress = 0x1254;
+#define ON 0
+#define OFF 1
+#define STATUS_ON 1
+#define STATUS_OFF 0
 
 /* GLOBAL VARIABLES */
-// Reminder: Make your variable names descriptive
-
-// TODO: Add your additional challenge variables
-// Syntax Hint: <Class name>* <variable name>;
-Car *car;
 LED *redLed;
 LED *blueLed;
 LED *greenLed;
-int LEDState = 0;
-ServoMotor *servo;
-bool servoAscending = false;
-// Transceiver *ir = new Transceiver(IRDETECT, IRLED);
-LightSensor *lightSensor;
 
 void setRGB(uint8_t aRed, uint8_t aBlue, uint8_t aGreen) {
   redLed->setBrightness(aRed);
@@ -47,125 +51,161 @@ void setRGB(uint8_t aRed, uint8_t aBlue, uint8_t aGreen) {
   blueLed->setBrightness(aBlue);
 }
 
-/* JOYSTICK CALLBACKS */
-void onAPress() {
-  switch (LEDState) {
-  case 0:
-    setRGB(0, 0, 255);
-    LEDState += 1;
-    break;
-  case 1:
-    setRGB(0, 255, 0);
-    LEDState += 1;
-    break;
-  case 2:
-    setRGB(255, 0, 0);
-    LEDState += 1;
-    break;
-  default:
-    setRGB(0, 0, 0);
-    LEDState = 0;
-  }
-};
-void onARelease(){};
-void onBPress(){
-    // ir->send(0x00, 0x10);
-};
-void onBRelease(){};
-void onXPress(){
-    lightSensor->Enable();
-};
-void onXRelease(){
-    lightSensor->Disable();
-};
-void onYPress() {
-  auto currentAngle = servo->getAngle();
-  servo->setAngle((currentAngle + 10) % 90);
-//   if (servoAscending) {
-//     auto nextAngle = currentAngle += 10;
-//     if (nextAngle >= ServoMotor::MAX_DEGREE) {
-//       servoAscending = false;
-//       servo->setAngle(currentAngle - 10);
-//     }
-//     servo->setAngle(nextAngle);
-//   } else {
-//     auto nextAngle = currentAngle -= 10;
-//     if (nextAngle <= ServoMotor::MIN_DEGREE) {
-//       servoAscending = true;
-//       servo->setAngle(currentAngle + 10);
-//     }
-//     servo->setAngle(nextAngle);
-//   }
-};
-void onYRelease(){};
-void onTriggerPress() { car->enableTurbo(); };
-void onTriggerRelease() { car->disableTurbo(); };
-
-void onReceiveIRData(uint16_t address, uint16_t data, bool isRepeat) {
-  ESP_LOGI("MAIN", "Address=%04X, Command=%04X\r\n\r\n", address, data);
-}
-
-void registerJoystickButtonHandlers(std::shared_ptr<Mocute052> aJoystick) {
-  aJoystick->onA(onAPress, onARelease);
-  aJoystick->onB(onBPress, onBRelease);
-  aJoystick->onX(onXPress, onXRelease);
-  aJoystick->onY(onYPress, onYRelease);
-  aJoystick->onTrigger(onTriggerPress, onTriggerRelease);
-}
-
-// Light Sensor Code
-int64_t last_time_seen = 0;
-int64_t volcano_pulse_measurement = 0;
-
 void led_sensor_handler(int64_t timestamp_ms) {
   ESP_LOGI("LightSensor", "------------- INTERRUPT -------------\n");
-  if (gpio_get_level(InternalRedLedPin)) {
-    gpio_set_level(InternalRedLedPin, 0);
+  
+  if (ON == gpio_get_level(InternalBlueLedPin)) {
+    gpio_set_level(InternalBlueLedPin, OFF);
   } else {
-    gpio_set_level(InternalRedLedPin, 1);
-  }
-
-  if (!last_time_seen) {
-    last_time_seen = timestamp_ms;
-  } else {
-    volcano_pulse_measurement = timestamp_ms - last_time_seen;
-    ESP_LOGI("LightSensor", "%lli - %lli = %lli", timestamp_ms, last_time_seen,
-             volcano_pulse_measurement);
-    last_time_seen = 0;
-    volcano_pulse_measurement = 0;
+    gpio_set_level(InternalRedLedPin, ON);
   }
 }
 
 extern "C" void app_main(void) {
+  vTaskDelay(HALF_SEC);
   nvs_flash_init();
-  auto bt = BTClassicHID::getInstance();
 
-  // TODO: Put in your MAC Address
-  // esp_bd_addr_t joystickAddress{0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF};
-  esp_bd_addr_t joystickAddress{0xD0, 0x54, 0x7B, 0x00, 0x00, 0x00};
-  auto joystick = bt->connect<controller>(joystickAddress);
+  ESP_LOGI(LOG_TAG, "--- BEGIN TESTS ---");
 
-  // TODO: Create the new motors for your car
-  Motor *left = new Motor(LeftMotorLeftPin, LeftMotorRightPin);
-  Motor *right = new Motor(RightMotorLeftPin, RightMotorRightPin);
+  // LED
+  if (ALL_TEST || LED_TEST)
+  {
+    redLed = new LED(RedLedPin);
+    blueLed = new LED(BlueLedPin);
+    greenLed = new LED(GreenLedPin);
 
-  // TODO: using the joystick and motor variables make a new car.
-  car = new Car(joystick, left, right);
+    ESP_LOGI(LOG_TAG, "LED Test Start...");
+    ESP_LOGI(LOG_TAG, "Red");
+    setRGB(128, 0, 0);
+    vTaskDelay(REST);
+    ESP_LOGI(LOG_TAG, "Green");
+    setRGB(0, 128, 0);
+    vTaskDelay(REST);
+    ESP_LOGI(LOG_TAG, "Blue");
+    setRGB(0, 0, 128);
+    vTaskDelay(REST);
+    ESP_LOGI(LOG_TAG, "...LED Test Stop");
+    setRGB(0, 0, 0);
+    vTaskDelay(REST);
+  }
 
-  // TODO: Set your LED/Servo/IR variable
-  redLed = new LED(RedLedPin);
-  blueLed = new LED(BlueLedPin);
-  greenLed = new LED(GreenLedPin);
-  servo = new ServoMotor(ServoPin);
+  if (ALL_TEST || INT_LED_TEST)
+  {
+    gpio_reset_pin(InternalRedLedPin);
+    gpio_reset_pin(InternalGreenLedPin);
+    gpio_reset_pin(InternalBlueLedPin);
+    gpio_set_direction(InternalRedLedPin, GPIO_MODE_OUTPUT);
+    gpio_set_direction(InternalGreenLedPin, GPIO_MODE_OUTPUT);
+    gpio_set_direction(InternalBlueLedPin, GPIO_MODE_OUTPUT);
+    gpio_set_level(InternalRedLedPin, OFF);
+    gpio_set_level(InternalGreenLedPin, OFF);
+    gpio_set_level(InternalBlueLedPin, OFF);
 
-  // TODO: Set your Light Sensor variable
-  lightSensor = new LightSensor(LightSensorPin, led_sensor_handler);
+    ESP_LOGI(LOG_TAG, "LED Internal Test Start...");
+    ESP_LOGI(LOG_TAG, "Red");
+    gpio_set_level(InternalRedLedPin, ON);
+    vTaskDelay(REST);
+    ESP_LOGI(LOG_TAG, "Green");
+    gpio_set_level(InternalRedLedPin, OFF);
+    gpio_set_level(InternalGreenLedPin, ON);
+    vTaskDelay(REST);
+    ESP_LOGI(LOG_TAG, "Blue");
+    gpio_set_level(InternalGreenLedPin, OFF);
+    gpio_set_level(InternalBlueLedPin, ON);
+    vTaskDelay(REST);
+    ESP_LOGI(LOG_TAG, "...LED Internal Test Stop");
+    gpio_set_level(InternalBlueLedPin, OFF);
+    vTaskDelay(REST);
+  }
 
-  // Don't forget to tell IR how to handle incoming transmissions
-  // TODO add log to remind to enable RX
-  // ir->SetReceiveHandler(onReceiveIRData);
-  // ir->enableRx();
-  // ir->enableTx();
-  registerJoystickButtonHandlers(joystick);
-  vTaskDelete(NULL); // Delete Main Task
+  if (ALL_TEST || STATUS_LED_TEST)
+  {
+    gpio_reset_pin(StatusLedPin);
+    gpio_set_direction(StatusLedPin, GPIO_MODE_OUTPUT);
+    gpio_set_level(StatusLedPin, STATUS_OFF);
+
+    ESP_LOGI(LOG_TAG, "Status LED Test Start...");
+    gpio_set_level(StatusLedPin, STATUS_ON);
+    vTaskDelay(REST);
+    ESP_LOGI(LOG_TAG, "...Status LED Test Stop");
+    gpio_set_level(StatusLedPin, STATUS_OFF);
+    vTaskDelay(REST);
+  }
+
+  // Servo
+  if (ALL_TEST || SERVO_TEST)
+  {
+    ServoMotor *servo = new ServoMotor(ServoPin);
+
+    ESP_LOGI(LOG_TAG, "Servo Test Start...");
+    ESP_LOGI(LOG_TAG, "-90");
+    servo->setAngle(-90);
+    vTaskDelay(REST);
+    ESP_LOGI(LOG_TAG, "0");
+    servo->setAngle(0);
+    vTaskDelay(REST);
+    ESP_LOGI(LOG_TAG, "90");
+    servo->setAngle(90);
+    vTaskDelay(REST);
+    ESP_LOGI(LOG_TAG, "...Servo Test Stop");
+    servo->setAngle(-90);
+    vTaskDelay(REST);
+  }
+
+  // Motors
+  if (ALL_TEST || MOTOR_TEST)
+  {
+    Motor *leftMotor = new Motor(LeftMotorLeftPin, LeftMotorRightPin);
+    Motor *rightMotor = new Motor(RightMotorLeftPin, RightMotorRightPin);
+
+    gpio_config_t motorSleepPinConfig;
+    motorSleepPinConfig.pin_bit_mask = 1ULL << GPIO_NUM_17;
+    motorSleepPinConfig.mode = GPIO_MODE_OUTPUT;
+    motorSleepPinConfig.pull_up_en = GPIO_PULLUP_ENABLE;
+    motorSleepPinConfig.pull_down_en = GPIO_PULLDOWN_DISABLE;
+    motorSleepPinConfig.intr_type = GPIO_INTR_DISABLE;
+    gpio_config(&motorSleepPinConfig);
+    Car *car = new Car(nullptr, leftMotor, rightMotor);
+
+    ESP_LOGI(LOG_TAG, "Motor Test Start...");
+    leftMotor->setSpeed(10000);
+    rightMotor->setSpeed(0);
+    ESP_LOGI(LOG_TAG, "Left Forward");
+    leftMotor->forward();
+    vTaskDelay(REST);
+    ESP_LOGI(LOG_TAG, "Left Backward");
+    leftMotor->reverse();
+    vTaskDelay(REST);
+
+    rightMotor->setSpeed(10000);
+    leftMotor->setSpeed(0);
+    ESP_LOGI(LOG_TAG, "Right Forward");
+    rightMotor->forward();
+    vTaskDelay(REST);
+    ESP_LOGI(LOG_TAG, "Right Backward");
+    rightMotor->reverse();
+    vTaskDelay(REST);
+    ESP_LOGI(LOG_TAG, "...Motor Test Stop");
+    rightMotor->setSpeed(0);
+    vTaskDelay(REST);
+  }
+
+  // IR
+  if (ALL_TEST || IR_TEST) {
+    Transceiver *ir = new Transceiver(IRDETECT, IRLED);
+    ir->enableTx();
+    ir->send(10, 20);
+  }
+
+  // Light Sensor
+  if (ALL_TEST || LIGHT_SENSOR_TEST) {
+    LightSensor *lightSensor = new LightSensor(LightSensorPin, led_sensor_handler);
+    gpio_set_direction(InternalBlueLedPin, GPIO_MODE_INPUT_OUTPUT);
+
+    lightSensor->Enable();
+  }
+
+  ESP_LOGI(LOG_TAG, "--- END TESTS ---");
+
+  vTaskDelay(portMAX_DELAY); // delay Main Task 4 eva
 }
