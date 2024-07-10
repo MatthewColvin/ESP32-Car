@@ -23,13 +23,13 @@
 #define LOG_TAG "main"
 
 /* TEST CONTROLS */
-#define ALL_TEST 0
+#define ALL_TEST 1
 #define LED_TEST 0
 #define INT_LED_TEST 0
 #define STATUS_LED_TEST 0
 #define SERVO_TEST 0
 #define MOTOR_TEST 0
-#define LIGHT_SENSOR_TEST 1
+#define LIGHT_SENSOR_TEST 0
 #define IR_TEST 0
 
 #define HALF_SEC 500 / portTICK_PERIOD_MS
@@ -57,7 +57,7 @@ void led_sensor_handler(int64_t timestamp_ms) {
   if (ON == gpio_get_level(InternalBlueLedPin)) {
     gpio_set_level(InternalBlueLedPin, OFF);
   } else {
-    gpio_set_level(InternalRedLedPin, ON);
+    gpio_set_level(InternalBlueLedPin, ON);
   }
 }
 
@@ -157,15 +157,6 @@ extern "C" void app_main(void) {
   {
     Motor *leftMotor = new Motor(LeftMotorLeftPin, LeftMotorRightPin);
     Motor *rightMotor = new Motor(RightMotorLeftPin, RightMotorRightPin);
-
-    gpio_config_t motorSleepPinConfig;
-    motorSleepPinConfig.pin_bit_mask = 1ULL << GPIO_NUM_17;
-    motorSleepPinConfig.mode = GPIO_MODE_OUTPUT;
-    motorSleepPinConfig.pull_up_en = GPIO_PULLUP_ENABLE;
-    motorSleepPinConfig.pull_down_en = GPIO_PULLDOWN_DISABLE;
-    motorSleepPinConfig.intr_type = GPIO_INTR_DISABLE;
-    gpio_config(&motorSleepPinConfig);
-    Car *car = new Car(nullptr, leftMotor, rightMotor);
 
     ESP_LOGI(LOG_TAG, "Motor Test Start...");
     leftMotor->setSpeed(10000);
