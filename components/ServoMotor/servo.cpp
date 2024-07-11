@@ -1,6 +1,7 @@
 #include "servo.hpp"
 #include "driver/mcpwm_gen.h"
 #include "esp_log.h"
+#include <math.h>
 
 #define LOG_TAG "Servo"
 
@@ -14,6 +15,16 @@
 #define SERVO_TIMEBASE_PERIOD 20000          // 20000 ticks, 20ms
 
 ServoMotor::ServoMotor(gpio_num_t servoPin) : mPin(servoPin) { attach(); };
+
+ServoMotor::~ServoMotor(){};
+
+float mapValues(float value, float aMin, float aMax, float aTargetMin,
+                float aTargetMax) {
+  float span = aMax - aMin;
+  float targetSpan = aTargetMax - aTargetMin;
+  float scaled = (value - aMin) / span;
+  return aTargetMin + (scaled * targetSpan);
+}
 
 uint32_t ServoMotor::angleToPulseWidth(uint32_t value) {
   return (value - ServoMotor::MIN_DEGREE) *
@@ -106,3 +117,12 @@ void ServoMotor::incrementAngle(int numDegrees) {
 void ServoMotor::decrementAngle(int numDegrees) {
   setAngle(mAngle - numDegrees);
 };
+
+void ServoMotor::controlWith(std::shared_ptr<Mocute052> aController) {
+  aController->onJoyStick([this](auto aX, auto aY) {
+    int newAngle =
+        std::floor(mapValues(aY, Mocute052::MIN_XY, Mocute052::MAX_XY,
+                             SERVO_MIN_DEGREE, SERVO_MAX_DEGREE));
+    setAngle(newAngle);
+  });
+}
