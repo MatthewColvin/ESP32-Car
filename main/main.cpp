@@ -55,14 +55,22 @@ std::unique_ptr<ButtonHandler> currentTestHandler =
 
 class ServoHandler : public ButtonHandler {
 public:
-  void aPress() override{};
-  void aRelease() override{};
-  void bPress() override{};
-  void bRelease() override{};
-  void xRelease() override{};
-  void xPress() override{};
-  void yRelease() override{};
-  void yPress() override{};
+  ServoHandler() : mMotor(ServoPin){};
+  ~ServoHandler() { car->controlWith(joystick); }
+
+  void aPress() override { // Control Servo With Joystick
+    mMotor.controlWith(joystick);
+  };
+
+  void bPress() override { // Control Car With Joystick
+    car->controlWith(joystick);
+  };
+
+  void xPress() override { mMotor.incrementAngle(10); };
+
+  void yPress() override { mMotor.decrementAngle(10); };
+
+  ServoMotor mMotor;
 };
 
 class RGBLedHandler : public ButtonHandler {
@@ -193,18 +201,24 @@ public:
   std::unique_ptr<ButtonHandler> GetHandler(sensorType aSensor) {
     switch (aSensor) {
     case sensorType::Servo:
+      ESP_LOGI(LOG_TAG, "---Servo TEST---");
       return std::make_unique<ServoHandler>();
     case sensorType::LightSensor:
+      ESP_LOGI(LOG_TAG, "---Light Sensor TEST---");
       return std::make_unique<LightSensorHandler>();
     case sensorType::IR:
+      ESP_LOGI(LOG_TAG, "---IR TEST---");
       return std::make_unique<IRHandler>();
     case sensorType::ExternalLed:
+      ESP_LOGI(LOG_TAG, "---External LED TEST---");
       return std::make_unique<RGBLedHandler>(
           InternalRedLedPin, InternalGreenLedPin, InternalBlueLedPin);
     case sensorType::InternalLed:
+      ESP_LOGI(LOG_TAG, "---Internal LED TEST---");
       return std::make_unique<RGBLedHandler>(RedLedPin, GreenLedPin,
                                              BlueLedPin);
     case sensorType::Driving:
+      ESP_LOGI(LOG_TAG, "---Driving TEST---");
       return std::make_unique<DriveHandler>();
     default:
       return std::make_unique<ButtonHandler>();
