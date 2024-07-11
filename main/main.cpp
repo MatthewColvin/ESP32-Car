@@ -54,6 +54,7 @@ std::unique_ptr<ButtonHandler> currentTestHandler =
     std::make_unique<ButtonHandler>();
 
 class ServoHandler : public ButtonHandler {
+public:
   void aPress() override{};
   void aRelease() override{};
   void bPress() override{};
@@ -64,47 +65,56 @@ class ServoHandler : public ButtonHandler {
   void yPress() override{};
 };
 
-class ExternalLedHandler : public ButtonHandler {
-  void aPress() override{};
-  void aRelease() override{};
-  void bPress() override{};
-  void bRelease() override{};
-  void xRelease() override{};
-  void xPress() override{};
-  void yRelease() override{};
-  void yPress() override{};
-};
+class RGBLedHandler : public ButtonHandler {
+public:
+  RGBLedHandler(gpio_num_t redPin, gpio_num_t greenPin, gpio_num_t bluePin)
+      : red(redPin), green(greenPin), blue(bluePin) {
+    red.setBrightness(0);
+    green.setBrightness(0);
+    blue.setBrightness(0);
+  }
+  LED red;
+  LED green;
+  LED blue;
 
-class InternalLedHandler : public ButtonHandler {
-  void aPress() override{};
-  void aRelease() override{};
-  void bRelease() override{};
-  void bPress() override{};
-  void xRelease() override{};
-  void xPress() override{};
-  void yRelease() override{};
-  void yPress() override{};
+  void aPress() override {
+    red.setBrightness((red.getBrightness() + 10) % 255);
+  };
+  void bPress() override {
+    green.setBrightness((green.getBrightness() + 10) % 255);
+  };
+  void xPress() override {
+    blue.setBrightness((blue.getBrightness() + 10) % 255);
+  };
+  void yPress() override {
+    red.setBrightness(0);
+    green.setBrightness(0);
+    blue.setBrightness(0);
+  };
 };
 
 class LightSensorHandler : public ButtonHandler {
-  void aPress() override{};
-  void aRelease() override{};
-  void bRelease() override{};
-  void bPress() override{};
-  void xRelease() override{};
-  void xPress() override{};
-  void yRelease() override{};
-  void yPress() override{};
+public:
+  LightSensorHandler()
+      : mLightSensor(LightSensorPin, [this](auto aTimeWhenPulse) {
+          led_sensor_handler(aTimeWhenPulse);
+        }) {}
+
+  void aPress() override { mLightSensor.Enable(); };
+  void bPress() override { mLightSensor.Disable(); };
+
+  LightSensor mLightSensor;
+
   // Light Sensor Code
   int64_t last_time_seen = 0;
   int64_t volcano_pulse_measurement = 0;
 
   void led_sensor_handler(int64_t timestamp_ms) {
     ESP_LOGI("LightSensor", "------------- INTERRUPT -------------\n");
-    if (gpio_get_level(InternalRedLedPin)) {
-      gpio_set_level(InternalRedLedPin, 0);
+    if (gpio_get_level(StatusLedPin)) {
+      gpio_set_level(StatusLedPin, 0);
     } else {
-      gpio_set_level(InternalRedLedPin, 1);
+      gpio_set_level(StatusLedPin, 1);
     }
 
     if (!last_time_seen) {
@@ -120,17 +130,33 @@ class LightSensorHandler : public ButtonHandler {
 };
 
 class IRHandler : public ButtonHandler {
-  void aPress() override{};
-  void aRelease() override{};
-  void bRelease() override{};
-  void bPress() override{};
-  void xRelease() override{};
-  void xPress() override{};
-  void yRelease() override{};
-  void yPress() override{};
+public:
+  IRHandler() : mIr(IRDETECT, IRLED) {
+    mIr.mSetReceiveHandler([](auto addr, auto cmd, auto isRepeat) {
+      ESP_LOGI(LOG_TAG, "Received Address:%i Command:%i \n", addr, cmd);
+    });
+    mIr.disableRx();
+    mIr.disableTx();
+  }
+  void aPress() override { // Toggle Receive
+    mRxEnabled ? mIr.disableRx() : mIr.enableRx();
+    mRxEnabled = !mRxEnabled;
+  };
+  void bPress() override { // Toggle Send
+    mTxEnabled ? mIr.disableTx() : mIr.enableTx();
+    mTxEnabled = !mTxEnabled;
+  };
+
+  void xPress() override { mIr.send(0, 0); };
+  void yPress() override { mIr.send(0, 135); };
+
+  Transceiver mIr;
+  bool mRxEnabled = false;
+  bool mTxEnabled = false;
 };
 
 class DriveHandler : public ButtonHandler {
+public:
   bool mTurboEnabled = false;
 
   void aPress() override { // Toggle Turbo
@@ -139,7 +165,6 @@ class DriveHandler : public ButtonHandler {
   };
 
   void bPress() override { // Increase Cruise Speed
-
     car->setCruiseSpeed(car->getCruiseSpeed() + 1000);
   };
 
@@ -173,10 +198,12 @@ public:
       return std::make_unique<LightSensorHandler>();
     case sensorType::IR:
       return std::make_unique<IRHandler>();
-    case sensorType::InternalLed:
-      return std::make_unique<InternalLedHandler>();
     case sensorType::ExternalLed:
-      return std::make_unique<ExternalLedHandler>();
+      return std::make_unique<RGBLedHandler>(
+          InternalRedLedPin, InternalGreenLedPin, InternalBlueLedPin);
+    case sensorType::InternalLed:
+      return std::make_unique<RGBLedHandler>(RedLedPin, GreenLedPin,
+                                             BlueLedPin);
     case sensorType::Driving:
       return std::make_unique<DriveHandler>();
     default:
