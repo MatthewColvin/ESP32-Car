@@ -1,10 +1,11 @@
 #pragma once
 
 #include "driver/mcpwm_prelude.h"
+#include "mocute052.hpp"
 #include <driver/gpio.h>
 #include <driver/ledc.h>
+#include <memory>
 #include <stdio.h>
-
 
 class ServoMotor {
 public:
@@ -17,6 +18,7 @@ public:
   int getAngle() { return mAngle; }
   void incrementAngle(int numDegrees);
   void decrementAngle(int numDegrees);
+  void controlWith(std::shared_ptr<Mocute052> aController);
 
 private:
   static constexpr auto MIN_PULSEWIDTH_US =
