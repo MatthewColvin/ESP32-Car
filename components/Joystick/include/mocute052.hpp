@@ -5,7 +5,7 @@
 class Mocute052 : public HIDDevice {
 public:
   /// @brief max value of controller used externally
-  static constexpr float MAX_XY = 127;
+  static constexpr float MAX_XY = 128;
   /// @brief min value of controller used externally
   static constexpr float MIN_XY = -128;
 
