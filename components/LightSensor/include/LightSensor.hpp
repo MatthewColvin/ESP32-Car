@@ -1,19 +1,20 @@
 #pragma once
 
 #include <driver/gpio.h>
+#include <functional>
 
 class LightSensor {
 public:
-    typedef void (*LightSensorCallback)(int64_t timestamp_ms);
-    
-    LightSensor(gpio_num_t aPin, LightSensorCallback aOnReadLightFunction);
-    void Enable();
-    void Disable();
+  typedef std::function<void(int64_t)> LightSensorCallback;
+
+  LightSensor(gpio_num_t aPin, LightSensorCallback aOnReadLightFunction);
+  void Enable();
+  void Disable();
 
 private:
-    void Initialize();
-    static void LightSensorIsrHandler(void *self);
-    static void CallbackWrapper(void* self);
-    gpio_num_t mPin;
-    LightSensorCallback mCallback;
+  void Initialize();
+  static void LightSensorIsrHandler(void *self);
+  static void CallbackWrapper(void *self);
+  gpio_num_t mPin;
+  LightSensorCallback mCallback;
 };
