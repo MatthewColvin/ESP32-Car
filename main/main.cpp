@@ -26,146 +26,202 @@
 
 constexpr auto SpeedSetIRAddress = 0x1254;
 
-/* GLOBAL VARIABLES */
-// Reminder: Make your variable names descriptive
+/*
+This Code is for testing all components that can go on a Car and its connection
+to Joystick.
 
-// TODO: Add your additional challenge variables
-// Syntax Hint: <Class name>* <variable name>;
+It uses Modes to determine function this mode is shown by color of the servo.
+
+
+*/
+
 Car *car;
-LED *redLed;
-LED *blueLed;
-LED *greenLed;
-int LEDState = 0;
-ServoMotor *servo;
-bool servoAscending = false;
-// Transceiver *ir = new Transceiver(IRDETECT, IRLED);
-LightSensor *lightSensor;
+std::shared_ptr<controller> joystick = nullptr;
 
-void setRGB(uint8_t aRed, uint8_t aBlue, uint8_t aGreen) {
-  redLed->setBrightness(aRed);
-  greenLed->setBrightness(aGreen);
-  blueLed->setBrightness(aBlue);
-}
+class ButtonHandler {
+public:
+  virtual void aPress(){};
+  virtual void aRelease(){};
+  virtual void bPress(){};
+  virtual void bRelease(){};
+  virtual void xRelease(){};
+  virtual void xPress(){};
+  virtual void yRelease(){};
+  virtual void yPress(){};
+};
 
-/* JOYSTICK CALLBACKS */
-void onAPress() {
-  switch (LEDState) {
-  case 0:
-    setRGB(0, 0, 255);
-    LEDState += 1;
-    break;
-  case 1:
-    setRGB(0, 255, 0);
-    LEDState += 1;
-    break;
-  case 2:
-    setRGB(255, 0, 0);
-    LEDState += 1;
-    break;
-  default:
-    setRGB(0, 0, 0);
-    LEDState = 0;
+std::unique_ptr<ButtonHandler> currentTestHandler =
+    std::make_unique<ButtonHandler>();
+
+class ServoHandler : public ButtonHandler {
+  void aPress() override{};
+  void aRelease() override{};
+  void bPress() override{};
+  void bRelease() override{};
+  void xRelease() override{};
+  void xPress() override{};
+  void yRelease() override{};
+  void yPress() override{};
+};
+
+class ExternalLedHandler : public ButtonHandler {
+  void aPress() override{};
+  void aRelease() override{};
+  void bPress() override{};
+  void bRelease() override{};
+  void xRelease() override{};
+  void xPress() override{};
+  void yRelease() override{};
+  void yPress() override{};
+};
+
+class InternalLedHandler : public ButtonHandler {
+  void aPress() override{};
+  void aRelease() override{};
+  void bRelease() override{};
+  void bPress() override{};
+  void xRelease() override{};
+  void xPress() override{};
+  void yRelease() override{};
+  void yPress() override{};
+};
+
+class LightSensorHandler : public ButtonHandler {
+  void aPress() override{};
+  void aRelease() override{};
+  void bRelease() override{};
+  void bPress() override{};
+  void xRelease() override{};
+  void xPress() override{};
+  void yRelease() override{};
+  void yPress() override{};
+  // Light Sensor Code
+  int64_t last_time_seen = 0;
+  int64_t volcano_pulse_measurement = 0;
+
+  void led_sensor_handler(int64_t timestamp_ms) {
+    ESP_LOGI("LightSensor", "------------- INTERRUPT -------------\n");
+    if (gpio_get_level(InternalRedLedPin)) {
+      gpio_set_level(InternalRedLedPin, 0);
+    } else {
+      gpio_set_level(InternalRedLedPin, 1);
+    }
+
+    if (!last_time_seen) {
+      last_time_seen = timestamp_ms;
+    } else {
+      volcano_pulse_measurement = timestamp_ms - last_time_seen;
+      ESP_LOGI("LightSensor", "%lli - %lli = %lli", timestamp_ms,
+               last_time_seen, volcano_pulse_measurement);
+      last_time_seen = 0;
+      volcano_pulse_measurement = 0;
+    }
   }
 };
-void onARelease(){};
-void onBPress(){
-    // ir->send(0x00, 0x10);
+
+class IRHandler : public ButtonHandler {
+  void aPress() override{};
+  void aRelease() override{};
+  void bRelease() override{};
+  void bPress() override{};
+  void xRelease() override{};
+  void xPress() override{};
+  void yRelease() override{};
+  void yPress() override{};
 };
-void onBRelease(){};
-void onXPress(){
-    lightSensor->Enable();
+
+class DriveHandler : public ButtonHandler {
+  bool mTurboEnabled = false;
+
+  void aPress() override { // Toggle Turbo
+    mTurboEnabled ? car->disableTurbo() : car->enableTurbo();
+    mTurboEnabled = !mTurboEnabled;
+  };
+
+  void bPress() override { // Increase Cruise Speed
+
+    car->setCruiseSpeed(car->getCruiseSpeed() + 1000);
+  };
+
+  void xPress() override { // decrease Cruise Speed
+    car->setCruiseSpeed(car->getCruiseSpeed() - 1000);
+  };
+
+  void yPress() override { // Change Handling
+    car->getHandling() == Car::Handling::Car
+        ? car->setHandling(Car::Handling::Tank)
+        : car->setHandling(Car::Handling::Car);
+  };
 };
-void onXRelease(){
-    lightSensor->Disable();
+
+class ButtonHandlerFactory {
+public:
+  enum class sensorType {
+    Servo,
+    ExternalLed,
+    InternalLed,
+    LightSensor,
+    IR,
+    Driving,
+    COUNT
+  };
+  std::unique_ptr<ButtonHandler> GetHandler(sensorType aSensor) {
+    switch (aSensor) {
+    case sensorType::Servo:
+      return std::make_unique<ServoHandler>();
+    case sensorType::LightSensor:
+      return std::make_unique<LightSensorHandler>();
+    case sensorType::IR:
+      return std::make_unique<IRHandler>();
+    case sensorType::InternalLed:
+      return std::make_unique<InternalLedHandler>();
+    case sensorType::ExternalLed:
+      return std::make_unique<ExternalLedHandler>();
+    case sensorType::Driving:
+      return std::make_unique<DriveHandler>();
+    default:
+      return std::make_unique<ButtonHandler>();
+    };
+  };
+
+  std::unique_ptr<ButtonHandler> GetNextHandler() {
+    sensorType nextType =
+        static_cast<sensorType>((static_cast<int>(mCurrentType) + 1) %
+                                static_cast<int>(sensorType::COUNT));
+    mCurrentType = nextType;
+    return GetHandler(nextType);
+  };
+
+  sensorType mCurrentType = sensorType::COUNT;
 };
-void onYPress() {
-  auto currentAngle = servo->getAngle();
-  servo->setAngle((currentAngle + 10) % 90);
-//   if (servoAscending) {
-//     auto nextAngle = currentAngle += 10;
-//     if (nextAngle >= ServoMotor::MAX_DEGREE) {
-//       servoAscending = false;
-//       servo->setAngle(currentAngle - 10);
-//     }
-//     servo->setAngle(nextAngle);
-//   } else {
-//     auto nextAngle = currentAngle -= 10;
-//     if (nextAngle <= ServoMotor::MIN_DEGREE) {
-//       servoAscending = true;
-//       servo->setAngle(currentAngle + 10);
-//     }
-//     servo->setAngle(nextAngle);
-//   }
-};
-void onYRelease(){};
-void onTriggerPress() { car->enableTurbo(); };
-void onTriggerRelease() { car->disableTurbo(); };
 
-void onReceiveIRData(uint16_t address, uint16_t data, bool isRepeat) {
-  ESP_LOGI("MAIN", "Address=%04X, Command=%04X\r\n\r\n", address, data);
-}
-
-void registerJoystickButtonHandlers(std::shared_ptr<Mocute052> aJoystick) {
-  aJoystick->onA(onAPress, onARelease);
-  aJoystick->onB(onBPress, onBRelease);
-  aJoystick->onX(onXPress, onXRelease);
-  aJoystick->onY(onYPress, onYRelease);
-  aJoystick->onTrigger(onTriggerPress, onTriggerRelease);
-}
-
-// Light Sensor Code
-int64_t last_time_seen = 0;
-int64_t volcano_pulse_measurement = 0;
-
-void led_sensor_handler(int64_t timestamp_ms) {
-  ESP_LOGI("LightSensor", "------------- INTERRUPT -------------\n");
-  if (gpio_get_level(InternalRedLedPin)) {
-    gpio_set_level(InternalRedLedPin, 0);
-  } else {
-    gpio_set_level(InternalRedLedPin, 1);
-  }
-
-  if (!last_time_seen) {
-    last_time_seen = timestamp_ms;
-  } else {
-    volcano_pulse_measurement = timestamp_ms - last_time_seen;
-    ESP_LOGI("LightSensor", "%lli - %lli = %lli", timestamp_ms, last_time_seen,
-             volcano_pulse_measurement);
-    last_time_seen = 0;
-    volcano_pulse_measurement = 0;
-  }
-}
+ButtonHandlerFactory handlerFactory;
+void onTriggerPress() { currentTestHandler = handlerFactory.GetNextHandler(); };
+void onTriggerRelease(){};
 
 extern "C" void app_main(void) {
   nvs_flash_init();
   auto bt = BTClassicHID::getInstance();
 
-  // TODO: Put in your MAC Address
-  // esp_bd_addr_t joystickAddress{0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF};
+  // Put in your MAC Address
+  // Note 0x00 Acts as a don't care this can allow for connection to multiple
+  // remotes. esp_bd_addr_t joystickAddress{0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF};
   esp_bd_addr_t joystickAddress{0xD0, 0x54, 0x7B, 0x00, 0x00, 0x00};
-  auto joystick = bt->connect<controller>(joystickAddress);
+  joystick = bt->connect<controller>(joystickAddress);
 
-  // TODO: Create the new motors for your car
   Motor *left = new Motor(LeftMotorLeftPin, LeftMotorRightPin);
   Motor *right = new Motor(RightMotorLeftPin, RightMotorRightPin);
-
-  // TODO: using the joystick and motor variables make a new car.
   car = new Car(joystick, left, right);
 
-  // TODO: Set your LED/Servo/IR variable
-  redLed = new LED(RedLedPin);
-  blueLed = new LED(BlueLedPin);
-  greenLed = new LED(GreenLedPin);
-  servo = new ServoMotor(ServoPin);
+  joystick->onA([] { currentTestHandler->aPress(); },
+                [] { currentTestHandler->aRelease(); });
+  joystick->onB([] { currentTestHandler->bPress(); },
+                [] { currentTestHandler->bRelease(); });
+  joystick->onX([] { currentTestHandler->xPress(); },
+                [] { currentTestHandler->xRelease(); });
+  joystick->onY([] { currentTestHandler->yPress(); },
+                [] { currentTestHandler->yRelease(); });
 
-  // TODO: Set your Light Sensor variable
-  lightSensor = new LightSensor(LightSensorPin, led_sensor_handler);
-
-  // Don't forget to tell IR how to handle incoming transmissions
-  // TODO add log to remind to enable RX
-  // ir->SetReceiveHandler(onReceiveIRData);
-  // ir->enableRx();
-  // ir->enableTx();
-  registerJoystickButtonHandlers(joystick);
+  joystick->onTrigger(onTriggerPress, onTriggerRelease);
   vTaskDelete(NULL); // Delete Main Task
 }
