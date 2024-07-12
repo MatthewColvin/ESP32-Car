@@ -209,12 +209,12 @@ public:
     case sensorType::IR:
       ESP_LOGI(LOG_TAG, "---IR TEST---");
       return std::make_unique<IRHandler>();
+    // case sensorType::InternalLed:
+    //   ESP_LOGI(LOG_TAG, "---Internal LED TEST---");
+    //   return std::make_unique<RGBLedHandler>(
+    //       InternalRedLedPin, InternalGreenLedPin, InternalBlueLedPin);
     case sensorType::ExternalLed:
       ESP_LOGI(LOG_TAG, "---External LED TEST---");
-      return std::make_unique<RGBLedHandler>(
-          InternalRedLedPin, InternalGreenLedPin, InternalBlueLedPin);
-    case sensorType::InternalLed:
-      ESP_LOGI(LOG_TAG, "---Internal LED TEST---");
       return std::make_unique<RGBLedHandler>(RedLedPin, GreenLedPin,
                                              BlueLedPin);
     case sensorType::Driving:
@@ -247,7 +247,7 @@ extern "C" void app_main(void) {
   // Put in your MAC Address
   // Note 0x00 Acts as a don't care this can allow for connection to multiple
   // remotes. esp_bd_addr_t joystickAddress{0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF};
-  esp_bd_addr_t joystickAddress{0xD0, 0x54, 0x7B, 0x00, 0x00, 0x00};
+  esp_bd_addr_t joystickAddress{0xD4, 0x14, 0xA7, 0x00, 0x00, 0x00};
   joystick = bt->connect<controller>(joystickAddress);
 
   Motor *left = new Motor(LeftMotorLeftPin, LeftMotorRightPin);
