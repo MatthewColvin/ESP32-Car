@@ -21,10 +21,12 @@
 #include <memory>
 
 #define LOG_TAG "main"
-#define HALF_SEC 500 / portTICK_PERIOD_MS
-#define REST 2 * HALF_SEC
 
-constexpr auto SpeedSetIRAddress = 0x1254;
+#define UpLink true           // IR Sensor
+#define TeamSyncLed true      // External LED
+#define VolcanoMeasure true   // Light Frequency Sensor & IR Sensor & Status
+#define CaveNavigation true   // Servo
+#define SampleCollection true // Servo
 
 /*
 This Code is for testing all components that can go on a Car and its connection
@@ -253,6 +255,7 @@ extern "C" void app_main(void) {
   Motor *left = new Motor(LeftMotorLeftPin, LeftMotorRightPin);
   Motor *right = new Motor(RightMotorLeftPin, RightMotorRightPin);
   car = new Car(joystick, left, right);
+  car->enableTurbo();
 
   joystick->onA([] { currentTestHandler->aPress(); },
                 [] { currentTestHandler->aRelease(); });
