@@ -26,29 +26,47 @@
 
 constexpr auto SpeedSetIRAddress = 0x1254;
 
+#define Uplink false           // IR Sensor
+#define TeamSyncLed false      // External LED
+#define VolcanoMeasure false   // Light Frequency Sensor & IR Sensor & Status
+#define CaveNavigation false   // Servo
+#define SampleCollection false // Servo
+
 /* GLOBAL VARIABLES */
 // Reminder: Make your variable names descriptive
 
 // TODO: Add your additional challenge variables
 // Syntax Hint: <Class name>* <variable name>;
 Car *car;
-LED *redLed;
-LED *blueLed;
-LED *greenLed;
-int LEDState = 0;
-ServoMotor *servo;
-bool servoAscending = false;
-// Transceiver *ir = new Transceiver(IRDETECT, IRLED);
-LightSensor *lightSensor;
+
+#if TeamSyncLed
+LED *redLed = new LED(RedLedPin);
+LED *blueLed = new LED(BlueLedPin);
+LED *greenLed = new LED(GreenLedPin);
+#endif
+
+#if CaveNavigation || SampleCollection
+ServoMotor *servo = new ServoMotor(ServoPin);
+#endif
+
+#if UpLink || VolcanoMeasure
+Transceiver *ir = new Transceiver(IRDETECT, IRLED);
+#endif
+
+#if VolcanoMeasure
+LightSensor *lightSensor = new LightSensor(LightSensorPin, led_sensor_handler);
+#endif
 
 void setRGB(uint8_t aRed, uint8_t aBlue, uint8_t aGreen) {
+#if TeamSyncLed
   redLed->setBrightness(aRed);
   greenLed->setBrightness(aGreen);
   blueLed->setBrightness(aBlue);
+#endif
 }
 
-/* JOYSTICK CALLBACKS */
-void onAPress() {
+int LEDState = 0;
+void ChangeLEDColor() {
   switch (LEDState) {
   case 0:
     setRGB(0, 0, 255);
@@ -66,40 +84,19 @@ void onAPress() {
     setRGB(0, 0, 0);
     LEDState = 0;
   }
-};
+}
+
+/* JOYSTICK CALLBACKS */
+void onAPress() { ChangeLEDColor(); };
 void onARelease(){};
-void onBPress(){
-    // ir->send(0x00, 0x10);
-};
+void onBPress(){};
 void onBRelease(){};
-void onXPress(){
-    lightSensor->Enable();
-};
-void onXRelease(){
-    lightSensor->Disable();
-};
-void onYPress() {
-  auto currentAngle = servo->getAngle();
-  servo->setAngle((currentAngle + 10) % 90);
-//   if (servoAscending) {
-//     auto nextAngle = currentAngle += 10;
-//     if (nextAngle >= ServoMotor::MAX_DEGREE) {
-//       servoAscending = false;
-//       servo->setAngle(currentAngle - 10);
-//     }
-//     servo->setAngle(nextAngle);
-//   } else {
-//     auto nextAngle = currentAngle -= 10;
-//     if (nextAngle <= ServoMotor::MIN_DEGREE) {
-//       servoAscending = true;
-//       servo->setAngle(currentAngle + 10);
-//     }
-//     servo->setAngle(nextAngle);
-//   }
-};
+void onXPress(){};
+void onXRelease(){};
+void onYPress(){};
 void onYRelease(){};
-void onTriggerPress() { car->enableTurbo(); };
-void onTriggerRelease() { car->disableTurbo(); };
+void onTriggerPress(){};
+void onTriggerRelease(){};
 
 void onReceiveIRData(uint16_t address, uint16_t data, bool isRepeat) {
   ESP_LOGI("MAIN", "Address=%04X, Command=%04X\r\n\r\n", address, data);
@@ -152,20 +149,11 @@ extern "C" void app_main(void) {
   // TODO: using the joystick and motor variables make a new car.
   car = new Car(joystick, left, right);
 
-  // TODO: Set your LED/Servo/IR variable
-  redLed = new LED(RedLedPin);
-  blueLed = new LED(BlueLedPin);
-  greenLed = new LED(GreenLedPin);
-  servo = new ServoMotor(ServoPin);
+// TODO add log to remind to enable RX
+#if UpLink || VolcanoMeasure
+  ir->SetReceiveHandler(onReceiveIRData);
+#endif
 
-  // TODO: Set your Light Sensor variable
-  lightSensor = new LightSensor(LightSensorPin, led_sensor_handler);
-
-  // Don't forget to tell IR how to handle incoming transmissions
-  // TODO add log to remind to enable RX
-  // ir->SetReceiveHandler(onReceiveIRData);
-  // ir->enableRx();
-  // ir->enableTx();
   registerJoystickButtonHandlers(joystick);
   vTaskDelete(NULL); // Delete Main Task
 }
