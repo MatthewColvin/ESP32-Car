@@ -42,6 +42,7 @@ std::shared_ptr<controller> joystick = nullptr;
 
 class ButtonHandler {
 public:
+  virtual ~ButtonHandler(){};
   virtual void aPress(){};
   virtual void aRelease(){};
   virtual void bPress(){};
@@ -77,66 +78,60 @@ public:
 
 class RGBLedHandler : public ButtonHandler {
 public:
-  RGBLedHandler(gpio_num_t redPin, gpio_num_t greenPin, gpio_num_t bluePin)
-      : red(redPin), green(greenPin), blue(bluePin) {
-    red.setBrightness(0);
-    green.setBrightness(0);
-    blue.setBrightness(0);
+  RGBLedHandler(LED *aRed, LED *aGreen, LED *aBlue) {
+    red = aRed;
+    green = aGreen;
+    blue = aBlue;
+
+    red->setBrightness(0);
+    green->setBrightness(0);
+    blue->setBrightness(0);
   }
-  LED red;
-  LED green;
-  LED blue;
+  LED *red;
+  LED *green;
+  LED *blue;
 
   void aPress() override {
-    red.setBrightness((red.getBrightness() + 10) % 255);
+    red->setBrightness((red->getBrightness() + 10) % 255);
   };
   void bPress() override {
-    green.setBrightness((green.getBrightness() + 10) % 255);
+    green->setBrightness((green->getBrightness() + 10) % 255);
   };
   void xPress() override {
-    blue.setBrightness((blue.getBrightness() + 10) % 255);
+    blue->setBrightness((blue->getBrightness() + 10) % 255);
   };
   void yPress() override {
-    red.setBrightness(0);
-    green.setBrightness(0);
-    blue.setBrightness(0);
+    red->setBrightness(0);
+    green->setBrightness(0);
+    blue->setBrightness(0);
   };
 };
 
 class LightSensorHandler : public ButtonHandler {
 public:
   LightSensorHandler()
-      : mLightSensor(LightSensorPin, [this](auto aTimeWhenPulse) {
-          led_sensor_handler(aTimeWhenPulse);
-        }) {}
+      : mLightSensor(LightSensorPin, [this]() { pulseCount++; }) {}
 
-  void aPress() override { mLightSensor.Enable(); };
+  void aPress() override {
+    mLightSensor.Enable();
+    pulseCount = 0;
+  };
+
   void bPress() override { mLightSensor.Disable(); };
+
+  void xPress() override { // Print Collection results
+    int timeBetweenPulses = 0;
+    if (pulseCount > 0) {
+      timeBetweenPulses = mLightSensor.GetCollectionTime() / pulseCount;
+    }
+    ESP_LOGI(LOG_TAG, "TimeMeasured: %lli NumPulses: %d AvgTimeBetween: %d",
+             mLightSensor.GetCollectionTime(), pulseCount, timeBetweenPulses);
+  }
 
   LightSensor mLightSensor;
 
   // Light Sensor Code
-  int64_t last_time_seen = 0;
-  int64_t volcano_pulse_measurement = 0;
-
-  void led_sensor_handler(int64_t timestamp_ms) {
-    ESP_LOGI("LightSensor", "------------- INTERRUPT -------------\n");
-    if (gpio_get_level(StatusLedPin)) {
-      gpio_set_level(StatusLedPin, 0);
-    } else {
-      gpio_set_level(StatusLedPin, 1);
-    }
-
-    if (!last_time_seen) {
-      last_time_seen = timestamp_ms;
-    } else {
-      volcano_pulse_measurement = timestamp_ms - last_time_seen;
-      ESP_LOGI("LightSensor", "%lli - %lli = %lli", timestamp_ms,
-               last_time_seen, volcano_pulse_measurement);
-      last_time_seen = 0;
-      volcano_pulse_measurement = 0;
-    }
-  }
+  int pulseCount = 0;
 };
 
 class IRHandler : public ButtonHandler {
@@ -191,6 +186,12 @@ public:
 
 class ButtonHandlerFactory {
 public:
+  ButtonHandlerFactory()
+      : intRed(InternalRedLedPin, true), intGreen(InternalGreenLedPin, true),
+        intBlue(InternalBlueLedPin, true), extRed(RedLedPin),
+        extGreen(GreenLedPin), extBlue(BlueLedPin) {}
+  virtual ~ButtonHandlerFactory() = default;
+
   enum class sensorType {
     Servo,
     ExternalLed,
@@ -211,14 +212,12 @@ public:
     case sensorType::IR:
       ESP_LOGI(LOG_TAG, "---IR TEST---");
       return std::make_unique<IRHandler>();
-    // case sensorType::InternalLed:
-    //   ESP_LOGI(LOG_TAG, "---Internal LED TEST---");
-    //   return std::make_unique<RGBLedHandler>(
-    //       InternalRedLedPin, InternalGreenLedPin, InternalBlueLedPin);
+    case sensorType::InternalLed:
+      ESP_LOGI(LOG_TAG, "---Internal LED TEST---");
+      return std::make_unique<RGBLedHandler>(&intRed, &intGreen, &intBlue);
     case sensorType::ExternalLed:
       ESP_LOGI(LOG_TAG, "---External LED TEST---");
-      return std::make_unique<RGBLedHandler>(RedLedPin, GreenLedPin,
-                                             BlueLedPin);
+      return std::make_unique<RGBLedHandler>(&extRed, &extGreen, &extBlue);
     case sensorType::Driving:
       ESP_LOGI(LOG_TAG, "---Driving TEST---");
       return std::make_unique<DriveHandler>();
@@ -234,6 +233,14 @@ public:
     mCurrentType = nextType;
     return GetHandler(nextType);
   };
+
+  LED intRed;
+  LED intGreen;
+  LED intBlue;
+
+  LED extRed;
+  LED extGreen;
+  LED extBlue;
 
   sensorType mCurrentType = sensorType::COUNT;
 };
