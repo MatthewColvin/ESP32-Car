@@ -16,7 +16,15 @@
 
 ServoMotor::ServoMotor(gpio_num_t servoPin) : mPin(servoPin) { attach(); };
 
-ServoMotor::~ServoMotor(){};
+ServoMotor::~ServoMotor() {
+  mcpwm_timer_start_stop(mTimer, MCPWM_TIMER_START_STOP_EMPTY);
+  mcpwm_timer_disable(mTimer);
+
+  mcpwm_del_generator(mGenerator);
+  mcpwm_del_comparator(mComparator);
+  mcpwm_del_operator(mOperator);
+  mcpwm_del_timer(mTimer);
+};
 
 float mapValues(float value, float aMin, float aMax, float aTargetMin,
                 float aTargetMax) {
@@ -96,6 +104,9 @@ void ServoMotor::attach() {
   // Enable and start timer
   ESP_ERROR_CHECK(mcpwm_timer_enable(timer));
   ESP_ERROR_CHECK(mcpwm_timer_start_stop(timer, MCPWM_TIMER_START_NO_STOP));
+  mTimer = timer;
+  mOperator = oper;
+  mGenerator = generator;
 }
 
 void ServoMotor::setAngle(int angle) {

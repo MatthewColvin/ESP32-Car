@@ -12,6 +12,11 @@ LightSensor::LightSensor(gpio_num_t aPin,
   Initialize();
 }
 
+LightSensor::~LightSensor() {
+  gpio_isr_handler_remove(mPin);
+  gpio_uninstall_isr_service();
+}
+
 void LightSensor::Initialize() {
   gpio_config_t light_sensor_config;
   light_sensor_config.intr_type = GPIO_INTR_DISABLE;
