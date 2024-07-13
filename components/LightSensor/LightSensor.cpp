@@ -29,14 +29,13 @@ void LightSensor::Enable() {
   gpio_set_intr_type(mPin, GPIO_INTR_POSEDGE);
   gpio_isr_handler_add(mPin, LightSensorIsrHandler, this);
   ESP_LOGI("LightSensor", "Light Sensor is now enabled");
-  mStartTime = esp_timer_get_time();
+  mStartTime = 0;
   mEndTime = 0;
 }
 
 void LightSensor::Disable() {
   gpio_intr_disable(mPin);
   ESP_LOGI("LightSensor", "Light Sensor is disabled");
-  mEndTime = esp_timer_get_time();
 }
 
 int64_t LightSensor::GetCollectionTime() {
@@ -53,6 +52,11 @@ void LightSensor::LightSensorIsrHandler(void *self) {
 }
 
 void LightSensor::CallbackWrapper(void *self) {
+  if (!((LightSensor *)self)->mStartTime) {
+    ((LightSensor *)self)->mStartTime = esp_timer_get_time();
+  }
+  ((LightSensor *)self)->mEndTime = esp_timer_get_time();
+
   ((LightSensor *)self)->mCallback();
   vTaskDelete(NULL);
 }
