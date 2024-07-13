@@ -58,6 +58,8 @@ Transceiver *ir = new Transceiver(IRDETECT, IRLED);
 LightSensor *lightSensor = new LightSensor(LightSensorPin, led_sensor_handler);
 #endif
 
+int64_t volcano_flash_count = 0;
+
 void setRGB(uint8_t aRed, uint8_t aBlue, uint8_t aGreen) {
 #if TeamSyncLed
   redLed->setBrightness(aRed);
@@ -159,26 +161,14 @@ void registerJoystickButtonHandlers(std::shared_ptr<Mocute052> aJoystick) {
 }
 
 // Light Sensor Code
-int64_t last_time_seen = 0;
-int64_t volcano_pulse_measurement = 0;
-
-void led_sensor_handler(int64_t timestamp_ms) {
+void led_sensor_handler() {
   ESP_LOGI("LightSensor", "------------- INTERRUPT -------------\n");
   if (gpio_get_level(InternalRedLedPin)) {
     gpio_set_level(InternalRedLedPin, 0);
   } else {
     gpio_set_level(InternalRedLedPin, 1);
   }
-
-  if (!last_time_seen) {
-    last_time_seen = timestamp_ms;
-  } else {
-    volcano_pulse_measurement = timestamp_ms - last_time_seen;
-    ESP_LOGI("LightSensor", "%lli - %lli = %lli", timestamp_ms, last_time_seen,
-             volcano_pulse_measurement);
-    last_time_seen = 0;
-    volcano_pulse_measurement = 0;
-  }
+  volcano_flash_count += 1;
 }
 
 extern "C" void app_main(void) {
