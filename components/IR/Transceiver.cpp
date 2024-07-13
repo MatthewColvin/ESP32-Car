@@ -174,7 +174,7 @@ void Transceiver::disableTx() {
 
 void Transceiver::send(uint16_t address, uint16_t data) {
   if (!mIsTxEnabled) {
-    ESP_LOGE(LOG_TAG, "Must enableTx() before using send()");
+    ESP_LOGW(LOG_TAG, "Must enableTx() before using send()");
     return;
   }
   rmt_transmit_config_t aTransmitConfig;

@@ -100,11 +100,10 @@ void ServoMotor::attach() {
 
 void ServoMotor::setAngle(int angle) {
   if (angle > MAX_DEGREE || angle < MIN_DEGREE) {
-    ESP_LOGE(LOG_TAG, "ERROR: Angle must be between %d and %d tried to set %d",
+    ESP_LOGW(LOG_TAG, "Angle must be between %d and %d tried to set %d",
              MIN_DEGREE, MAX_DEGREE, angle);
     return;
   }
-  // ESP_LOGI(LOG_TAG, "Setting Angle: %d", angle);
   auto pulseWidth = angleToPulseWidth(angle);
   ESP_ERROR_CHECK(mcpwm_comparator_set_compare_value(mComparator, pulseWidth));
   mAngle = angle;
@@ -120,7 +119,6 @@ void ServoMotor::decrementAngle(int numDegrees) {
 
 void ServoMotor::controlWith(std::shared_ptr<Mocute052> aController) {
   aController->onJoyStick([this](auto aX, auto aY) {
-    ESP_LOGI(LOG_TAG, "aY val %d", aY);
     int newAngle =
         std::floor(mapValues(aY, 0, 255, SERVO_MIN_DEGREE, SERVO_MAX_DEGREE));
     setAngle(newAngle);

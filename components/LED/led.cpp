@@ -57,7 +57,7 @@ void LED::initialize() {
 
 void LED::setBrightness(int aNewBrightness) {
   if (0 > aNewBrightness || aNewBrightness > 255) {
-    ESP_LOGE(LOG_TAG, "FAILED to Set Brightness to %d valid range is (0-255)",
+    ESP_LOGW(LOG_TAG, "FAILED to Set Brightness to %d valid range is (0-255)",
              aNewBrightness);
     return;
   }

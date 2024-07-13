@@ -214,7 +214,7 @@ static void add_ble_scan_result(esp_bd_addr_t bda, esp_ble_addr_type_t addr_type
 {
     if (find_scan_result(bda, ble_scan_results))
     {
-        ESP_LOGW(TAG, "Result already exists!");
+        ESP_LOGV(TAG, "Result already exists!");
         return;
     }
     esp_hid_scan_result_t *r = (esp_hid_scan_result_t *)malloc(sizeof(esp_hid_scan_result_t));
