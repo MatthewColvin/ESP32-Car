@@ -21,16 +21,12 @@
 #include <memory>
 
 #define LOG_TAG "main"
-#define HALF_SEC 500 / portTICK_PERIOD_MS
-#define REST 2 * HALF_SEC
 
-constexpr auto SpeedSetIRAddress = 0x1254;
-
-#define UpLink false           // IR Sensor
-#define TeamSyncLed false      // External LED
-#define VolcanoMeasure false   // Light Frequency Sensor & IR Sensor & Status
-#define CaveNavigation false   // Servo
-#define SampleCollection false // Servo
+#define UpLink true           // IR Sensor
+#define TeamSyncLed true      // External LED
+#define VolcanoMeasure true   // Light Frequency Sensor & IR Sensor & Status
+#define CaveNavigation true   // Servo
+#define SampleCollection true // Servo
 
 /* GLOBAL VARIABLES */
 // Reminder: Make your variable names descriptive
@@ -55,10 +51,8 @@ Transceiver *ir = new Transceiver(IRDETECT, IRLED);
 #endif
 
 #if VolcanoMeasure
-LightSensor *lightSensor = new LightSensor(LightSensorPin, led_sensor_handler);
+LightSensor *lightSensor = nullptr;
 #endif
-
-int64_t volcano_flash_count = 0;
 
 void setRGB(uint8_t aRed, uint8_t aBlue, uint8_t aGreen) {
 #if TeamSyncLed
@@ -97,8 +91,10 @@ void sendIREasy() {
 #endif
 }
 
+// DEV_TODO Add Address for Operation data
 #define TowerAddress 0x00
 void sendIRHard(uint16_t op, uint16_t aInputValue) {
+// DEV_TODO Add Operations
 #if (UpLink)
   uint16_t answer = 0;
   switch (op) {
@@ -135,12 +131,43 @@ void controlServoWithJoystick() {
 
 void controlCarWithJoystick() { car->controlWith(joystick); }
 
+int numPulses = 0;
+void startVolcanoCollection() {
+#if VolcanoMeasure
+  numPulses = 0;
+  lightSensor->Enable();
+#endif
+}
+
+void onPulse() { numPulses++; }
+
+uint16_t timeBetweenPulses = 0;
+void endVolcanoCollection() {
+#if VolcanoMeasure
+  lightSensor->Disable();
+  if (numPulses > 0) {
+    timeBetweenPulses = lightSensor->GetCollectionTime() / numPulses;
+  }
+#endif
+}
+
+// DEV_TODO Update Address for Volcano Data
+#define VolcanoDataTowerAddress 0x00
+void sendVolcanoTimeBetweenPulses() {
+#if VolcanoMeasure
+  ir->enableTx();
+  ir->send(VolcanoDataTowerAddress, timeBetweenPulses);
+  ir->disableTx();
+  ESP_LOGI(LOG_TAG, "timeBetweenPulses: %d sent", timeBetweenPulses);
+#endif
+}
+
 /* JOYSTICK CALLBACKS */
 void onAPress() { ChangeLEDColor(); };
 void onARelease() { sendIREasy(); };
-void onBPress(){};
-void onBRelease(){};
-void onXPress(){};
+void onBPress() { startVolcanoCollection(); };
+void onBRelease() { endVolcanoCollection(); };
+void onXPress() { sendVolcanoTimeBetweenPulses(); };
 void onXRelease(){};
 void onYPress(){};
 void onYRelease(){};
@@ -160,24 +187,13 @@ void registerJoystickButtonHandlers(std::shared_ptr<Mocute052> aJoystick) {
   aJoystick->onTrigger(onTriggerPress, onTriggerRelease);
 }
 
-// Light Sensor Code
-void led_sensor_handler() {
-  ESP_LOGI("LightSensor", "------------- INTERRUPT -------------\n");
-  if (gpio_get_level(InternalRedLedPin)) {
-    gpio_set_level(InternalRedLedPin, 0);
-  } else {
-    gpio_set_level(InternalRedLedPin, 1);
-  }
-  volcano_flash_count += 1;
-}
-
 extern "C" void app_main(void) {
   nvs_flash_init();
   auto bt = BTClassicHID::getInstance();
 
   // TODO: Put in your MAC Address
   // esp_bd_addr_t joystickAddress{0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF};
-  esp_bd_addr_t joystickAddress{0xD0, 0x54, 0x7B, 0x00, 0x00, 0x00};
+  esp_bd_addr_t joystickAddress{0xD4, 0x14, 0xA7, 0x0C, 0x14, 0x00};
   joystick = bt->connect<controller>(joystickAddress);
 
   // TODO: Create the new motors for your car
@@ -188,8 +204,12 @@ extern "C" void app_main(void) {
   car = new Car(joystick, left, right);
   car->enableTurbo();
 
+#if VolcanoMeasure
+  lightSensor = new LightSensor(LightSensorPin, onPulse);
+#endif
+
 // TODO add log to remind to enable RX
-#if UpLink || VolcanoMeasure
+#if UpLink
   ir->mSetReceiveHandler(onReceiveIRData);
 #endif
 
