@@ -26,7 +26,7 @@
 
 constexpr auto SpeedSetIRAddress = 0x1254;
 
-#define Uplink false           // IR Sensor
+#define UpLink false           // IR Sensor
 #define TeamSyncLed false      // External LED
 #define VolcanoMeasure false   // Light Frequency Sensor & IR Sensor & Status
 #define CaveNavigation false   // Servo
@@ -38,6 +38,7 @@ constexpr auto SpeedSetIRAddress = 0x1254;
 // TODO: Add your additional challenge variables
 // Syntax Hint: <Class name>* <variable name>;
 Car *car;
+std::shared_ptr<controller> joystick = nullptr;
 
 #if TeamSyncLed
 LED *redLed = new LED(RedLedPin);
@@ -86,20 +87,67 @@ void ChangeLEDColor() {
   }
 }
 
+void sendIREasy() {
+#if UpLink
+  ir->enableTx();
+  ir->send(0, 0);
+  ir->disableTx();
+#endif
+}
+
+#define TowerAddress 0x00
+void sendIRHard(uint16_t op, uint16_t aInputValue) {
+#if (UpLink)
+  uint16_t answer = 0;
+  switch (op) {
+  case 1:
+    answer = aInputValue;
+    break;
+  case 2:
+    answer = aInputValue;
+    break;
+  case 3:
+    answer = aInputValue;
+    break;
+  case 4:
+    answer = aInputValue;
+    break;
+  case 5:
+    answer = aInputValue;
+    break;
+  default:
+    answer = aInputValue;
+  }
+
+  ir->enableTx();
+  ir->send(TowerAddress, answer);
+  ir->disableTx();
+#endif
+}
+
+void controlServoWithJoystick() {
+#if CaveNavigation || SampleCollection
+  servo->controlWith(joystick);
+#endif
+}
+
+void controlCarWithJoystick() { car->controlWith(joystick); }
+
 /* JOYSTICK CALLBACKS */
 void onAPress() { ChangeLEDColor(); };
-void onARelease(){};
+void onARelease() { sendIREasy(); };
 void onBPress(){};
 void onBRelease(){};
 void onXPress(){};
 void onXRelease(){};
 void onYPress(){};
 void onYRelease(){};
-void onTriggerPress(){};
-void onTriggerRelease(){};
+void onTriggerPress() { controlServoWithJoystick(); };
+void onTriggerRelease() { controlCarWithJoystick(); };
 
 void onReceiveIRData(uint16_t address, uint16_t data, bool isRepeat) {
   ESP_LOGI("MAIN", "Address=%04X, Command=%04X\r\n\r\n", address, data);
+  sendIRHard(address, data);
 }
 
 void registerJoystickButtonHandlers(std::shared_ptr<Mocute052> aJoystick) {
@@ -140,7 +188,7 @@ extern "C" void app_main(void) {
   // TODO: Put in your MAC Address
   // esp_bd_addr_t joystickAddress{0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF};
   esp_bd_addr_t joystickAddress{0xD0, 0x54, 0x7B, 0x00, 0x00, 0x00};
-  auto joystick = bt->connect<controller>(joystickAddress);
+  joystick = bt->connect<controller>(joystickAddress);
 
   // TODO: Create the new motors for your car
   Motor *left = new Motor(LeftMotorLeftPin, LeftMotorRightPin);
@@ -148,10 +196,11 @@ extern "C" void app_main(void) {
 
   // TODO: using the joystick and motor variables make a new car.
   car = new Car(joystick, left, right);
+  car->enableTurbo();
 
 // TODO add log to remind to enable RX
 #if UpLink || VolcanoMeasure
-  ir->SetReceiveHandler(onReceiveIRData);
+  ir->mSetReceiveHandler(onReceiveIRData);
 #endif
 
   registerJoystickButtonHandlers(joystick);
