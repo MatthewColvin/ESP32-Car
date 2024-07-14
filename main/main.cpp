@@ -33,20 +33,17 @@
 #define STATUS_ON 1
 #define STATUS_OFF 0
 
-void onReceiveIRData(uint16_t address, uint16_t data, bool isRepeat)
-{
+void onReceiveIRData(uint16_t address, uint16_t data, bool isRepeat) {
   ESP_LOGI("MAIN", "Address=%04X, Command=%04X\r\n\r\n", address, data);
   gpio_set_level(InternalGreenLedPin, ON);
 }
 
-extern "C" void app_main(void)
-{
+extern "C" void app_main(void) {
   vTaskDelay(HALF_SEC);
   nvs_flash_init();
 
   // IR
-  if (IR_TEST)
-  {
+  if (IR_TEST) {
     Transceiver *ir = new Transceiver(IRDETECT, IRLED);
     gpio_reset_pin(InternalGreenLedPin);
     gpio_set_direction(InternalGreenLedPin, GPIO_MODE_OUTPUT);
