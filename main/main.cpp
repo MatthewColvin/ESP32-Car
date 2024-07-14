@@ -51,7 +51,7 @@ void setRGB(uint8_t aRed, uint8_t aBlue, uint8_t aGreen) {
   blueLed->setBrightness(aBlue);
 }
 
-void led_sensor_handler(int64_t timestamp_ms) {
+void led_sensor_handler() {
   ESP_LOGI("LightSensor", "------------- INTERRUPT -------------\n");
 
   if (ON == gpio_get_level(InternalBlueLedPin)) {
