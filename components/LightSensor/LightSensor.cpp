@@ -4,10 +4,17 @@
 #include "freertos/FreeRTOS.h"
 #include "freertos/task.h"
 
+#define LOG_TAG "LightSensor"
+
 LightSensor::LightSensor(gpio_num_t aPin,
                          LightSensorCallback aOnReadLightFunction)
     : mPin(aPin), mCallback(aOnReadLightFunction) {
   Initialize();
+}
+
+LightSensor::~LightSensor() {
+  gpio_isr_handler_remove(mPin);
+  gpio_uninstall_isr_service();
 }
 
 void LightSensor::Initialize() {
@@ -19,7 +26,7 @@ void LightSensor::Initialize() {
   light_sensor_config.pull_up_en = GPIO_PULLUP_DISABLE;
   auto err = gpio_config(&light_sensor_config);
   if (err == ESP_ERR_INVALID_ARG) {
-    ESP_LOGE("LightSensor", "Invalid Arguments!!!");
+    ESP_LOGE(LOG_TAG, "Invalid Arguments in GPIO config!!!");
   }
 
   gpio_install_isr_service(ESP_INTR_FLAG_EDGE);
@@ -28,12 +35,22 @@ void LightSensor::Initialize() {
 void LightSensor::Enable() {
   gpio_set_intr_type(mPin, GPIO_INTR_POSEDGE);
   gpio_isr_handler_add(mPin, LightSensorIsrHandler, this);
-  ESP_LOGI("LightSensor", "Light Sensor is now enabled");
+  ESP_LOGI(LOG_TAG, "Light Sensor is enabled");
+  mStartTime = 0;
+  mEndTime = 0;
 }
 
 void LightSensor::Disable() {
   gpio_intr_disable(mPin);
-  ESP_LOGI("LightSensor", "Light Sensor is disabled");
+  ESP_LOGI(LOG_TAG, "Light Sensor is disabled");
+}
+
+int64_t LightSensor::GetCollectionTime() {
+  if (!mEndTime) {
+    ESP_LOGW(LOG_TAG, "End measurement before getting the collection time.");
+    return 0;
+  }
+  return (mEndTime - mStartTime) / 1000;
 }
 
 void LightSensor::LightSensorIsrHandler(void *self) {
@@ -42,7 +59,11 @@ void LightSensor::LightSensorIsrHandler(void *self) {
 }
 
 void LightSensor::CallbackWrapper(void *self) {
-  auto current_time = esp_timer_get_time() / 1000;
-  ((LightSensor *)self)->mCallback(current_time);
+  if (!((LightSensor *)self)->mStartTime) {
+    ((LightSensor *)self)->mStartTime = esp_timer_get_time();
+  }
+  ((LightSensor *)self)->mEndTime = esp_timer_get_time();
+
+  ((LightSensor *)self)->mCallback();
   vTaskDelete(NULL);
 }

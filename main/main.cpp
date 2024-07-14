@@ -45,11 +45,18 @@ LED *redLed;
 LED *blueLed;
 LED *greenLed;
 
-void setRGB(uint8_t aRed, uint8_t aBlue, uint8_t aGreen) {
-  redLed->setBrightness(aRed);
-  greenLed->setBrightness(aGreen);
-  blueLed->setBrightness(aBlue);
-}
+class ButtonHandler {
+public:
+  virtual ~ButtonHandler(){};
+  virtual void aPress(){};
+  virtual void aRelease(){};
+  virtual void bPress(){};
+  virtual void bRelease(){};
+  virtual void xRelease(){};
+  virtual void xPress(){};
+  virtual void yRelease(){};
+  virtual void yPress(){};
+};
 
 void led_sensor_handler(int64_t timestamp_ms) {
   ESP_LOGI("LightSensor", "------------- INTERRUPT -------------\n");
@@ -59,7 +66,111 @@ void led_sensor_handler(int64_t timestamp_ms) {
   } else {
     gpio_set_level(InternalBlueLedPin, ON);
   }
-}
+  void aPress() override { // Toggle Receive
+    mRxEnabled ? mIr.disableRx() : mIr.enableRx();
+    mRxEnabled = !mRxEnabled;
+  };
+  void bPress() override { // Toggle Send
+    mTxEnabled ? mIr.disableTx() : mIr.enableTx();
+    mTxEnabled = !mTxEnabled;
+  };
+
+  void xPress() override { mIr.send(0, 0); };
+  void yPress() override { mIr.send(0, 135); };
+
+  Transceiver mIr;
+  bool mRxEnabled = false;
+  bool mTxEnabled = false;
+};
+
+class DriveHandler : public ButtonHandler {
+public:
+  bool mTurboEnabled = false;
+
+  void aPress() override { // Toggle Turbo
+    mTurboEnabled ? car->disableTurbo() : car->enableTurbo();
+    mTurboEnabled = !mTurboEnabled;
+  };
+
+  void bPress() override { // Increase Cruise Speed
+    car->setCruiseSpeed(car->getCruiseSpeed() + 1000);
+  };
+
+  void xPress() override { // decrease Cruise Speed
+    car->setCruiseSpeed(car->getCruiseSpeed() - 1000);
+  };
+
+  void yPress() override { // Change Handling
+    car->getHandling() == Car::Handling::Car
+        ? car->setHandling(Car::Handling::Tank)
+        : car->setHandling(Car::Handling::Car);
+  };
+};
+
+class ButtonHandlerFactory {
+public:
+  ButtonHandlerFactory()
+      : intRed(InternalRedLedPin, true), intGreen(InternalGreenLedPin, true),
+        intBlue(InternalBlueLedPin, true), extRed(RedLedPin),
+        extGreen(GreenLedPin), extBlue(BlueLedPin) {}
+  virtual ~ButtonHandlerFactory() = default;
+
+  enum class sensorType {
+    Servo,
+    ExternalLed,
+    InternalLed,
+    LightSensor,
+    IR,
+    Driving,
+    COUNT
+  };
+  std::unique_ptr<ButtonHandler> GetHandler(sensorType aSensor) {
+    switch (aSensor) {
+    case sensorType::Servo:
+      ESP_LOGI(LOG_TAG, "---Servo TEST---");
+      return std::make_unique<ServoHandler>();
+    case sensorType::LightSensor:
+      ESP_LOGI(LOG_TAG, "---Light Sensor TEST---");
+      return std::make_unique<LightSensorHandler>();
+    case sensorType::IR:
+      ESP_LOGI(LOG_TAG, "---IR TEST---");
+      return std::make_unique<IRHandler>();
+    case sensorType::InternalLed:
+      ESP_LOGI(LOG_TAG, "---Internal LED TEST---");
+      return std::make_unique<RGBLedHandler>(&intRed, &intGreen, &intBlue);
+    case sensorType::ExternalLed:
+      ESP_LOGI(LOG_TAG, "---External LED TEST---");
+      return std::make_unique<RGBLedHandler>(&extRed, &extGreen, &extBlue);
+    case sensorType::Driving:
+      ESP_LOGI(LOG_TAG, "---Driving TEST---");
+      return std::make_unique<DriveHandler>();
+    default:
+      return std::make_unique<ButtonHandler>();
+    };
+  };
+
+  std::unique_ptr<ButtonHandler> GetNextHandler() {
+    sensorType nextType =
+        static_cast<sensorType>((static_cast<int>(mCurrentType) + 1) %
+                                static_cast<int>(sensorType::COUNT));
+    mCurrentType = nextType;
+    return GetHandler(nextType);
+  };
+
+  LED intRed;
+  LED intGreen;
+  LED intBlue;
+
+  LED extRed;
+  LED extGreen;
+  LED extBlue;
+
+  sensorType mCurrentType = sensorType::COUNT;
+};
+
+ButtonHandlerFactory handlerFactory;
+void onTriggerPress() { currentTestHandler = handlerFactory.GetNextHandler(); };
+void onTriggerRelease(){};
 
 extern "C" void app_main(void) {
   vTaskDelay(HALF_SEC);
