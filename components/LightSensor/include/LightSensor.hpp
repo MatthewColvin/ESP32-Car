@@ -8,6 +8,7 @@ public:
   typedef std::function<void(void)> LightSensorCallback;
 
   LightSensor(gpio_num_t aPin, LightSensorCallback aOnReadLightFunction);
+  virtual ~LightSensor();
   void Enable();
   void Disable();
   int64_t GetCollectionTime();

@@ -13,7 +13,7 @@ public:
   static constexpr auto MAX_DEGREE = 90;
 
   ServoMotor(gpio_num_t servoPin);
-  ~ServoMotor();
+  virtual ~ServoMotor();
   void setAngle(int angle);
   int getAngle() { return mAngle; }
   void incrementAngle(int numDegrees);
@@ -30,6 +30,11 @@ private:
   uint32_t angleToPulseWidth(uint32_t anAngle);
 
   gpio_num_t mPin;
+
+  mcpwm_timer_handle_t mTimer;
+  mcpwm_oper_handle_t mOperator;
   mcpwm_cmpr_handle_t mComparator;
+  mcpwm_gen_handle_t mGenerator;
+
   int mAngle = 0;
 };
