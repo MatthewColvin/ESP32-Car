@@ -22,12 +22,6 @@
 
 #define LOG_TAG "main"
 
-#define UpLink true           // IR Sensor
-#define TeamSyncLed true      // External LED
-#define VolcanoMeasure true   // Light Frequency Sensor & IR Sensor & Status
-#define CaveNavigation true   // Servo
-#define SampleCollection true // Servo
-
 /*
 This Code is for testing all components that can go on a Car and its connection
 to Joystick.
