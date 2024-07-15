@@ -96,25 +96,19 @@ void sendIREasy() {
 void sendIRHard(uint16_t op, uint16_t aInputValue) {
 // DEV_TODO Add Operations
 #if (UpLink)
+
   uint16_t answer = 0;
-  switch (op) {
-  case 1:
-    answer = aInputValue;
-    break;
-  case 2:
-    answer = aInputValue;
-    break;
-  case 3:
-    answer = aInputValue;
-    break;
-  case 4:
-    answer = aInputValue;
-    break;
-  case 5:
-    answer = aInputValue;
-    break;
-  default:
-    answer = aInputValue;
+  if (op == 0) {
+  } else if (op == 1) {
+    answer = aInputValue + 5;
+  } else if (op == 2) {
+    answer = aInputValue - 7;
+  } else if (op == 3) {
+    answer = aInputValue + 28;
+  } else if (op == 4) {
+    answer = aInputValue - 50;
+  } else if (op == 5) {
+    answer = aInputValue + 64;
   }
 
   ir->enableTx();
