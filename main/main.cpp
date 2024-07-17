@@ -37,6 +37,9 @@ ServoMotor *servo = nullptr;
 LED* red = nullptr;
 LED* green = nullptr;
 LED* blue = nullptr;
+LED* internalRed = nullptr;
+LED* internalGreen = nullptr;
+LED* internalBlue = nullptr;
 
 // Use Area below to make the variable for your sensors similar to above examples
 // <variableType> *<variableName> = nullptr;
@@ -69,19 +72,24 @@ void onARelease(){
 
 void onBPress(){
   // Tip: try typing <variableName>-> and then wait for editor to show you what you can do.
-  // Lets say you want to make your red light come on but don't know how...
+  // Lets say you want to make your internalRed light come on but don't know how...
 
-  // Try typing red->
+  // Try typing internalRed->
   // The editor will show you all the things that you can do with that variable.
   // in that list you see setBrightness so click it to auto fill
-  // red->setBrightness
+
+  // internalRed->setBrightness
   // Now add a parenthesis to see what the function takes
-  // red->setBrightness(
+
+  // internalRed->setBrightness(
   // You will notice a window pop up and see it takes an int which is just a number so fill it in
-  // red->setBrightness(50)
+
+  // internalRed->setBrightness(50)
   // Dont forget to add your semicolon
-  // red->setBrightness(50);
+
+  // internalRed->setBrightness(50);
   // This is a full working line of code that will turn on your red LED.
+
   // Maybe you could try to move your servo next?
 }
 void onBRelease(){}
@@ -100,6 +108,9 @@ void postCarInitSetup(){
     red = new LED(RedLedPin);
     green = new LED(GreenLedPin);
     blue = new LED(BlueLedPin);
+    internalRed = new LED(InternalRedLedPin,true);
+    internalGreen = new LED(InternalGreenLedPin,true);
+    internalBlue = new LED(InternalBlueLedPin,true);
 
     if(car){
       // TODO: Maybe you could update this line to make the car faster?
@@ -114,6 +125,28 @@ void postCarInitSetup(){
     }
 }
 
+/////////////// IR Communication Section ////////////////////////
+// TODO: Create your IR variable and set it up similar to the way you did the car.
+// you will need the IR receive (IRDETECT) and IR Send (IRLED) pins.
+// register onIRmessageReceived to be ran when you have an incoming message
+
+void onIRmessageReceived(uint16_t anOperation, uint16_t aValue){
+
+
+}
+////////////////////////////////////////////////////////////////
+
+
+////////////// LIGHT SENSOR Section ////////////////////
+// TODO: Create your LightSensor variable by telling it what
+// pin the light sensor is on (LightSensorPin) and giving it onLightSensorDetect
+// to be ran when it detects light.
+void onLightSensorDetect(){
+
+}
+
+
+/////////////////////////////////////////////////////////
 extern "C" void app_main(void) {
   nvs_flash_init();
   auto bt = BTClassicHID::getInstance();
